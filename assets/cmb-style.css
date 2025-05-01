@@ -1,0 +1,153 @@
+[id^="cmb-"] .inside {
+    padding: 0px 0px 0px 0px;
+    margin-top: 0px !important;
+}
+[id^="cmb-"] .inside * {
+    box-sizing: border-box;
+}
+
+.cmb-field {
+    border-bottom: 1px solid #e1e1e1;
+    display: flex;
+}
+.cmb-container .cmb-field:last-child {
+    border-bottom: 0px solid #ddd;
+
+}
+
+.cmb-field .cmb-label {
+    display: block;
+    padding: 12px;
+    border-right: 1px solid #e1e1e1;
+    width: 20%;
+    background: #f9f9f9;
+}
+
+.cmb-field .cmb-label  label {
+    font-weight: bold;
+    margin-bottom: 3px;
+}
+
+.cmb-field p.cmb-description {
+    display: block;
+    margin-top: 6px;
+    color: #667085;
+    margin-bottom: 0px;
+}
+
+
+.cmb-field .cmb-input {
+    display: block;
+    padding: 12px;
+    width: 80%;
+    flex-grow: 1;
+}
+
+
+.cmb-field.cmb-inline{
+    display: block;
+}
+
+.cmb-field.cmb-inline .cmb-label{
+    width: 100%;
+    border-right: 0px;
+    border-bottom: 1px solid #ededed;
+} 
+
+.cmb-field.cmb-inline .cmb-input{
+    width: 100%;
+} 
+
+.cmb-field input[type="text"],
+.cmb-field textarea,
+.cmb-field select {
+    width: 100%;
+}
+
+.cmb-group {
+}
+
+.cmb-group-item-header {
+    width: 100%;
+    display: flex;
+    padding: 8px;
+    background: #f9f9f9;
+    border: 1px solid #e1e1e1;
+    margin-top: -1px;
+}
+
+.cmb-group-item-body {
+    border: 1px solid #e1e1e1;
+    display: none;
+    border-top: 0;
+}
+
+.cmb-group-item.open > .cmb-group-item-body {
+    display: flex;
+    
+  }
+
+
+.cmb-group-index {
+    width: 32px;
+    background: #f4f4f4;
+    cursor: move;
+    color: #aaa;
+    text-shadow: #fff 0 1px 0;
+    padding: 8px;
+    border-right: 1px solid #e1e1e1;
+    text-align:center;
+}
+
+.cmb-remove-row {
+    width: 32px;
+    background: #f4f4f4;
+    cursor: pointer;
+    color: #aaa;
+    text-shadow: #fff 0 1px 0;
+    padding: 8px;
+    border-left: 1px solid #e1e1e1;
+    text-align:center;
+}
+
+.cmb-group-fields {
+    display: grid;
+    flex-grow: 1;
+}
+
+.cmb-add-row {
+    margin-top: 10px;
+}
+
+.cmb-remove-row {
+    width: auto; /* Allow remove button width to adjust to content */
+    min-width: 25px; /* Minimum width for remove button */
+    background: #f4f4f4;
+    cursor: pointer;
+    color: #777; /* Darker remove button color */
+    text-shadow: #fff 0 1px 0;
+    padding: 8px;
+    border-left: 1px solid #e1e1e1;
+    text-align:center;
+    box-sizing: border-box; /* Include padding and border in width */
+}
+.cmb-remove-row:hover {
+    background-color: #e9e9e9; /* Hover effect for remove button */
+}
+
+
+.cmb-add-row {
+    margin-top: 10px;
+    display: inline-block; /* Style as inline-block button */
+    padding: 8px 15px;
+    background-color: #f4f4f4;
+    color: #777;
+    border: 1px solid #e1e1e1;
+    border-radius: 3px;
+    cursor: pointer;
+    text-decoration: none; /* Remove default link underline if using <a> tag */
+    box-sizing: border-box; /* Include padding and border in width */
+}
+.cmb-add-row:hover {
+    background-color: #e9e9e9; /* Hover effect for add button */
+}

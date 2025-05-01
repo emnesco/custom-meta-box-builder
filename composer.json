@@ -1,0 +1,13 @@
+{
+    "name": "yourname/custom-meta-box-builder",
+    "description": "Modern WordPress custom meta box plugin",
+    "type": "wordpress-plugin",
+    "require": {},
+    "autoload": {
+      "psr-4": {
+        "CMB\\": "src/"
+      }
+    },
+    "minimum-stability": "stable",
+    "license": "GPL-2.0-or-later"
+  }
