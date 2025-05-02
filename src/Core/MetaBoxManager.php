@@ -20,7 +20,7 @@ class MetaBoxManager {
             foreach ($metaBox['postTypes'] as $postType) {
                 add_meta_box($id, $metaBox['title'], function ($post) use ($metaBox) {
                     $renderer = new FieldRenderer($post);
-                    echo '<div class="cmb-container cmb-fields inside">';
+                    echo '<div class="cmb-container cmb-fields">';
                     foreach ($metaBox['fields'] as $field) {
                         echo $renderer->render($field);
                     }
