@@ -19,14 +19,10 @@ class MetaBoxManager {
         foreach ($this->metaBoxes as $id => $metaBox) {
             foreach ($metaBox['postTypes'] as $postType) {
                 add_meta_box($id, $metaBox['title'], function ($post) use ($metaBox) {
-                    echo '<div class="cmb-wrapper">';
+                    $renderer = new FieldRenderer($post);
+                    echo '<div class="cmb-container cmb-fields inside">';
                     foreach ($metaBox['fields'] as $field) {
-                        $fieldClass = 'CMB\\Fields\\' . ucfirst($field['type']) . 'Field';
-                        if (class_exists($fieldClass)) {
-                            /** @var FieldInterface $instance */
-                            $instance = new $fieldClass($field);
-                            echo $instance->render();
-                        }
+                        echo $renderer->render($field);
                     }
                     echo '</div>';
                     wp_nonce_field('cmb_nonce', 'cmb_nonce');

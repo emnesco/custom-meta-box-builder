@@ -10,6 +10,7 @@
     border-bottom: 1px solid #e1e1e1;
     display: flex;
 }
+
 .cmb-container .cmb-field:last-child {
     border-bottom: 0px solid #ddd;
 
