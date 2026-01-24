@@ -14,6 +14,3 @@
  
  $plugin = new Plugin();
  $plugin->boot();
-
-
- require_once __DIR__ . '/public-api.php';

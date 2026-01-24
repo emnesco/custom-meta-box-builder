@@ -8,6 +8,9 @@ class GroupField extends AbstractField {
     public function render(): string {
         $groupFields = $this->config['fields'] ?? [];
         $value = get_post_meta(get_the_ID(), $this->getId()) ?: [];
+
+        dump($this->getId());
+
         $output = '<div class="cmb-group">';
             $output .= '<div class="cmb-group-items">';
             if (empty($value)) {
