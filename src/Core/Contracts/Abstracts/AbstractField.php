@@ -18,7 +18,7 @@ abstract class AbstractField implements FieldInterface {
         return $this->config['label'] ?? '';
     }
 
-    public function getValue(int $postId) {
-        return get_post_meta($postId, $this->getId(), true);
+    public function getValue() {
+        return $this->config['value'] ?? [];
     }
 }

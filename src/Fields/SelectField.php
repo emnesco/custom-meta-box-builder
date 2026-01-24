@@ -5,7 +5,7 @@ use CMB\Core\Contracts\Abstracts\AbstractField;
 
 class SelectField extends AbstractField {
     public function render(): string {
-        $value = $this->getValue(get_the_ID());
+        $value = $this->getValue();
         $output = '<label>' . esc_html($this->getLabel()) . '</label>';
         $output .= '<select name="' . esc_attr($this->getId()) . '">';
 

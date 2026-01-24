@@ -19,10 +19,10 @@ class MetaBoxManager {
         foreach ($this->metaBoxes as $id => $metaBox) {
             foreach ($metaBox['postTypes'] as $postType) {
                 add_meta_box($id, $metaBox['title'], function ($post) use ($metaBox) {
-                    $renderer = new FieldRenderer($post);
+                    $fields = new FieldRenderer($post);
                     echo '<div class="cmb-container cmb-fields">';
                     foreach ($metaBox['fields'] as $field) {
-                        echo $renderer->render($field);
+                        echo $fields->render($field);
                     }
                     echo '</div>';
                     wp_nonce_field('cmb_nonce', 'cmb_nonce');
@@ -38,11 +38,21 @@ class MetaBoxManager {
         foreach ($this->metaBoxes as $metaBox) {
             foreach ($metaBox['fields'] as $field) {
                 $fieldClass = 'CMB\\Fields\\' . ucfirst($field['type']) . 'Field';
+                
                 if (class_exists($fieldClass)) {
-                    /** @var FieldInterface $instance */
                     $instance = new $fieldClass($field);
-                    $sanitized = $instance->sanitize($_POST[$field['id']] ?? '');
-                    update_post_meta($postId, $field['id'], $sanitized);
+                    $fieldId = $field['id'];
+                    $sanitized = $instance->sanitize($_POST[$fieldId] ?? '');
+
+                    delete_post_meta($postId, $fieldId); 
+
+                    if (is_array($sanitized)) {
+                        foreach ($sanitized as $s) {
+                            add_post_meta($postId, $fieldId, $s);
+                        }
+                    } else {
+                        update_post_meta($postId, $fieldId, $sanitized);
+                    }
                 }
             }
         }

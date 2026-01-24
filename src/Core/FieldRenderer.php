@@ -10,21 +10,29 @@ class FieldRenderer {
         $this->post = $post;
     }
 
-    public function render(array $field, string $parentName = '', int $index = 0): string {
-        $fullName = $this->buildName($field, $parentName, $index);
-        $value = $this->getFieldValue($field['id']);
+    public function render( array $field, string $parent = '', int $index = 0, array $value = [], array $parent_field = []): string {
 
-       
+
+
+
 
         $fieldClass = 'CMB\\Fields\\' . ucfirst($field['type']) . 'Field';
         if (!class_exists($fieldClass)) {
             return '';
         }
 
+
+        $fullName = $this->buildName($parent_field, $field, $parent, $index);
+        
+
+
         /** @var FieldInterface $instance */
         $instance = new $fieldClass(array_merge($field, [
-            'id' => $fullName
+            'id' => $fullName,
+            'value' => $parent ? $value[$field['id']] : $this->getFieldValue($field),
         ]));
+
+
 
         $layout = isset($field['layout']) ? 'cmb-'.$field['layout'] : 'cmb-horizontal';
 
@@ -34,12 +42,11 @@ class FieldRenderer {
         $repeat = ($has_field_repeat || $has_parent_repeat) ? 'cmb-repeat' : '';
         
         $output = '<div class="cmb-field ' . $layout . ' cmb-type-'.$field['type'].' ' . $repeat . '">';
-            
-            $output .= '<div class="cmb-label">'.$field['type']. ' - ';
+            $output .= '<div class="cmb-label">';
                 $output .= esc_html($field['label'] ?? '');
+
             $output .= '</div>';
             $output .= '<div class="cmb-input">';
-            
 
                 $output .= $instance->render();
 
@@ -56,29 +63,33 @@ class FieldRenderer {
         return $output;
     }
 
-    protected function getFieldValue(string $fieldId) {
-        return get_post_meta($this->post->ID, $fieldId, true);
+    protected function getFieldValue(array $field) {
+        if($field['type'] === 'group' || $field['repeat'] === true) {
+            return get_post_meta($this->post->ID, $field['id']);
+        }
+        return get_post_meta($this->post->ID, $field['id'], true);
     }
 
-    protected function buildName(array $field, string $parent, int $index, int $group_index = 0): string {
+    protected function buildName(array $parent_field = [], array $field, string $parent, int $index = 0, int $group_index = 0): string {
 
 
+        $name = $parent ? $parent : $field['id'];
 
-        $name = $parent_name ?? $field['id'];
-
-        $isFieldGroup = ($field['type'] ?? null) === 'group';
+        $isParentFieldGroup = ($parent_field['type'] ?? null) === 'group';
+        $isParentFieldRepeatable = $parent_field['repeat'] ?? false;
         $isFieldRepeatable = $field['repeat'] ?? false;
-        
-        if (empty($parent) && ($isFieldGroup || $isFieldRepeatable)) {
-            $current_name = $name . '[' . $group_index . ']';
-        } elseif (empty($parent) && (!$isFieldGroup && !$isFieldRepeatable)) {
+
+
+
+        if (empty($parent) && !$isFieldRepeatable) {
             $current_name = $name;
-        } elseif (!empty($parent) && ($isFieldGroup || $isFieldRepeatable)) {
-            $current_name = $name . '[' . $field['id'] . '][' . $group_index . ']';
+        } elseif (empty($parent) && $isFieldRepeatable) {
+            $current_name = $name. '[' . $index . ']';
+        } elseif (!empty($parent) && ($isParentFieldGroup || $isParentFieldRepeatable)) {
+            $current_name = $name . '[' . $index . '][' . $field['id'] . ']';
         } else {
             $current_name = $name . '[' . $field['id'] . ']';
         }
-
 
 
         return $current_name;
