@@ -11,20 +11,23 @@ class FieldRenderer {
     }
 
 
-
-
-
-
-
     public function render( $field, $value = null, $group_index = 0, $parent_name = null, $parent = []) {
         
         $name = $parent_name ?? $field['id'];
-        $isFieldGroup = ($field['type'] ?? null) === 'group';
-        $isFieldRepeatable = $field['repeat'] ?? false;
+        $isFieldGroup = (isset($field['type']) && $field['type'] === 'group') ? true : false;
+        $isFieldRepeatable = (isset($field['repeat']) && $field['repeat'] === true) ? true : false;
 
         // Build correct input name depending on nesting and repeat status
         if (empty($parent) && ($isFieldGroup || $isFieldRepeatable)) {
+            
+            if($isFieldRepeatable && !$isFieldGroup) {
+            $current_name = $name . '[]';
+
+            } else {
             $current_name = $name . '[' . $group_index . ']';
+
+            }
+
         } elseif (empty($parent)) {
             $current_name = $name;
         } elseif ($isFieldGroup || $isFieldRepeatable) {
@@ -38,12 +41,9 @@ class FieldRenderer {
             $value = $this->get_field_value($this->post->ID, $field);
         }
 
-
         
         $layout = isset($field['layout']) ? 'cmb-'.$field['layout'] : 'cmb-horizontal';
         $repeat = (isset($field['repeat']) && $field['repeat'] === true || isset($parent['repeat']) && $parent['repeat'] === true) ? 'cmb-repeat' : '';
-
-
 
         $fieldClass = 'CMB\\Fields\\' . ucfirst($field['type']) . 'Field';
         if (!class_exists($fieldClass)) {
@@ -58,7 +58,6 @@ class FieldRenderer {
         ]));
 
 
-
         $layout = isset($field['layout']) ? 'cmb-'.$field['layout'] : 'cmb-horizontal';
 
         $has_field_repeat = isset($field['repeat']);
@@ -71,7 +70,9 @@ class FieldRenderer {
                 $output .= esc_html($field['label'] ?? '') . '</label>';
             $output .= '</div>';
             $output .= '<div class="cmb-input">';
+            
                 $output .= $instance->render();
+
                 if ( ( isset($field['repeat']) && $field['repeat'] === true) ) {
                     $output .= '<span class="cmb-add-row">Add Row</span>';
                 }
@@ -86,37 +87,11 @@ class FieldRenderer {
 
 
 
-    protected function buildName(array $field, string $parent, int $index, int $group_index = 0): string {
-
-
-        $name = $parent_name ?? $field['id'];
-
-        $isFieldGroup = ($field['type'] ?? null) === 'group';
-        $isFieldRepeatable = $field['repeat'] ?? false;
-        
-        if (empty($parent) && ($isFieldGroup || $isFieldRepeatable)) {
-            $current_name = $name . '[' . $group_index . ']';
-        } elseif (empty($parent) && (!$isFieldGroup && !$isFieldRepeatable)) {
-            $current_name = $name;
-        } elseif (!empty($parent) && ($isFieldGroup || $isFieldRepeatable)) {
-            $current_name = $name . '[' . $field['id'] . '][' . $group_index . ']';
-        } else {
-            $current_name = $name . '[' . $field['id'] . ']';
-        }
-
-
-
-        return $current_name;
-    }
-
-
     private function get_field_value($post_id, $field) {
         if ($field['type'] === 'group' || (isset($field['repeat']) && $field['repeat'] === true)) {
             return get_post_meta($post_id, $field['id']) ? : array(0);
         }
         return get_post_meta($post_id, $field['id'], true);
     }
-
-
 
 }

@@ -5,15 +5,20 @@ use CMB\Core\Contracts\Abstracts\AbstractField;
 
 class TextField extends AbstractField {
     public function render(): string {
-        $value = esc_attr($this->getValue());
+        $value = $this->getValue();
+$output = '';
+        if( isset($this->config['repeat']) && $this->config['repeat'] === true) {
+            foreach ($value as $key => $valu) {
+                    $output .= '<input type="text" name="' . esc_attr($this->getName()) . '" value="' . esc_attr($valu) . '">';
 
-        if( $this->config['repeat'] === true) {
-            dump($this->getName());
-            dump($value);
-            dump($this->config);
+            }
+
+        } else {
+                        $output .= '<input type="text" name="' . esc_attr($this->getName()) . '" value="' . esc_attr($value) . '">';
 
         }
-        return '<input type="text" name="' . esc_attr($this->getName()) . '" value="' . esc_attr($value) . '">';
+
+        return $output;
     }
 
     public function sanitize($value) {

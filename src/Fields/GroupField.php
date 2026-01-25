@@ -56,7 +56,6 @@ class GroupField extends AbstractField {
         foreach ($field['fields'] as $sub_field) {
             $sub_field_value = $this->sub_field_value($value, $index, $field, $sub_field);
 
-        dump($sub_field_value);
 
         // if( $name === 'attr[0][addr][0]') {
         //     dump($name);
@@ -96,7 +95,6 @@ class GroupField extends AbstractField {
      * Fetch field value from post meta.
      */
    function sub_field_value($value, $index, $field, $sub_field) {
-       // if (count($field['fields']) === 1) return $value[$index] ?? null;
         return $value[$index][$sub_field['id']] ?? null;
     }
 
