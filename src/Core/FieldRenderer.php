@@ -14,28 +14,32 @@ class FieldRenderer {
     public function render( $field, $value = null, $group_index = 0, $parent_name = null, $parent = []) {
         
         $name = $parent_name ?? $field['id'];
+
         $isFieldGroup = (isset($field['type']) && $field['type'] === 'group') ? true : false;
         $isFieldRepeatable = (isset($field['repeat']) && $field['repeat'] === true) ? true : false;
 
+        $isParentFieldGroup = (isset($parent['type']) && $parent['type'] === 'group') ? true : false;
+        $isParentFieldRepeatable = (isset($parent['repeat']) && $parent['repeat'] === true) ? true : false;
+
+
         // Build correct input name depending on nesting and repeat status
         if (empty($parent) && ($isFieldGroup || $isFieldRepeatable)) {
-            
             if($isFieldRepeatable && !$isFieldGroup) {
-            $current_name = $name . '[]';
-
+                $current_name = $name . '[]';
             } else {
-            $current_name = $name . '[' . $group_index . ']';
-
+                $current_name = $name . '[' . $group_index . ']';
             }
-
         } elseif (empty($parent)) {
             $current_name = $name;
         } elseif ($isFieldGroup || $isFieldRepeatable) {
-            $current_name = $name . '[' . $field['id'] . '][' . $group_index . ']';
+            if($isFieldGroup && $isFieldRepeatable) {
+                $current_name = $name . '[' . $field['id'] . '][' . $group_index . ']';
+            } elseif($isFieldGroup && !$isFieldRepeatable) {
+                $current_name = $name . '[' . $field['id'] . ']';
+            }
         } else {
             $current_name = $name . '[' . $field['id'] . ']';
         }
-       
 
         if (!$parent_name) {
             $value = $this->get_field_value($this->post->ID, $field);
@@ -70,7 +74,7 @@ class FieldRenderer {
                 $output .= esc_html($field['label'] ?? '') . '</label>';
             $output .= '</div>';
             $output .= '<div class="cmb-input">';
-            
+                $output .= $current_name;
                 $output .= $instance->render();
 
                 if ( ( isset($field['repeat']) && $field['repeat'] === true) ) {
