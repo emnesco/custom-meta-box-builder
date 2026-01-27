@@ -74,7 +74,6 @@ class FieldRenderer {
                 $output .= esc_html($field['label'] ?? '') . '</label>';
             $output .= '</div>';
             $output .= '<div class="cmb-input">';
-                $output .= $current_name;
                 $output .= $instance->render();
 
                 if ( ( isset($field['repeat']) && $field['repeat'] === true) ) {
