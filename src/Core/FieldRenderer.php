@@ -11,41 +11,56 @@ class FieldRenderer {
     }
 
 
-    public function render( $field, $value = null, $group_index = 0, $parent_name = null, $parent = []) {
-        
-        $name = $parent_name ?? $field['id'];
 
+
+    public function getname( $field, $group_index, $parent){
+        
         $isFieldGroup = (isset($field['type']) && $field['type'] === 'group') ? true : false;
         $isFieldRepeatable = (isset($field['repeat']) && $field['repeat'] === true) ? true : false;
 
         $isParentFieldGroup = (isset($parent['type']) && $parent['type'] === 'group') ? true : false;
         $isParentFieldRepeatable = (isset($parent['repeat']) && $parent['repeat'] === true) ? true : false;
+        
+        $name = $parent ? $parent['id']: $field['id'];
 
-
-        // Build correct input name depending on nesting and repeat status
-        if (empty($parent) && ($isFieldGroup || $isFieldRepeatable)) {
-            if($isFieldRepeatable && !$isFieldGroup) {
-                $current_name = $name . '[]';
-            } else {
-                $current_name = $name . '[' . $group_index . ']';
+        if($parent) {
+            if($isParentFieldGroup && $isParentFieldRepeatable ) {
+                return $name  . '['.$group_index.'][' . $field['id'] . ']';
             }
-        } elseif (empty($parent)) {
-            $current_name = $name;
-        } elseif ($isFieldGroup || $isFieldRepeatable) {
-            if($isFieldGroup && $isFieldRepeatable) {
-                $current_name = $name . '[' . $field['id'] . '][' . $group_index . ']';
-            } elseif($isFieldGroup && !$isFieldRepeatable) {
-                $current_name = $name . '[' . $field['id'] . ']';
+            if($isParentFieldGroup && !$isParentFieldRepeatable ) {
+                return $name  . '[' . $field['id'] . ']';
             }
         } else {
-            $current_name = $name . '[' . $field['id'] . ']';
+            if($isFieldRepeatable && !$isFieldGroup) {
+                return $name . '[]';
+            } 
+            return $name;
         }
 
-        if (!$parent_name) {
+        return $name;
+    }
+
+
+
+
+
+    public function render( $field, $value = null, $index = 0, $parent = []) {
+        
+        
+
+
+        $current_name = $this->getname( $field, $index, $parent);
+
+
+
+
+
+    
+        if (!$parent) {
             $value = $this->get_field_value($this->post->ID, $field);
         }
 
-        
+
         $layout = isset($field['layout']) ? 'cmb-'.$field['layout'] : 'cmb-horizontal';
         $repeat = (isset($field['repeat']) && $field['repeat'] === true || isset($parent['repeat']) && $parent['repeat'] === true) ? 'cmb-repeat' : '';
 
@@ -69,11 +84,16 @@ class FieldRenderer {
         $has_parent_repeat = isset($parent['repeat']) && $parent['repeat'] === true;
         $repeat = ($has_field_repeat || $has_parent_repeat) ? 'cmb-repeat' : '';
         
-        $output = '<div class="cmb-field ' . $layout . ' cmb-type-'.$field['type'].' ' . $repeat . '">';
+        $width = isset($field['width']) ? $field['width'] : '';
+
+        $output = '<div class="cmb-field ' . $layout . ' cmb-type-'.$field['type'].' ' . $repeat . ' '.$width.'">';
             $output .= '<div class="cmb-label">';
                 $output .= esc_html($field['label'] ?? '') . '</label>';
             $output .= '</div>';
             $output .= '<div class="cmb-input">';
+
+                $output .= $current_name;
+                $output .= '<br>';
                 $output .= $instance->render();
 
                 if ( ( isset($field['repeat']) && $field['repeat'] === true) ) {

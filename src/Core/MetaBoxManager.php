@@ -66,16 +66,7 @@ class MetaBoxManager {
                 
             delete_post_meta($post_id, $field['id']);
 
-                foreach ($_POST['test-repeat-text'] as $key => $valuec) {
 
-dump($valuec );
-
-if($valuec){
-
-                    add_post_meta($post_id, $field['id'], $valuec);
-
-}
-                }
 
             }
 

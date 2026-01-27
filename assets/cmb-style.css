@@ -9,7 +9,20 @@
 .cmb-field {
     border-bottom: 1px solid #e1e1e1;
     display: flex;
+    flex: 0 0 100%; 
 }
+
+
+.cmb-field.w-25 { flex: 0 0 calc(25% ); }
+.cmb-field.w-33 { flex: 0 0 calc(33.33%); }
+.cmb-field.w-50 { flex: 0 0 calc(50%); }
+.cmb-field.w-75 { flex: 0 0 calc(75%); }
+
+ @media (max-width: 600px) {
+        .cmb-field.w-25, .cmb-field.w-33, .cmb-field.w-50, .cmb-field.w-75 {
+            flex: 0 0 100%;
+        }
+    }
 
 .cmb-container .cmb-field:last-child {
     border-bottom: 0px solid #ddd;
@@ -112,8 +125,11 @@
 }
 
 .cmb-group-fields {
-    display: grid;
-    flex-grow: 1;
+display: flex;
+            flex-wrap: wrap;
+            width: 100%;
+            max-width: 2000px;
+            margin: 0 auto;
 }
 
 .cmb-add-row {

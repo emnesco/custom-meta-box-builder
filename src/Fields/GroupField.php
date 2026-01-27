@@ -17,7 +17,7 @@ class GroupField extends AbstractField {
         $name = $this->getName();
         $field = $this->config;
 
-        $collapsed = isset($field['collapsed']) && $field['collapsed'] !== true ? '' : '';
+        $collapsed = isset($field['collapsed']) && $field['collapsed'] === true ? 'open' : 'open';
         $output = '';
         $output .=  '<div class="cmb-group">';
         $output .=  '<div class="cmb-group-items">';
@@ -27,6 +27,7 @@ class GroupField extends AbstractField {
         } else {
             if(isset($field['repeat']) && $field['repeat'] === true) {
                 foreach ($value as $index => $group) {
+
                     $output .= $this->group_item($collapsed, $name, $field, $index, $value);
                 }
             } else {
@@ -51,17 +52,10 @@ class GroupField extends AbstractField {
         $output .=  '<div class="cmb-group-index">' . ($index) . '</div>';
         $output .=  '<div class="cmb-group-fields">';
 
-
-
-
         foreach ($field['fields'] as $sub_field) {
-
-
-
-
             $sub_field_value = $this->sub_field_value($value, $index, $field, $sub_field);
-             $fieldRenderer = new FieldRenderer(get_post(get_the_ID()));
-           $output .= $fieldRenderer->render($sub_field, $sub_field_value, $index, $name, $field);
+            $fieldRenderer = new FieldRenderer(get_post(get_the_ID()));
+            $output .= $fieldRenderer->render($sub_field, $sub_field_value, $index, $field);
         }
         $output .=  '</div>';
         $output .=  '<span class="cmb-remove-row">×</span>';
@@ -84,12 +78,9 @@ class GroupField extends AbstractField {
      */
    function sub_field_value($value, $index, $field, $sub_field) {
 
-
-if(!isset($field['repeat']) || (isset($field['repeat']) && $field['repeat'] === false)) {
-         return $value[$sub_field['id']] ?? null;
-}
-
-
+        if(!isset($field['repeat']) || (isset($field['repeat']) && $field['repeat'] === false)) {
+                return $value[$sub_field['id']] ?? null;
+        }
 
         return $value[$index][$sub_field['id']] ?? null;
     }
