@@ -21,6 +21,8 @@ class MetaBoxManager {
                     $fieldRenderer = new FieldRenderer($post);
                     echo '<div class="cmb-container cmb-fields">';
                     foreach ($metaBox['fields'] as $field) {
+                        // if top level fields type are group but not repeat,
+                        // we need make that repeat  because, we need to preserver group fileds key too.
                         if(isset($field['fields']) && $field['type']==='group' && !isset($field['repeat']) ){
                             $field['repeat'] = true;
                             $field['repeat_fake'] = true;
