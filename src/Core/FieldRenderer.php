@@ -92,11 +92,12 @@ class FieldRenderer {
             $output .= '</div>';
             $output .= '<div class="cmb-input">';
 
-                $output .= $current_name;
-                $output .= '<br>';
+
                 $output .= $instance->render();
 
-                if ( ( isset($field['repeat']) && $field['repeat'] === true) ) {
+
+
+                if ( ( isset($field['repeat']) && $field['repeat'] === true && !isset($field['repeat_fake'])) ) {
                     $output .= '<span class="cmb-add-row">Add Row</span>';
                 }
                 if (!empty($field['description'])) {

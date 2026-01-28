@@ -51,27 +51,7 @@
       }
 
   
-      $(document).on('click', '.cmb-group > .cmb-group-items > .cmb-group-item > .cmb-group-item-body >.cmb-remove-row', function(event) {
-        event.preventDefault();
-        const $removeRowButton = $(this); // Changed variable name to be more descriptive
 
-        const $repeatedField = $removeRowButton.closest('.cmb-group-item');
-        const itemIndex = $repeatedField.parent().children('.cmb-group-item').index($repeatedField);
-
-        console.log('Removed item index:', itemIndex); // Log the index for verification
-
-        $repeatedField.remove();
-      })
-     
-      $(document).on('click', '.cmb-group > .cmb-group-items > .cmb-group-item > .cmb-group-item-header', function(event) {
-        event.preventDefault();
-        const $toggleButton = $(this); // Changed variable name to be more descriptive
-
-        const $toggleElement = $toggleButton.parent('.cmb-group-item');
-
-
-        $toggleElement.toggleClass('open');
-      })
       
 
 
@@ -85,11 +65,17 @@
       */
       function processNestedGroups($clone, nestingLevel, parentItemIndex) {
   
+
+
         $clone.find(':input').each(function() {
           const $input = $(this);
           let name = $input.attr('name');
+        
+
           if (name) {
+            console.log(name)
             const newName = updateNestedGroupName(name, nestingLevel, parentItemIndex);
+
             $input.attr('name', newName).val('');
           } else {
             $input.val('');
@@ -112,7 +98,7 @@
 
 
           if ($nestedGroupItem.length) {
-            processNestedGroups($nestedGroupItem, getNestingLevel, 0 );
+            processNestedGroups($nestedGroupItem, getNestingLevel, parentItemIndex );
           }
         });
   
@@ -133,9 +119,9 @@
         let match;
         
 
-        console.log('inputName ' + inputName);
-        console.log('nestingLevel ' + nestingLevel);
-        console.log('currentItemIndex ' + currentItemIndex);
+        // console.log('inputName ' + inputName);
+        // console.log('nestingLevel ' + nestingLevel);
+        // console.log('currentItemIndex ' + currentItemIndex);
 
 
         // Find all [index] patterns and their positions
@@ -160,8 +146,29 @@
         return inputName.slice(0, target.start) + 
                newSegment + 
                inputName.slice(target.end);
-    }
-  
+      }
+
+      $(document).on('click', '.cmb-group > .cmb-group-items > .cmb-group-item > .cmb-group-item-body >.cmb-remove-row', function(event) {
+        event.preventDefault();
+        const $removeRowButton = $(this); // Changed variable name to be more descriptive
+
+        const $repeatedField = $removeRowButton.closest('.cmb-group-item');
+        const itemIndex = $repeatedField.parent().children('.cmb-group-item').index($repeatedField);
+
+        console.log('Removed item index:', itemIndex); // Log the index for verification
+
+        $repeatedField.remove();
+      })
+     
+      $(document).on('click', '.cmb-group > .cmb-group-items > .cmb-group-item > .cmb-group-item-header', function(event) {
+        event.preventDefault();
+        const $toggleButton = $(this); // Changed variable name to be more descriptive
+
+        const $toggleElement = $toggleButton.parent('.cmb-group-item');
+
+
+        $toggleElement.toggleClass('open');
+      })
     });
   
   })(jQuery);
