@@ -36,7 +36,7 @@
 
 .cmb-field .cmb-label {
     display: block;
-    padding: 12px;
+    padding: 6px;
     border-right: 1px solid #e1e1e1;
     width: 180px;
     flex-shrink: 0;
@@ -58,8 +58,8 @@
 
 .cmb-field .cmb-input {
     display: block;
-    padding: 12px;
-    
+    padding: 6px;
+    min-width: 0;
     flex-grow: 1;
 }
 
@@ -136,6 +136,8 @@
     width: 100%;
     max-width: 2000px;
     margin: 0 auto;
+    min-width: 0;
+    flex-grow: 1;
 }
 
 .cmb-add-row {
