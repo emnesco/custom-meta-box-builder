@@ -47,7 +47,7 @@ class GroupField extends AbstractField {
     function group_item($collapsed, $name, $field, $index, $value) {
         $output = '';
         $output .=  '<div class="cmb-group-item ' . esc_attr($collapsed) . '" data-field-name="' . esc_attr($name) . '">';
-        $output .=  '<div class="cmb-group-item-header">' . esc_html($field['label']) . '</div>';
+        $output .=  '<div class="cmb-group-item-header">' . esc_html($field['label']) . ' #' . ($index) . '</div>';
         $output .=  '<div class="cmb-group-item-body">';
         $output .=  '<div class="cmb-group-index">' . ($index) . '</div>';
         $output .=  '<div class="cmb-group-fields">';

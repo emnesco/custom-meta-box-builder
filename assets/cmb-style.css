@@ -9,18 +9,23 @@
 .cmb-field {
     border-bottom: 1px solid #e1e1e1;
     display: flex;
-    flex: 0 0 100%; 
+    min-width: 450px;
+     flex: 1 1 100%; 
 }
 
 
-.cmb-field.w-25 { flex: 0 0 calc(25% ); }
-.cmb-field.w-33 { flex: 0 0 calc(33.33%); }
-.cmb-field.w-50 { flex: 0 0 calc(50%); }
-.cmb-field.w-75 { flex: 0 0 calc(75%); }
 
- @media (max-width: 600px) {
+
+.cmb-field.w-25 { flex: 1 1 calc(25% ); }
+.cmb-field.w-33 { flex: 1 1 calc(33.33%); }
+.cmb-field.w-50 { flex: 1 1 calc(50%); }
+.cmb-field.w-75 { flex: 1 1 calc(75%); }
+
+ @media (max-width: 1495px) {
+    .cmb-field,
         .cmb-field.w-25, .cmb-field.w-33, .cmb-field.w-50, .cmb-field.w-75 {
-            flex: 0 0 100%;
+            flex: 1 1 100%;
+            min-width: 100%;
         }
     }
 
@@ -33,7 +38,8 @@
     display: block;
     padding: 12px;
     border-right: 1px solid #e1e1e1;
-    width: 20%;
+    width: 180px;
+    flex-shrink: 0;
     background: #f9f9f9;
 }
 
@@ -53,16 +59,16 @@
 .cmb-field .cmb-input {
     display: block;
     padding: 12px;
-    width: 80%;
+    
     flex-grow: 1;
 }
 
 
 .cmb-field.cmb-inline{
-    display: block;
+    flex-direction: column;
 }
 
-.cmb-field.cmb-inline .cmb-label{
+.cmb-field.cmb-inline > .cmb-label{
     width: 100%;
     border-right: 0px;
     border-bottom: 1px solid #ededed;
@@ -125,11 +131,11 @@
 }
 
 .cmb-group-fields {
-display: flex;
-            flex-wrap: wrap;
-            width: 100%;
-            max-width: 2000px;
-            margin: 0 auto;
+    display: flex;
+    flex-wrap: wrap;
+    width: 100%;
+    max-width: 2000px;
+    margin: 0 auto;
 }
 
 .cmb-add-row {

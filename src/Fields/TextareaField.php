@@ -6,8 +6,8 @@ use CMB\Core\Contracts\Abstracts\AbstractField;
 class TextareaField extends AbstractField {
     public function render(): string {
         $value = esc_textarea($this->getValue());
-        return '<label>' . esc_html($this->getLabel()) . '</label>' .
-               '<textarea name="' . esc_attr($this->getId()) . '">' . $value . '</textarea>';
+        return '<label>' . esc_html($this->getLabel()) . '<textarea name="' . esc_attr($this->getId()) . '">' . $value . '</textarea></label>' .
+               '';
     }
 
     public function sanitize($value) {
