@@ -1,9 +1,6 @@
 <?php
 namespace CMB\Core;
-
 use CMB\Core\Contracts\FieldInterface;
-
-use function Laravel\Prompts\form;
 
 class MetaBoxManager {
     private array $metaBoxes = [];
@@ -37,38 +34,18 @@ class MetaBoxManager {
         }
     }
 
-
-
-
-
-
-
-
-
-
     public function saveMetaBoxData(int $postId): void {
         if (!isset($_POST['cmb_nonce']) || !wp_verify_nonce($_POST['cmb_nonce'], 'cmb_nonce')) return;
         if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) return;
-
-
-
         foreach ($this->metaBoxes as $metaBox) {
-
             foreach ($metaBox['fields'] as $field) {
-
-
-
-
                 $fieldClass = 'CMB\\Fields\\' . ucfirst($field['type']) . 'Field';
-                
                 if (class_exists($fieldClass)) {
+                     /** @var FieldInterface $instance */
                     $instance = new $fieldClass($field);
                     $fieldId = $field['id'];
-
-                    $sanitized = $_POST[$fieldId] ?? '';
-
+                    $sanitized = $instance->sanitize($_POST[$fieldId] ?? '');
                     delete_post_meta($postId, $fieldId); 
-
                     if (is_array($sanitized)) {
                         foreach ($sanitized as $s) {
                              add_post_meta($postId, $fieldId, $s);
@@ -79,8 +56,5 @@ class MetaBoxManager {
                 }
             }
         }
-
     }
-
-
 }
