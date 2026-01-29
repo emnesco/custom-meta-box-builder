@@ -86,6 +86,14 @@
 
 .cmb-group {
 }
+.cmb-group-item .toggle-indicator {
+}
+.cmb-group-item .toggle-indicator::before {
+        content: "\f140" / '' !important;
+}
+.cmb-group-item.open .toggle-indicator::before {
+        content: "\f142" / '' !important;
+}
 
 .cmb-group-item-header {
     width: 100%;
@@ -94,6 +102,7 @@
     background: #f9f9f9;
     border: 1px solid #e1e1e1;
     margin-top: -1px;
+    justify-content: space-between;
 }
 
 .cmb-group-item-body {
