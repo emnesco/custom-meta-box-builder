@@ -27,7 +27,6 @@ class GroupField extends AbstractField {
         } else {
             if(isset($field['repeat']) && $field['repeat'] === true) {
                 foreach ($value as $index => $group) {
-
                     $output .= $this->group_item($collapsed, $name, $field, $index, $value);
                 }
             } else {
