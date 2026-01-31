@@ -52,6 +52,7 @@ class FieldRenderer {
         /** @var FieldInterface $instance */
         $instance = new $fieldClass(array_merge($field, [
             'id' => $name,
+            'name' => $name,
             'value' => $value,
         ]));
 
