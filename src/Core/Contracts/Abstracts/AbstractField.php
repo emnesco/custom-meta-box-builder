@@ -67,10 +67,29 @@ abstract class AbstractField implements FieldInterface {
          * A "collection" is defined as a group field or a field marked as repeatable.
          */
         $isCollection = (
-            ($this->config['type'] ?? '') === 'group' || 
+            ($this->config['type'] ?? '') === 'group' ||
             (isset($this->config['repeat']) && $this->config['repeat'] ?? false) === true
         );
-        
+
         return $isCollection ? [] : null;
+    }
+
+    /**
+     * Renders extra HTML attributes from the 'attributes' config key.
+     * Supports any key-value pairs; values are escaped with esc_attr().
+     *
+     * @return string Space-prefixed attribute string, or empty string.
+     */
+    protected function renderAttributes(): string
+    {
+        $attrs = $this->config['attributes'] ?? [];
+        if (empty($attrs) || !is_array($attrs)) {
+            return '';
+        }
+        $html = '';
+        foreach ($attrs as $attr => $val) {
+            $html .= ' ' . esc_attr($attr) . '="' . esc_attr((string) $val) . '"';
+        }
+        return $html;
     }
 }
