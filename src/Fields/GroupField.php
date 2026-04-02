@@ -54,7 +54,10 @@ class GroupField extends AbstractField {
         foreach ($field['fields'] as $sub_field) {
             $sub_field_value = $this->sub_field_value($value, $index, $field, $sub_field);
             $fieldRenderer = new FieldRenderer(get_post(get_the_ID()));
-            $output .= $fieldRenderer->render($sub_field, $sub_field_value, $index, $field);
+            // Pass the fully-resolved parent name as a string prefix so that
+            // getname() can build correct name attributes at any nesting depth.
+            $parent_prefix = $fieldRenderer->getChildPrefix($name, $field, $index);
+            $output .= $fieldRenderer->render($sub_field, $sub_field_value, $index, $parent_prefix);
         }
         $output .=  '</div>';
         $output .=  '<span class="cmb-remove-row">×</span>';
