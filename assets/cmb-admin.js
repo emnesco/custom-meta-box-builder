@@ -44,6 +44,9 @@
         $('.cmb-field-row').each(function () {
             updateTypeOptions($(this));
         });
+        $('.cmb-sub-field-row').each(function () {
+            updateSubFieldTypeOptions($(this));
+        });
     }
 
     /* ─── Event Bindings ────────────────────────────────── */
@@ -294,6 +297,67 @@
                 $('#cmb-import-modal').hide();
             }
         });
+
+        /* ── Sub-Field Events ── */
+
+        // Add sub-field
+        $(document).on('click', '.cmb-add-sub-field', function () {
+            var parentIndex = $(this).data('parent-index');
+            var $list = $(this).siblings('.cmb-sub-fields-list');
+            var subIndex = $list.children('.cmb-sub-field-row').length;
+            var html = buildSubFieldHtml(parentIndex, subIndex);
+            var $row = $(html);
+            $list.append($row);
+            updateSubFieldTypeOptions($row);
+            $row.find('.cmb-sub-field-label-input').focus();
+            markDirty();
+        });
+
+        // Remove sub-field
+        $(document).on('click', '.cmb-sub-field-remove', function (e) {
+            e.stopPropagation();
+            if (!confirm('Remove this sub-field?')) return;
+            var $row = $(this).closest('.cmb-sub-field-row');
+            var $list = $row.parent('.cmb-sub-fields-list');
+            $row.slideUp(150, function () {
+                $(this).remove();
+                reindexSubFields($list);
+                markDirty();
+            });
+        });
+
+        // Toggle sub-field body
+        $(document).on('click', '.cmb-sub-field-header', function (e) {
+            if ($(e.target).closest('.cmb-sub-field-actions').length) return;
+            if ($(e.target).closest('.cmb-sub-field-drag').length) return;
+            $(this).closest('.cmb-sub-field-row').toggleClass('open');
+        });
+
+        // Sub-field label → auto ID
+        $(document).on('input', '.cmb-sub-field-label-input', function () {
+            var $row = $(this).closest('.cmb-sub-field-row');
+            var label = $(this).val();
+            $row.find('.cmb-sub-field-label').text(label || 'New Sub-Field');
+            var $idInput = $row.find('.cmb-sub-field-id-input');
+            var currentId = $idInput.val();
+            var autoId = slugify(label);
+            if (!currentId || currentId === slugify($row.data('prev-label') || '')) {
+                $idInput.val(autoId);
+                $row.find('.cmb-sub-field-id-badge').text(autoId);
+            }
+            $row.data('prev-label', label);
+        });
+
+        // Sub-field type change
+        $(document).on('change', '.cmb-sub-field-type-select', function () {
+            var $row = $(this).closest('.cmb-sub-field-row');
+            var type = $(this).val();
+            var typeInfo = cmbAdmin.fieldTypes[type] || {};
+            $row.attr('data-type', type);
+            $row.find('.cmb-sub-field-type-badge').text(typeInfo.label || type);
+            $row.find('.cmb-sub-field-icon').attr('class', 'dashicons ' + (typeInfo.icon || 'dashicons-admin-generic') + ' cmb-sub-field-icon');
+            updateSubFieldTypeOptions($row);
+        });
     }
 
     /* ─── Add Field ─────────────────────────────────────── */
@@ -436,6 +500,15 @@
         html += '<div class="cmb-fs-row cmb-fs-third"><label class="cmb-checkbox-label" style="margin-top:24px">';
         html += '<input type="checkbox" name="' + prefix + '[collapsed]" value="1" checked> Collapsed';
         html += '</label></div></div>';
+
+        // Group sub-fields area
+        html += '<div class="cmb-type-opt cmb-sub-fields-wrap" data-show-for="group">';
+        html += '<div class="cmb-sub-fields-header"><label>Sub-Fields</label>';
+        html += '<small>Define the fields that appear inside each group row.</small></div>';
+        html += '<div class="cmb-sub-fields-list" data-parent-index="' + idx + '"></div>';
+        html += '<button type="button" class="button cmb-add-sub-field" data-parent-index="' + idx + '">';
+        html += '<span class="dashicons dashicons-plus-alt2"></span> Add Sub-Field</button>';
+        html += '</div>';
 
         html += '</div>'; // .cmb-type-options
 
@@ -620,6 +693,104 @@
                 $list.append('<div class="cmb-no-fields-msg"><p>No fields yet. Click the button below to add your first field.</p></div>');
             }
         }
+    }
+
+    /* ─── Sub-Field Helpers ─────────────────────────────── */
+
+    function buildSubFieldHtml(parentIndex, subIndex) {
+        var prefix = 'cmb_fields[' + parentIndex + '][sub_fields][' + subIndex + ']';
+
+        var html = '<div class="cmb-sub-field-row open" data-sub-index="' + subIndex + '" data-type="text">';
+
+        // Header
+        html += '<div class="cmb-sub-field-header">';
+        html += '<span class="cmb-sub-field-drag dashicons dashicons-menu"></span>';
+        html += '<span class="dashicons dashicons-editor-textcolor cmb-sub-field-icon"></span>';
+        html += '<span class="cmb-sub-field-label"><em>New Sub-Field</em></span>';
+        html += '<span class="cmb-sub-field-type-badge">Text</span>';
+        html += '<code class="cmb-sub-field-id-badge"></code>';
+        html += '<span class="cmb-sub-field-actions">';
+        html += '<button type="button" class="cmb-sub-field-remove" title="Remove"><span class="dashicons dashicons-no-alt"></span></button>';
+        html += '</span>';
+        html += '</div>';
+
+        // Body
+        html += '<div class="cmb-sub-field-body">';
+        html += '<div class="cmb-field-settings-grid">';
+
+        html += '<div class="cmb-fs-row cmb-fs-half"><label>Label</label>';
+        html += '<input type="text" name="' + prefix + '[label]" class="widefat cmb-sub-field-label-input" placeholder="Field Label"></div>';
+
+        html += '<div class="cmb-fs-row cmb-fs-half"><label>ID <small>(auto)</small></label>';
+        html += '<input type="text" name="' + prefix + '[id]" class="widefat cmb-sub-field-id-input" placeholder="auto_generated" required></div>';
+
+        html += '<div class="cmb-fs-row cmb-fs-half"><label>Type</label>';
+        html += '<select name="' + prefix + '[type]" class="widefat cmb-sub-field-type-select">';
+        $.each(cmbAdmin.fieldGroups, function (_, cat) {
+            html += '<optgroup label="' + escHtml(cat.label) + '">';
+            $.each(cat.types, function (key, info) {
+                if (key === 'group') return; // No nested groups
+                var sel = (key === 'text') ? ' selected' : '';
+                html += '<option value="' + key + '"' + sel + '>' + escHtml(info.label) + '</option>';
+            });
+            html += '</optgroup>';
+        });
+        html += '</select></div>';
+
+        html += '<div class="cmb-fs-row cmb-fs-half"><label>Description</label>';
+        html += '<input type="text" name="' + prefix + '[description]" class="widefat"></div>';
+
+        html += '</div>'; // .cmb-field-settings-grid
+
+        // Placeholder & Default
+        html += '<div class="cmb-field-settings-grid cmb-sub-type-opt" data-show-for="text,textarea,number,email,url,password">';
+        html += '<div class="cmb-fs-row cmb-fs-half"><label>Placeholder</label>';
+        html += '<input type="text" name="' + prefix + '[placeholder]" class="widefat"></div>';
+        html += '<div class="cmb-fs-row cmb-fs-half"><label>Default Value</label>';
+        html += '<input type="text" name="' + prefix + '[default_value]" class="widefat"></div>';
+        html += '</div>';
+
+        // Options for select/radio
+        html += '<div class="cmb-sub-type-opt" data-show-for="select,radio">';
+        html += '<div class="cmb-fs-row"><label>Options <small>One per line: <code>value|Label</code></small></label>';
+        html += '<textarea name="' + prefix + '[options]" class="widefat cmb-options-textarea" rows="3" placeholder="option1|Option One&#10;option2|Option Two"></textarea>';
+        html += '</div></div>';
+
+        // Required
+        html += '<div class="cmb-sub-field-bottom">';
+        html += '<label class="cmb-checkbox-label">';
+        html += '<input type="checkbox" name="' + prefix + '[required]" value="1"> Required</label>';
+        html += '</div>';
+
+        html += '</div>'; // .cmb-sub-field-body
+        html += '</div>'; // .cmb-sub-field-row
+
+        return html;
+    }
+
+    function reindexSubFields($list) {
+        var parentIndex = $list.data('parent-index');
+        $list.children('.cmb-sub-field-row').each(function (newIndex) {
+            $(this).attr('data-sub-index', newIndex);
+            $(this).find('[name]').each(function () {
+                var name = $(this).attr('name');
+                if (name) {
+                    // Replace sub_fields[N] part only
+                    $(this).attr('name', name.replace(
+                        /cmb_fields\[\d+\]\[sub_fields\]\[\d+\]/,
+                        'cmb_fields[' + parentIndex + '][sub_fields][' + newIndex + ']'
+                    ));
+                }
+            });
+        });
+    }
+
+    function updateSubFieldTypeOptions($row) {
+        var type = $row.attr('data-type') || $row.find('.cmb-sub-field-type-select').val() || 'text';
+        $row.find('.cmb-sub-type-opt').each(function () {
+            var showFor = ($(this).data('show-for') || '').split(',');
+            $(this).toggleClass('visible', showFor.indexOf(type) !== -1);
+        });
     }
 
 })(jQuery);

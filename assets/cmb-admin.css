@@ -623,6 +623,170 @@
     font-size: 12px;
 }
 
+/* ─── Sub-Fields ────────────────────────────────────────── */
+.cmb-sub-fields-wrap {
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid var(--cmb-border-light);
+}
+
+.cmb-sub-fields-header {
+    margin-bottom: 10px;
+}
+
+.cmb-sub-fields-header label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--cmb-text);
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+}
+
+.cmb-sub-fields-header small {
+    display: block;
+    font-size: 12px;
+    color: var(--cmb-text-secondary);
+    margin-top: 2px;
+    font-weight: 400;
+}
+
+.cmb-sub-fields-list {
+    margin-bottom: 10px;
+}
+
+.cmb-sub-field-row {
+    border: 1px solid var(--cmb-border-light);
+    border-radius: var(--cmb-radius);
+    margin-bottom: 6px;
+    background: var(--cmb-bg-white);
+    border-left: 3px solid var(--cmb-primary);
+}
+
+.cmb-sub-field-row:hover {
+    border-color: var(--cmb-border);
+    border-left-color: var(--cmb-primary);
+}
+
+.cmb-sub-field-header {
+    display: flex;
+    align-items: center;
+    padding: 8px 10px;
+    cursor: pointer;
+    gap: 6px;
+    font-size: 13px;
+}
+
+.cmb-sub-field-drag {
+    color: #ccc;
+    cursor: grab;
+    font-size: 14px;
+    width: 14px;
+    height: 14px;
+}
+
+.cmb-sub-field-icon {
+    color: var(--cmb-primary);
+    font-size: 14px;
+    width: 14px;
+    height: 14px;
+}
+
+.cmb-sub-field-label {
+    font-weight: 500;
+    font-size: 13px;
+}
+
+.cmb-sub-field-label em {
+    color: var(--cmb-text-secondary);
+    font-weight: 400;
+}
+
+.cmb-sub-field-type-badge {
+    font-size: 10px;
+    background: var(--cmb-bg);
+    color: var(--cmb-text-secondary);
+    padding: 1px 6px;
+    border-radius: 3px;
+}
+
+.cmb-sub-field-id-badge {
+    font-size: 10px;
+    color: var(--cmb-text-secondary);
+}
+
+.cmb-sub-field-actions {
+    margin-left: auto;
+    opacity: 0;
+    transition: opacity var(--cmb-transition);
+}
+
+.cmb-sub-field-row:hover .cmb-sub-field-actions {
+    opacity: 1;
+}
+
+.cmb-sub-field-remove {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--cmb-text-secondary);
+    padding: 2px;
+    line-height: 1;
+}
+
+.cmb-sub-field-remove:hover {
+    color: var(--cmb-danger);
+}
+
+.cmb-sub-field-remove .dashicons {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+}
+
+.cmb-sub-field-body {
+    display: none;
+    padding: 12px;
+    border-top: 1px solid var(--cmb-border-light);
+    background: #f8f9fa;
+}
+
+.cmb-sub-field-row.open .cmb-sub-field-body {
+    display: block;
+}
+
+.cmb-sub-type-opt {
+    display: none;
+    margin-top: 10px;
+}
+
+.cmb-sub-type-opt.visible {
+    display: block;
+}
+
+.cmb-sub-type-opt.cmb-field-settings-grid.visible {
+    display: grid;
+}
+
+.cmb-sub-field-bottom {
+    margin-top: 10px;
+    padding-top: 8px;
+    border-top: 1px solid var(--cmb-border-light);
+}
+
+.cmb-add-sub-field {
+    display: inline-flex !important;
+    align-items: center;
+    gap: 4px;
+    font-size: 12px !important;
+    padding: 4px 12px !important;
+}
+
+.cmb-add-sub-field .dashicons {
+    font-size: 14px;
+    width: 14px;
+    height: 14px;
+}
+
 /* ─── Add Field Button ──────────────────────────────────── */
 .cmb-add-field-area {
     padding: 16px 0 0;

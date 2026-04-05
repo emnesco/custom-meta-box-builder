@@ -398,6 +398,7 @@ class AdminUI {
         $collapsed   = $field['collapsed'] ?? true;
         $minRows     = $field['min_rows'] ?? '';
         $maxRows     = $field['max_rows'] ?? '';
+        $subFields   = $field['sub_fields'] ?? [];
 
         $typeInfo  = self::getFieldTypesFlat()[$type] ?? ['label' => ucfirst($type), 'icon' => 'dashicons-admin-generic'];
         $typeLabel = $typeInfo['label'];
@@ -594,6 +595,24 @@ class AdminUI {
         echo '</div>';
         echo '</div>';
 
+        // Group sub-fields
+        echo '<div class="cmb-type-opt cmb-sub-fields-wrap" data-show-for="group">';
+        echo '<div class="cmb-sub-fields-header">';
+        echo '<label>Sub-Fields</label>';
+        echo '<small>Define the fields that appear inside each group row.</small>';
+        echo '</div>';
+        echo '<div class="cmb-sub-fields-list" data-parent-index="' . $index . '">';
+        if (!empty($subFields)) {
+            foreach ($subFields as $si => $sf) {
+                self::renderSubFieldRow($index, $si, $sf);
+            }
+        }
+        echo '</div>';
+        echo '<button type="button" class="button cmb-add-sub-field" data-parent-index="' . $index . '">';
+        echo '<span class="dashicons dashicons-plus-alt2"></span> Add Sub-Field';
+        echo '</button>';
+        echo '</div>';
+
         echo '</div>'; // .cmb-type-options
 
         // Bottom row: required, width, repeatable
@@ -623,6 +642,104 @@ class AdminUI {
 
         echo '</div>'; // .cmb-field-row-body
         echo '</div>'; // .cmb-field-row
+    }
+
+    /* ─── Sub-Field Row Rendering ─────────────────────────── */
+
+    private static function renderSubFieldRow(int $parentIndex, int $subIndex, array $sf): void {
+        $prefix  = 'cmb_fields[' . $parentIndex . '][sub_fields][' . $subIndex . ']';
+        $sfType  = $sf['type'] ?? 'text';
+        $sfLabel = $sf['label'] ?? '';
+        $sfId    = $sf['id'] ?? '';
+        $sfDesc  = $sf['description'] ?? '';
+        $sfReq   = !empty($sf['required']);
+        $sfPh    = $sf['placeholder'] ?? '';
+        $sfDef   = $sf['default_value'] ?? ($sf['default'] ?? '');
+        $sfOpts  = $sf['options'] ?? '';
+
+        $typeInfo = self::getFieldTypesFlat()[$sfType] ?? ['label' => ucfirst($sfType), 'icon' => 'dashicons-admin-generic'];
+
+        if (is_array($sfOpts)) {
+            $lines = [];
+            foreach ($sfOpts as $k => $v) {
+                $lines[] = $k . '|' . $v;
+            }
+            $sfOpts = implode("\n", $lines);
+        }
+
+        echo '<div class="cmb-sub-field-row" data-sub-index="' . $subIndex . '" data-type="' . esc_attr($sfType) . '">';
+        echo '<div class="cmb-sub-field-header">';
+        echo '<span class="cmb-sub-field-drag dashicons dashicons-menu"></span>';
+        echo '<span class="dashicons ' . esc_attr($typeInfo['icon']) . ' cmb-sub-field-icon"></span>';
+        echo '<span class="cmb-sub-field-label">' . ($sfLabel ? esc_html($sfLabel) : '<em>New Sub-Field</em>') . '</span>';
+        echo '<span class="cmb-sub-field-type-badge">' . esc_html($typeInfo['label']) . '</span>';
+        if ($sfId) {
+            echo '<code class="cmb-sub-field-id-badge">' . esc_html($sfId) . '</code>';
+        }
+        echo '<span class="cmb-sub-field-actions">';
+        echo '<button type="button" class="cmb-sub-field-remove" title="Remove"><span class="dashicons dashicons-no-alt"></span></button>';
+        echo '</span>';
+        echo '</div>';
+
+        echo '<div class="cmb-sub-field-body">';
+        echo '<div class="cmb-field-settings-grid">';
+
+        echo '<div class="cmb-fs-row cmb-fs-half">';
+        echo '<label>Label</label>';
+        echo '<input type="text" name="' . $prefix . '[label]" value="' . esc_attr($sfLabel) . '" class="widefat cmb-sub-field-label-input" placeholder="Field Label">';
+        echo '</div>';
+
+        echo '<div class="cmb-fs-row cmb-fs-half">';
+        echo '<label>ID <small>(auto)</small></label>';
+        echo '<input type="text" name="' . $prefix . '[id]" value="' . esc_attr($sfId) . '" class="widefat cmb-sub-field-id-input" placeholder="auto_generated" required>';
+        echo '</div>';
+
+        echo '<div class="cmb-fs-row cmb-fs-half">';
+        echo '<label>Type</label>';
+        echo '<select name="' . $prefix . '[type]" class="widefat cmb-sub-field-type-select">';
+        foreach (self::getFieldTypeCategories() as $cat) {
+            // Skip group from sub-field types (no nested groups)
+            echo '<optgroup label="' . esc_attr($cat['label']) . '">';
+            foreach ($cat['types'] as $tKey => $tInfo) {
+                if ($tKey === 'group') continue;
+                $sel = ($sfType === $tKey) ? ' selected' : '';
+                echo '<option value="' . esc_attr($tKey) . '"' . $sel . '>' . esc_html($tInfo['label']) . '</option>';
+            }
+            echo '</optgroup>';
+        }
+        echo '</select>';
+        echo '</div>';
+
+        echo '<div class="cmb-fs-row cmb-fs-half">';
+        echo '<label>Description</label>';
+        echo '<input type="text" name="' . $prefix . '[description]" value="' . esc_attr($sfDesc) . '" class="widefat">';
+        echo '</div>';
+
+        echo '</div>'; // .cmb-field-settings-grid
+
+        // Placeholder & Default (for text-like types)
+        echo '<div class="cmb-field-settings-grid cmb-sub-type-opt" data-show-for="text,textarea,number,email,url,password">';
+        echo '<div class="cmb-fs-row cmb-fs-half"><label>Placeholder</label>';
+        echo '<input type="text" name="' . $prefix . '[placeholder]" value="' . esc_attr($sfPh) . '" class="widefat"></div>';
+        echo '<div class="cmb-fs-row cmb-fs-half"><label>Default Value</label>';
+        echo '<input type="text" name="' . $prefix . '[default_value]" value="' . esc_attr($sfDef) . '" class="widefat"></div>';
+        echo '</div>';
+
+        // Options for select/radio
+        echo '<div class="cmb-sub-type-opt" data-show-for="select,radio">';
+        echo '<div class="cmb-fs-row"><label>Options <small>One per line: <code>value|Label</code></small></label>';
+        echo '<textarea name="' . $prefix . '[options]" class="widefat cmb-options-textarea" rows="3">' . esc_textarea($sfOpts) . '</textarea>';
+        echo '</div></div>';
+
+        // Required checkbox
+        echo '<div class="cmb-sub-field-bottom">';
+        echo '<label class="cmb-checkbox-label">';
+        echo '<input type="checkbox" name="' . $prefix . '[required]" value="1"' . ($sfReq ? ' checked' : '') . '> Required';
+        echo '</label>';
+        echo '</div>';
+
+        echo '</div>'; // .cmb-sub-field-body
+        echo '</div>'; // .cmb-sub-field-row
     }
 
     /* ─── Field Type Picker Modal ─────────────────────────── */
@@ -796,6 +913,48 @@ class AdminUI {
                     $field['options'] = $opts;
                 }
 
+                // Process sub-fields for group type
+                if ($field['type'] === 'group' && !empty($f['sub_fields']) && is_array($f['sub_fields'])) {
+                    $subFields = [];
+                    foreach ($f['sub_fields'] as $sf) {
+                        if (empty($sf['id'])) continue;
+                        $sub = [
+                            'id'          => sanitize_text_field($sf['id']),
+                            'type'        => sanitize_text_field($sf['type'] ?? 'text'),
+                            'label'       => sanitize_text_field($sf['label'] ?? ''),
+                            'description' => sanitize_text_field($sf['description'] ?? ''),
+                            'required'    => !empty($sf['required']),
+                            'placeholder' => sanitize_text_field($sf['placeholder'] ?? ''),
+                            'default_value' => sanitize_text_field($sf['default_value'] ?? ''),
+                        ];
+                        // Parse sub-field options
+                        if (!empty($sf['options']) && in_array($sub['type'], ['select', 'radio'], true)) {
+                            $optLines = explode("\n", trim($sf['options']));
+                            $sOpts = [];
+                            foreach ($optLines as $line) {
+                                $line = trim($line);
+                                if ($line === '') continue;
+                                if (strpos($line, '|') !== false) {
+                                    [$val, $lbl] = explode('|', $line, 2);
+                                    $sOpts[trim($val)] = trim($lbl);
+                                } else {
+                                    $sOpts[sanitize_title($line)] = $line;
+                                }
+                            }
+                            $sub['options'] = $sOpts;
+                        }
+                        $sub = array_filter($sub, function($v) {
+                            return $v !== '' && $v !== null && $v !== false;
+                        });
+                        $sub['id'] = sanitize_text_field($sf['id']);
+                        $sub['type'] = sanitize_text_field($sf['type'] ?? 'text');
+                        $subFields[] = $sub;
+                    }
+                    if (!empty($subFields)) {
+                        $field['sub_fields'] = $subFields;
+                    }
+                }
+
                 // Clean up empty values
                 $field = array_filter($field, function($v) {
                     return $v !== '' && $v !== null;
@@ -803,6 +962,10 @@ class AdminUI {
                 // Always keep id and type
                 $field['id'] = sanitize_text_field($f['id']);
                 $field['type'] = sanitize_text_field($f['type'] ?? 'text');
+                // Preserve sub_fields array (array_filter may remove empty arrays but not populated ones)
+                if (!empty($f['sub_fields']) && $field['type'] === 'group') {
+                    $field['sub_fields'] = $field['sub_fields'] ?? [];
+                }
 
                 $fields[] = $field;
             }
@@ -1063,6 +1226,12 @@ class AdminUI {
             if (isset($field['collapsed']))     $f['collapsed']   = (bool) $field['collapsed'];
             if (!empty($field['min_rows']))     $f['min_rows']    = (int) $field['min_rows'];
             if (!empty($field['max_rows']))     $f['max_rows']    = (int) $field['max_rows'];
+
+            // Map sub_fields to 'fields' key expected by GroupField, and set repeat
+            if ($field['type'] === 'group' && !empty($field['sub_fields'])) {
+                $f['fields'] = self::transformFieldsForRegistration($field['sub_fields']);
+                $f['repeat'] = true; // Groups are always repeatable
+            }
 
             $transformed[] = $f;
         }
