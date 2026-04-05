@@ -5,8 +5,8 @@
 (function ($) {
     'use strict';
 
-    var fieldIndex = 0;
-    var formDirty = false;
+    let fieldIndex = 0;
+    let formDirty = false;
 
     $(document).ready(function () {
         initFieldIndex();
@@ -19,9 +19,9 @@
     /* ─── Initialization ────────────────────────────────── */
 
     function initFieldIndex() {
-        var maxIdx = -1;
+        let maxIdx = -1;
         $('.cmb-field-row').each(function () {
-            var idx = parseInt($(this).data('index'), 10);
+            let idx = parseInt($(this).data('index'), 10);
             if (idx > maxIdx) maxIdx = idx;
         });
         fieldIndex = maxIdx + 1;
@@ -56,7 +56,7 @@
         $(document).on('click', '.cmb-field-row-header', function (e) {
             if ($(e.target).closest('.cmb-field-row-actions').length) return;
             if ($(e.target).closest('.cmb-field-drag').length) return;
-            var $row = $(this).closest('.cmb-field-row');
+            let $row = $(this).closest('.cmb-field-row');
             $row.toggleClass('open');
         });
 
@@ -70,7 +70,7 @@
         $(document).on('click', '.cmb-field-remove', function (e) {
             e.stopPropagation();
             if (!confirm('Remove this field?')) return;
-            var $row = $(this).closest('.cmb-field-row');
+            let $row = $(this).closest('.cmb-field-row');
             $row.slideUp(200, function () {
                 $(this).remove();
                 reindexFields();
@@ -82,9 +82,9 @@
         // Duplicate field
         $(document).on('click', '.cmb-field-duplicate', function (e) {
             e.stopPropagation();
-            var $row = $(this).closest('.cmb-field-row');
-            var $clone = $row.clone(false, false);
-            var newIdx = fieldIndex++;
+            let $row = $(this).closest('.cmb-field-row');
+            let $clone = $row.clone(false, false);
+            let newIdx = fieldIndex++;
 
             // Update index
             $clone.attr('data-index', newIdx);
@@ -92,19 +92,19 @@
 
             // Update input names
             $clone.find('[name]').each(function () {
-                var name = $(this).attr('name');
+                let name = $(this).attr('name');
                 name = name.replace(/cmb_fields\[\d+\]/, 'cmb_fields[' + newIdx + ']');
                 $(this).attr('name', name);
             });
 
             // Update ID to avoid duplicate
-            var $idInput = $clone.find('.cmb-field-id-input');
+            let $idInput = $clone.find('.cmb-field-id-input');
             if ($idInput.val()) {
                 $idInput.val($idInput.val() + '_copy');
             }
 
             // Update header label
-            var label = $clone.find('.cmb-field-label-input').val();
+            let label = $clone.find('.cmb-field-label-input').val();
             $clone.find('.cmb-field-row-label').text(label ? label + ' (Copy)' : 'New Field');
 
             $clone.hide().insertAfter($row).slideDown(200);
@@ -113,16 +113,16 @@
 
         // Label → auto-generate ID
         $(document).on('input', '.cmb-field-label-input', function () {
-            var $row = $(this).closest('.cmb-field-row');
-            var $idInput = $row.find('.cmb-field-id-input');
-            var label = $(this).val();
+            let $row = $(this).closest('.cmb-field-row');
+            let $idInput = $row.find('.cmb-field-id-input');
+            let label = $(this).val();
 
             // Update header label
             $row.find('.cmb-field-row-label').text(label || 'New Field');
 
             // Auto-generate ID (only if the ID looks auto-generated or is empty)
-            var currentId = $idInput.val();
-            var autoId = slugify(label);
+            let currentId = $idInput.val();
+            let autoId = slugify(label);
             if (!currentId || currentId === slugify($row.data('prev-label') || '')) {
                 $idInput.val(autoId);
                 $row.find('.cmb-field-row-id').text(autoId);
@@ -133,16 +133,16 @@
 
         // ID input change → update header
         $(document).on('input', '.cmb-field-id-input', function () {
-            var $row = $(this).closest('.cmb-field-row');
+            let $row = $(this).closest('.cmb-field-row');
             $row.find('.cmb-field-row-id').text($(this).val());
             markDirty();
         });
 
         // Type change
         $(document).on('change', '.cmb-field-type-select', function () {
-            var $row = $(this).closest('.cmb-field-row');
-            var type = $(this).val();
-            var typeInfo = cmbAdmin.fieldTypes[type] || {};
+            let $row = $(this).closest('.cmb-field-row');
+            let type = $(this).val();
+            let typeInfo = cmbAdmin.fieldTypes[type] || {};
 
             $row.attr('data-type', type);
             $row.find('.cmb-field-row-type').text(typeInfo.label || type);
@@ -154,8 +154,8 @@
 
         // Required checkbox → update badge
         $(document).on('change', 'input[name$="[required]"]', function () {
-            var $row = $(this).closest('.cmb-field-row');
-            var $badge = $row.find('.cmb-required-badge');
+            let $row = $(this).closest('.cmb-field-row');
+            let $badge = $row.find('.cmb-required-badge');
             if ($(this).is(':checked')) {
                 if (!$badge.length) {
                     $row.find('.cmb-field-row-meta').append('<span class="cmb-required-badge">Required</span>');
@@ -167,13 +167,13 @@
 
         // Toggle switch text update
         $(document).on('change', '.cmb-toggle-label input', function () {
-            var $text = $(this).closest('.cmb-toggle-label').find('.cmb-toggle-text');
+            let $text = $(this).closest('.cmb-toggle-label').find('.cmb-toggle-text');
             $text.text($(this).is(':checked') ? 'Active' : 'Inactive');
         });
 
         // Tab switching
         $(document).on('click', '.cmb-editor-tab', function () {
-            var tab = $(this).data('tab');
+            let tab = $(this).data('tab');
             $('.cmb-editor-tab').removeClass('active');
             $(this).addClass('active');
             $('.cmb-editor-panel').removeClass('active');
@@ -193,7 +193,7 @@
 
         // Type picker: select type
         $(document).on('click', '.cmb-type-picker-item', function () {
-            var type = $(this).data('type');
+            let type = $(this).data('type');
             addField(type);
             $('#cmb-type-picker').hide();
         });
@@ -210,16 +210,16 @@
 
         // Type picker: search
         $(document).on('input', '#cmb-type-search', function () {
-            var query = $(this).val().toLowerCase();
+            let query = $(this).val().toLowerCase();
             $('.cmb-type-picker-item').each(function () {
-                var name = $(this).find('.cmb-type-picker-name').text().toLowerCase();
-                var type = $(this).data('type');
-                var match = name.indexOf(query) !== -1 || type.indexOf(query) !== -1;
+                let name = $(this).find('.cmb-type-picker-name').text().toLowerCase();
+                let type = $(this).data('type');
+                let match = name.indexOf(query) !== -1 || type.indexOf(query) !== -1;
                 $(this).toggleClass('hidden', !match);
             });
             // Hide empty categories
             $('.cmb-type-picker-category').each(function () {
-                var hasVisible = $(this).find('.cmb-type-picker-item:not(.hidden)').length > 0;
+                let hasVisible = $(this).find('.cmb-type-picker-item:not(.hidden)').length > 0;
                 $(this).toggle(hasVisible);
             });
         });
@@ -239,7 +239,7 @@
 
         // File input label update
         $(document).on('change', '.cmb-import-file-input', function () {
-            var name = this.files && this.files[0] ? this.files[0].name : '';
+            let name = this.files && this.files[0] ? this.files[0].name : '';
             if (name) {
                 $(this).closest('.cmb-import-file-label').find('span:last').text(name);
             }
@@ -247,17 +247,17 @@
 
         // Copy code
         $(document).on('click', '#cmb-copy-code', function () {
-            var code = $('#cmb-code-output code').text();
+            let code = $('#cmb-code-output code').text();
             if (navigator.clipboard) {
                 navigator.clipboard.writeText(code).then(function () {
-                    var $btn = $('#cmb-copy-code');
+                    let $btn = $('#cmb-copy-code');
                     $btn.text('Copied!');
                     setTimeout(function () {
                         $btn.html('<span class="dashicons dashicons-clipboard"></span> Copy Code');
                     }, 2000);
                 }).catch(function () {
                     // Fallback for older browsers
-                    var textarea = document.createElement('textarea');
+                    let textarea = document.createElement('textarea');
                     textarea.value = code;
                     document.body.appendChild(textarea);
                     textarea.select();
@@ -285,10 +285,10 @@
 
         // Auto-generate box ID from title
         $('#cmb-title-input').on('input', function () {
-            var $idField = $('#cmb-box-id');
+            let $idField = $('#cmb-box-id');
             if ($idField.prop('readonly')) return;
-            var title = $(this).val();
-            var id = slugify(title);
+            let title = $(this).val();
+            let id = slugify(title);
             if (!$idField.data('manual')) {
                 $idField.val(id);
             }
@@ -310,11 +310,11 @@
 
         // Add sub-field
         $(document).on('click', '.cmb-add-sub-field', function () {
-            var parentIndex = $(this).data('parent-index');
-            var $list = $(this).siblings('.cmb-sub-fields-list');
-            var subIndex = $list.children('.cmb-sub-field-row').length;
-            var html = buildSubFieldHtml(parentIndex, subIndex);
-            var $row = $(html);
+            let parentIndex = $(this).data('parent-index');
+            let $list = $(this).siblings('.cmb-sub-fields-list');
+            let subIndex = $list.children('.cmb-sub-field-row').length;
+            let html = buildSubFieldHtml(parentIndex, subIndex);
+            let $row = $(html);
             $list.append($row);
             updateSubFieldTypeOptions($row);
             $row.find('.cmb-sub-field-label-input').focus();
@@ -325,8 +325,8 @@
         $(document).on('click', '.cmb-sub-field-remove', function (e) {
             e.stopPropagation();
             if (!confirm('Remove this sub-field?')) return;
-            var $row = $(this).closest('.cmb-sub-field-row');
-            var $list = $row.parent('.cmb-sub-fields-list');
+            let $row = $(this).closest('.cmb-sub-field-row');
+            let $list = $row.parent('.cmb-sub-fields-list');
             $row.slideUp(150, function () {
                 $(this).remove();
                 reindexSubFields($list);
@@ -343,12 +343,12 @@
 
         // Sub-field label → auto ID
         $(document).on('input', '.cmb-sub-field-label-input', function () {
-            var $row = $(this).closest('.cmb-sub-field-row');
-            var label = $(this).val();
+            let $row = $(this).closest('.cmb-sub-field-row');
+            let label = $(this).val();
             $row.find('.cmb-sub-field-label').text(label || 'New Sub-Field');
-            var $idInput = $row.find('.cmb-sub-field-id-input');
-            var currentId = $idInput.val();
-            var autoId = slugify(label);
+            let $idInput = $row.find('.cmb-sub-field-id-input');
+            let currentId = $idInput.val();
+            let autoId = slugify(label);
             if (!currentId || currentId === slugify($row.data('prev-label') || '')) {
                 $idInput.val(autoId);
                 $row.find('.cmb-sub-field-id-badge').text(autoId);
@@ -358,9 +358,9 @@
 
         // Sub-field type change
         $(document).on('change', '.cmb-sub-field-type-select', function () {
-            var $row = $(this).closest('.cmb-sub-field-row');
-            var type = $(this).val();
-            var typeInfo = cmbAdmin.fieldTypes[type] || {};
+            let $row = $(this).closest('.cmb-sub-field-row');
+            let type = $(this).val();
+            let typeInfo = cmbAdmin.fieldTypes[type] || {};
             $row.attr('data-type', type);
             $row.find('.cmb-sub-field-type-badge').text(typeInfo.label || type);
             $row.find('.cmb-sub-field-icon').attr('class', 'dashicons ' + (typeInfo.icon || 'dashicons-admin-generic') + ' cmb-sub-field-icon');
@@ -371,11 +371,11 @@
     /* ─── Add Field ─────────────────────────────────────── */
 
     function addField(type) {
-        var idx = fieldIndex++;
-        var typeInfo = cmbAdmin.fieldTypes[type] || { label: type, icon: 'dashicons-admin-generic' };
-        var prefix = 'cmb_fields[' + idx + ']';
+        let idx = fieldIndex++;
+        let typeInfo = cmbAdmin.fieldTypes[type] || { label: type, icon: 'dashicons-admin-generic' };
+        let prefix = 'cmb_fields[' + idx + ']';
 
-        var html = '<div class="cmb-field-row open" data-index="' + idx + '" data-type="' + type + '">';
+        let html = '<div class="cmb-field-row open" data-index="' + idx + '" data-type="' + type + '">';
 
         // Header
         html += '<div class="cmb-field-row-header">';
@@ -416,7 +416,7 @@
         $.each(cmbAdmin.fieldGroups, function (_, cat) {
             html += '<optgroup label="' + escHtml(cat.label) + '">';
             $.each(cat.types, function (key, info) {
-                var sel = (key === type) ? ' selected' : '';
+                let sel = (key === type) ? ' selected' : '';
                 html += '<option value="' + key + '"' + sel + '>' + escHtml(info.label) + '</option>';
             });
             html += '</optgroup>';
@@ -538,7 +538,7 @@
 
         // Remove empty message and append
         $('.cmb-no-fields-msg').remove();
-        var $newRow = $(html);
+        let $newRow = $(html);
         $('#cmb-fields-list').append($newRow);
         updateTypeOptions($newRow);
 
@@ -555,17 +555,17 @@
     /* ─── Type-specific Options Visibility ──────────────── */
 
     function updateTypeOptions($row) {
-        var type = $row.attr('data-type') || $row.find('.cmb-field-type-select').val() || 'text';
+        let type = $row.attr('data-type') || $row.find('.cmb-field-type-select').val() || 'text';
 
         $row.find('.cmb-type-opt').each(function () {
-            var showFor = ($(this).data('show-for') || '').split(',');
-            var shouldShow = showFor.indexOf(type) !== -1;
+            let showFor = ($(this).data('show-for') || '').split(',');
+            let shouldShow = showFor.indexOf(type) !== -1;
             $(this).toggleClass('visible', shouldShow);
         });
 
         $row.find('.cmb-type-opt-inline').each(function () {
-            var hideFor = ($(this).data('hide-for') || '').split(',');
-            var shouldShow = hideFor.indexOf(type) === -1;
+            let hideFor = ($(this).data('hide-for') || '').split(',');
+            let shouldShow = hideFor.indexOf(type) === -1;
             $(this).toggleClass('visible', shouldShow);
         });
     }
@@ -574,10 +574,10 @@
 
     function reindexFields() {
         $('#cmb-fields-list .cmb-field-row').each(function (newIndex) {
-            var oldIndex = $(this).data('index');
+            let oldIndex = $(this).data('index');
             $(this).attr('data-index', newIndex).data('index', newIndex);
             $(this).find('[name]').each(function () {
-                var name = $(this).attr('name');
+                let name = $(this).attr('name');
                 if (name) {
                     $(this).attr('name', name.replace(/cmb_fields\[\d+\]/, 'cmb_fields[' + newIndex + ']'));
                 }
@@ -589,21 +589,21 @@
     /* ─── Code Preview ──────────────────────────────────── */
 
     function updateCodePreview() {
-        var $form = $('#cmb-builder-form');
+        let $form = $('#cmb-builder-form');
         if (!$form.length) return;
 
-        var title = $('#cmb-title-input').val() || 'My Field Group';
-        var boxId = $('#cmb-box-id').val() || 'my_field_group';
-        var context = $('[name="cmb_box_context"]').val() || 'advanced';
-        var priority = $('[name="cmb_box_priority"]').val() || 'default';
+        let title = $('#cmb-title-input').val() || 'My Field Group';
+        let boxId = $('#cmb-box-id').val() || 'my_field_group';
+        let context = $('[name="cmb_box_context"]').val() || 'advanced';
+        let priority = $('[name="cmb_box_priority"]').val() || 'default';
 
-        var postTypes = [];
+        let postTypes = [];
         $('[name="cmb_box_post_types[]"]:checked').each(function () {
             postTypes.push("'" + $(this).val() + "'");
         });
         if (!postTypes.length) postTypes = ["'post'"];
 
-        var code = "<?php\n";
+        let code = "<?php\n";
         code += "/**\n * Register '" + title + "' field group.\n */\n";
         code += "add_action('plugins_loaded', function () {\n";
         code += "    if (!function_exists('add_custom_meta_box')) return;\n\n";
@@ -614,39 +614,39 @@
         code += "        [\n";
 
         // Fields
-        var fieldLines = [];
+        let fieldLines = [];
         $('.cmb-field-row').each(function () {
-            var $r = $(this);
-            var fId = $r.find('.cmb-field-id-input').val();
-            var fType = $r.find('.cmb-field-type-select').val() || 'text';
-            var fLabel = $r.find('.cmb-field-label-input').val();
+            let $r = $(this);
+            let fId = $r.find('.cmb-field-id-input').val();
+            let fType = $r.find('.cmb-field-type-select').val() || 'text';
+            let fLabel = $r.find('.cmb-field-label-input').val();
 
             if (!fId) return;
 
-            var parts = [];
+            let parts = [];
             parts.push("'id' => '" + escPhp(fId) + "'");
             parts.push("'type' => '" + fType + "'");
             if (fLabel) parts.push("'label' => '" + escPhp(fLabel) + "'");
 
-            var desc = $r.find('[name$="[description]"]').val();
+            let desc = $r.find('[name$="[description]"]').val();
             if (desc) parts.push("'description' => '" + escPhp(desc) + "'");
 
-            var req = $r.find('[name$="[required]"]').is(':checked');
+            let req = $r.find('[name$="[required]"]').is(':checked');
             if (req) parts.push("'required' => true");
 
-            var ph = $r.find('[name$="[placeholder]"]').val();
+            let ph = $r.find('[name$="[placeholder]"]').val();
             if (ph) parts.push("'placeholder' => '" + escPhp(ph) + "'");
 
-            var def = $r.find('[name$="[default_value]"]').val() || $r.find('[name$="[default_value_dc]"]').val();
+            let def = $r.find('[name$="[default_value]"]').val() || $r.find('[name$="[default_value_dc]"]').val();
             if (def) parts.push("'default' => '" + escPhp(def) + "'");
 
-            var opts = $r.find('.cmb-options-textarea').val();
+            let opts = $r.find('.cmb-options-textarea').val();
             if (opts && (fType === 'select' || fType === 'radio')) {
-                var optParts = [];
+                let optParts = [];
                 opts.split('\n').forEach(function (line) {
                     line = line.trim();
                     if (!line) return;
-                    var p = line.split('|');
+                    let p = line.split('|');
                     if (p.length >= 2) {
                         optParts.push("'" + escPhp(p[0].trim()) + "' => '" + escPhp(p[1].trim()) + "'");
                     } else {
@@ -682,7 +682,7 @@
     }
 
     function escHtml(str) {
-        var map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
+        let map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
         return String(str).replace(/[&<>"']/g, function (m) { return map[m]; });
     }
 
@@ -695,7 +695,7 @@
     }
 
     function toggleEmptyMessage() {
-        var $list = $('#cmb-fields-list');
+        let $list = $('#cmb-fields-list');
         if ($list.find('.cmb-field-row').length === 0) {
             if (!$list.find('.cmb-no-fields-msg').length) {
                 $list.append('<div class="cmb-no-fields-msg"><p>No fields yet. Click the button below to add your first field.</p></div>');
@@ -706,9 +706,9 @@
     /* ─── Sub-Field Helpers ─────────────────────────────── */
 
     function buildSubFieldHtml(parentIndex, subIndex) {
-        var prefix = 'cmb_fields[' + parentIndex + '][sub_fields][' + subIndex + ']';
+        let prefix = 'cmb_fields[' + parentIndex + '][sub_fields][' + subIndex + ']';
 
-        var html = '<div class="cmb-sub-field-row open" data-sub-index="' + subIndex + '" data-type="text">';
+        let html = '<div class="cmb-sub-field-row open" data-sub-index="' + subIndex + '" data-type="text">';
 
         // Header
         html += '<div class="cmb-sub-field-header">';
@@ -738,7 +738,7 @@
             html += '<optgroup label="' + escHtml(cat.label) + '">';
             $.each(cat.types, function (key, info) {
                 if (key === 'group') return; // No nested groups
-                var sel = (key === 'text') ? ' selected' : '';
+                let sel = (key === 'text') ? ' selected' : '';
                 html += '<option value="' + key + '"' + sel + '>' + escHtml(info.label) + '</option>';
             });
             html += '</optgroup>';
@@ -777,11 +777,11 @@
     }
 
     function reindexSubFields($list) {
-        var parentIndex = $list.data('parent-index');
+        let parentIndex = $list.data('parent-index');
         $list.children('.cmb-sub-field-row').each(function (newIndex) {
             $(this).attr('data-sub-index', newIndex);
             $(this).find('[name]').each(function () {
-                var name = $(this).attr('name');
+                let name = $(this).attr('name');
                 if (name) {
                     // Replace sub_fields[N] part only
                     $(this).attr('name', name.replace(
@@ -794,9 +794,9 @@
     }
 
     function updateSubFieldTypeOptions($row) {
-        var type = $row.attr('data-type') || $row.find('.cmb-sub-field-type-select').val() || 'text';
+        let type = $row.attr('data-type') || $row.find('.cmb-sub-field-type-select').val() || 'text';
         $row.find('.cmb-sub-type-opt').each(function () {
-            var showFor = ($(this).data('show-for') || '').split(',');
+            let showFor = ($(this).data('show-for') || '').split(',');
             $(this).toggleClass('visible', showFor.indexOf(type) !== -1);
         });
     }

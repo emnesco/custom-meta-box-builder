@@ -1,4 +1,10 @@
 <?php
+/**
+ * Factory for creating field instances from type strings with extensible type registry.
+ *
+ * @package CustomMetaBoxBuilder
+ * @since   2.0
+ */
 namespace CMB\Core;
 
 use CMB\Core\Contracts\FieldInterface;
@@ -11,19 +17,25 @@ use CMB\Core\Contracts\FieldInterface;
 class FieldFactory {
     private static array $customTypes = [];
 
+    /** Built-in type aliases for non-standard naming conventions. */
+    private static array $typeAliases = [
+        'flexible_content' => \CMB\Fields\FlexibleContentField::class,
+        'checkbox_list'    => \CMB\Fields\Checkbox_listField::class,
+    ];
+
     /**
      * Register a custom field type class.
      */
     public static function registerType( string $type, string $className ): void {
         if ( ! class_exists( $className ) ) {
             if ( function_exists( '_doing_it_wrong' ) ) {
-                _doing_it_wrong( __METHOD__, sprintf( 'Class "%s" does not exist.', $className ), '2.1' );
+                _doing_it_wrong( __METHOD__, sprintf( 'Class "%s" does not exist. See https://developer.wordpress.org/plugins/ for guidance on custom field types.', $className ), '2.1' );
             }
             return;
         }
         if ( ! is_subclass_of( $className, FieldInterface::class ) ) {
             if ( function_exists( '_doing_it_wrong' ) ) {
-                _doing_it_wrong( __METHOD__, sprintf( 'Class "%s" must implement FieldInterface.', $className ), '2.1' );
+                _doing_it_wrong( __METHOD__, sprintf( 'Class "%s" must implement FieldInterface. Custom field classes must implement CMB\\Core\\Contracts\\FieldInterface.', $className ), '2.1' );
             }
             return;
         }
@@ -39,6 +51,11 @@ class FieldFactory {
         // Custom registered types take precedence
         if ( isset( self::$customTypes[ $type ] ) ) {
             return self::$customTypes[ $type ];
+        }
+
+        // Built-in aliases for non-standard naming
+        if ( isset( self::$typeAliases[ $type ] ) ) {
+            return self::$typeAliases[ $type ];
         }
 
         $fieldClass = 'CMB\\Fields\\' . ucfirst( $type ) . 'Field';
