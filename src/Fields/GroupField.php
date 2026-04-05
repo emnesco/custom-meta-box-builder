@@ -11,7 +11,7 @@ class GroupField extends AbstractField {
         $name = $this->getName();
         $field = $this->config;
 
-        $collapsed = !empty($field['collapsed']) ? '' : 'open';
+        $collapsed = (!isset($field['collapsed']) || $field['collapsed'] !== false) ? '' : 'open';
         $rowTitleField = $field['row_title_field'] ?? '';
         $dataAttrs = '';
         if ($rowTitleField) {
