@@ -8,7 +8,7 @@
 }
 
 .cmb-field {
-    border-bottom: 1px solid #e1e1e1;
+    border-bottom: 1px solid #e2e4e7;
     display: flex;
     flex: 1 1 100%;
 }
@@ -36,36 +36,45 @@
 
 /* === Label === */
 .cmb-field .cmb-label {
-    display: block;
-    padding: 6px 12px;
-    border-right: 1px solid #e1e1e1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 10px 14px;
+    border-right: 1px solid #e2e4e7;
     width: 180px;
     flex-shrink: 0;
     background: #f9f9f9;
 }
 
 .cmb-field .cmb-label label {
-    font-weight: bold;
-    margin-bottom: 3px;
+    font-weight: 600;
+    font-size: 13px;
+    color: #1e1e1e;
+    margin-bottom: 0;
     display: block;
+    line-height: 1.4;
 }
 
 .cmb-required-indicator {
-    color: #d63638;
-    font-weight: bold;
+    color: #cc1818;
+    font-weight: 700;
+    margin-left: 2px;
 }
 
 .cmb-field p.cmb-description {
     display: block;
     margin-top: 6px;
-    color: #667085;
     margin-bottom: 0;
+    color: #757575;
+    font-size: 12px;
+    line-height: 1.5;
+    font-style: italic;
 }
 
 /* === Input === */
 .cmb-field .cmb-input {
     display: block;
-    padding: 6px;
+    padding: 10px 12px;
     min-width: 0;
     flex-grow: 1;
 }
@@ -79,6 +88,7 @@
     width: 100%;
     border-right: 0;
     border-bottom: 1px solid #ededed;
+    padding: 8px 14px;
 }
 
 .cmb-field.cmb-inline .cmb-input {
@@ -93,19 +103,88 @@
 .cmb-field input[type="date"],
 .cmb-field input[type="datetime-local"],
 .cmb-field input[type="password"],
-.cmb-field input[type="color"],
 .cmb-field textarea,
 .cmb-field select {
     width: 100%;
+    border: 1px solid #c3c4c7;
+    border-radius: 4px;
+    padding: 6px 10px;
+    font-size: 13px;
+    line-height: 1.5;
+    color: #2c3338;
+    background: #fff;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.cmb-field input[type="text"]:focus,
+.cmb-field input[type="number"]:focus,
+.cmb-field input[type="email"]:focus,
+.cmb-field input[type="url"]:focus,
+.cmb-field input[type="date"]:focus,
+.cmb-field input[type="datetime-local"]:focus,
+.cmb-field input[type="password"]:focus,
+.cmb-field textarea:focus,
+.cmb-field select:focus {
+    border-color: #2271b1;
+    box-shadow: 0 0 0 1px #2271b1;
+    outline: none;
+}
+
+.cmb-field input[type="color"] {
+    width: 48px;
+    height: 36px;
+    padding: 2px;
+    border: 1px solid #c3c4c7;
+    border-radius: 4px;
+    cursor: pointer;
 }
 
 /* === Group === */
+
+/* -- Group Item Header -- */
+.cmb-group-item-header {
+    width: 100%;
+    display: flex;
+    padding: 0;
+    background: linear-gradient(to bottom, #fafafa, #f3f3f3);
+    border: 1px solid #c3c4c7;
+    margin-top: -1px;
+    justify-content: space-between;
+    cursor: pointer;
+    user-select: none;
+    align-items: center;
+    transition: background 0.15s ease;
+    min-height: 44px;
+}
+
+.cmb-group-item-header:hover {
+    background: linear-gradient(to bottom, #f5f5f5, #ececec);
+}
+
+.cmb-group-item-title {
+    font-weight: 600;
+    font-size: 13px;
+    color: #1e1e1e;
+    padding: 10px 14px;
+    flex-grow: 1;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+/* -- Toggle Indicator -- */
 .cmb-group-item .toggle-indicator {
-    display: inline-block;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     font-family: dashicons;
     font-size: 20px;
     line-height: 1;
-    vertical-align: middle;
+    color: #787c82;
+    width: 44px;
+    height: 44px;
+    flex-shrink: 0;
+    transition: color 0.15s ease, transform 0.2s ease;
 }
 .cmb-group-item .toggle-indicator::before {
     content: "\f140";
@@ -113,41 +192,62 @@
 .cmb-group-item.open .toggle-indicator::before {
     content: "\f142";
 }
-
-.cmb-group-item-header {
-    width: 100%;
-    display: flex;
-    padding: 8px 12px;
-    background: #f9f9f9;
-    border: 1px solid #e1e1e1;
-    margin-top: -1px;
-    justify-content: space-between;
-    cursor: pointer;
-    user-select: none;
-    align-items: center;
+.cmb-group-item-header:hover .toggle-indicator {
+    color: #2271b1;
 }
 
+/* -- Group Item Body -- */
 .cmb-group-item-body {
-    border: 1px solid #e1e1e1;
-    display: none;
+    border: 1px solid #c3c4c7;
     border-top: 0;
+    display: none;
 }
 
 .cmb-group-item.open > .cmb-group-item-body {
     display: flex;
 }
 
+/* -- Index / Drag Handle -- */
 .cmb-group-index {
-    width: 32px;
-    background: #f4f4f4;
-    cursor: default;
-    color: #aaa;
-    text-shadow: #fff 0 1px 0;
-    padding: 8px 12px;
-    border-right: 1px solid #e1e1e1;
+    width: 40px;
+    min-width: 40px;
+    background: #f6f7f7;
+    color: #a7aaad;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 12px 6px;
+    border-right: 1px solid #e2e4e7;
     text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 6px;
 }
 
+.cmb-sortable-handle {
+    cursor: grab;
+}
+
+.cmb-sortable-handle:active {
+    cursor: grabbing;
+}
+
+/* Drag dots indicator */
+.cmb-group-index::before {
+    content: "\2807";
+    font-size: 16px;
+    color: #c3c4c7;
+    letter-spacing: 2px;
+    line-height: 1;
+    display: block;
+}
+
+.cmb-group-index:hover::before {
+    color: #787c82;
+}
+
+/* -- Group Fields Container -- */
 .cmb-group-fields {
     display: flex;
     flex-wrap: wrap;
@@ -158,94 +258,171 @@
     flex-grow: 1;
 }
 
-/* === Remove Row Button === */
-.cmb-remove-row {
-    width: auto;
-    min-width: 32px;
-    background: #f4f4f4;
+/* -- Action Buttons Column (remove + duplicate) -- */
+.cmb-group-item-actions {
+    display: flex;
+    flex-direction: column;
+    border-left: 1px solid #e2e4e7;
+    width: 40px;
+    min-width: 40px;
+    flex-shrink: 0;
+}
+
+.cmb-group-item-actions button {
+    width: 100%;
+    height: 50%;
+    min-height: 36px;
+    background: #f6f7f7;
     cursor: pointer;
-    color: #777;
-    text-shadow: #fff 0 1px 0;
-    padding: 8px;
+    color: #a7aaad;
+    padding: 0;
     border: none;
-    border-left: 1px solid #e1e1e1;
     text-align: center;
     box-sizing: border-box;
-    font-size: 16px;
+    font-size: 18px;
     line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+/* Remove button */
+.cmb-remove-row {
+    border-top: 1px solid #e2e4e7 !important;
 }
 .cmb-remove-row:hover {
-    background-color: #fceded;
-    color: #d63638;
+    background-color: #fcecec !important;
+    color: #cc1818 !important;
+}
+
+/* Duplicate button */
+.cmb-duplicate-row:hover {
+    background-color: #e7f1fd !important;
+    color: #2271b1 !important;
+}
+
+/* -- Nested group indentation -- */
+.cmb-group .cmb-group {
+    margin-left: 0;
+}
+
+.cmb-group .cmb-group .cmb-group-item-header {
+    background: linear-gradient(to bottom, #f8f8f8, #f0f0f0);
+    border-color: #d0d0d5;
+}
+
+.cmb-group .cmb-group .cmb-group-item-body {
+    border-color: #d0d0d5;
+}
+
+.cmb-group .cmb-group .cmb-group .cmb-group-item-header {
+    background: linear-gradient(to bottom, #f5f5f5, #ebebeb);
+    border-color: #c5c5ca;
 }
 
 /* === Add Row Button === */
 .cmb-add-row {
-    margin-top: 10px;
-    display: inline-block;
-    padding: 8px 15px;
-    background-color: #f4f4f4;
-    color: #777;
-    border: 1px solid #e1e1e1;
-    border-radius: 3px;
+    margin-top: 12px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 16px;
+    background: #f6f7f7;
+    color: #2271b1;
+    border: 1px solid #c3c4c7;
+    border-radius: 4px;
     cursor: pointer;
     box-sizing: border-box;
+    font-size: 13px;
+    font-weight: 500;
+    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
 }
+
+.cmb-add-row::before {
+    content: "+";
+    font-size: 18px;
+    font-weight: 300;
+    line-height: 1;
+}
+
 .cmb-add-row:hover {
-    background-color: #e9e9e9;
+    background: #f0f0f1;
+    border-color: #2271b1;
+    color: #135e96;
 }
 
 /* === Item Count === */
 .cmb-item-count {
-    display: inline-block;
-    margin-left: 8px;
-    color: #999;
+    display: inline-flex;
+    align-items: center;
+    margin-left: 10px;
+    padding: 3px 10px;
+    background: #f0f0f1;
+    color: #787c82;
     font-size: 12px;
+    border-radius: 10px;
+    font-weight: 500;
 }
 
 /* === Empty State === */
 .cmb-empty-state {
-    padding: 20px;
+    padding: 24px 16px;
     text-align: center;
-    color: #999;
-    border: 1px dashed #ddd;
+    color: #a7aaad;
+    border: 2px dashed #dcdcde;
+    border-radius: 4px;
     margin: 4px 0;
+    font-size: 13px;
+    background: #fafafa;
 }
 
 /* === Expand/Collapse All === */
 .cmb-group-actions {
     display: flex;
-    gap: 12px;
-    margin-bottom: 4px;
+    gap: 4px;
+    margin-bottom: 8px;
     font-size: 12px;
 }
+
 .cmb-group-actions a {
     cursor: pointer;
     color: #2271b1;
     text-decoration: none;
+    padding: 4px 10px;
+    border: 1px solid #e2e4e7;
+    border-radius: 3px;
+    background: #f6f7f7;
+    font-weight: 500;
+    transition: background 0.15s ease, border-color 0.15s ease;
 }
+
 .cmb-group-actions a:hover {
+    background: #f0f0f1;
+    border-color: #c3c4c7;
     color: #135e96;
-    text-decoration: underline;
+    text-decoration: none;
 }
 
 /* === Focus Styles (Accessibility) === */
 .cmb-add-row:focus-visible,
-.cmb-remove-row:focus-visible,
+.cmb-group-item-actions button:focus-visible,
 .cmb-group-item-header:focus-visible,
 .cmb-group-actions a:focus-visible {
     outline: 2px solid #2271b1;
-    outline-offset: 2px;
+    outline-offset: 1px;
+    z-index: 1;
 }
 
 /* === Validation Error Styles === */
 .cmb-field.cmb-required input:invalid,
 .cmb-field.cmb-required textarea:invalid,
 .cmb-field.cmb-required select:invalid {
-    border-color: #d63638;
+    border-color: #cc1818;
+    box-shadow: 0 0 0 1px #cc1818;
 }
 
-/* === Tabs (6.4) === */
+/* === Tabs === */
 .cmb-tabs {
     width: 100%;
 }
@@ -255,8 +432,8 @@
     list-style: none;
     margin: 0;
     padding: 0;
-    border-bottom: 1px solid #e1e1e1;
-    background: #f9f9f9;
+    border-bottom: 1px solid #c3c4c7;
+    background: #f6f7f7;
 }
 
 .cmb-tab-nav-item {
@@ -266,11 +443,13 @@
 
 .cmb-tab-nav-item a {
     display: block;
-    padding: 8px 16px;
+    padding: 10px 18px;
     text-decoration: none;
-    color: #555;
-    border-bottom: 2px solid transparent;
+    color: #50575e;
+    border-bottom: 3px solid transparent;
     font-weight: 500;
+    font-size: 13px;
+    transition: color 0.15s ease, background 0.15s ease;
 }
 
 .cmb-tab-nav-item a:hover {
@@ -282,6 +461,7 @@
     color: #2271b1;
     border-bottom-color: #2271b1;
     background: #fff;
+    font-weight: 600;
 }
 
 .cmb-tab-panel {
@@ -293,57 +473,24 @@
     display: block;
 }
 
-/* === Sortable (6.1) === */
+/* === Sortable === */
 .cmb-sortable-placeholder {
-    border: 2px dashed #b4b9be;
-    background: #f0f0f1;
-    min-height: 40px;
+    border: 2px dashed #2271b1;
+    background: #f0f6fc;
+    min-height: 44px;
     margin-top: -1px;
-}
-
-.cmb-sortable-handle {
-    cursor: move;
+    border-radius: 2px;
+    opacity: 0.6;
 }
 
 .ui-sortable-helper {
-    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-    opacity: 0.9;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    opacity: 0.95;
+    border-radius: 2px;
+    transform: rotate(0.5deg);
 }
 
-/* === Duplicate Button (6.9) === */
-.cmb-group-item-actions {
-    display: flex;
-    flex-direction: column;
-    border-left: 1px solid #e1e1e1;
-}
-
-.cmb-duplicate-row {
-    width: auto;
-    min-width: 32px;
-    background: #f4f4f4;
-    cursor: pointer;
-    color: #777;
-    text-shadow: #fff 0 1px 0;
-    padding: 8px;
-    border: none;
-    border-bottom: 1px solid #e1e1e1;
-    text-align: center;
-    box-sizing: border-box;
-    font-size: 14px;
-    line-height: 1;
-}
-
-.cmb-duplicate-row:hover {
-    background-color: #e8f0fe;
-    color: #2271b1;
-}
-
-.cmb-duplicate-row:focus-visible {
-    outline: 2px solid #2271b1;
-    outline-offset: 2px;
-}
-
-/* === Multi-language Tabs (8.3) === */
+/* === Multi-language Tabs === */
 .cmb-lang-tabs {
     width: 100%;
 }
@@ -358,15 +505,21 @@
 
 .cmb-lang-tab-item a {
     display: block;
-    padding: 4px 10px;
+    padding: 4px 12px;
     text-decoration: none;
-    color: #555;
-    border: 1px solid #ddd;
+    color: #50575e;
+    border: 1px solid #dcdcde;
     border-radius: 3px 3px 0 0;
     font-size: 11px;
     font-weight: 600;
     text-transform: uppercase;
-    background: #f4f4f4;
+    background: #f6f7f7;
+    transition: background 0.15s ease, color 0.15s ease;
+}
+
+.cmb-lang-tab-item a:hover {
+    background: #f0f0f1;
+    color: #2271b1;
 }
 
 .cmb-lang-tab-item.cmb-lang-tab-active a {
@@ -383,23 +536,32 @@
     display: block;
 }
 
-/* === Search/Filter (8.4) === */
+/* === Search/Filter === */
 .cmb-group-search {
-    margin-bottom: 8px;
+    margin-bottom: 10px;
 }
 
 .cmb-group-search input {
     width: 100%;
-    padding: 6px 10px;
-    border: 1px solid #ddd;
-    border-radius: 3px;
+    padding: 7px 12px 7px 32px;
+    border: 1px solid #c3c4c7;
+    border-radius: 4px;
+    font-size: 13px;
+    background: #fff url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="%23a7aaad" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>') 8px center no-repeat;
+    transition: border-color 0.15s ease;
+}
+
+.cmb-group-search input:focus {
+    border-color: #2271b1;
+    box-shadow: 0 0 0 1px #2271b1;
+    outline: none;
 }
 
 .cmb-group-item.cmb-search-hidden {
     display: none !important;
 }
 
-/* === Virtual Scroll Container (8.5) === */
+/* === Virtual Scroll / Lazy Load === */
 .cmb-virtual-scroll {
     max-height: 600px;
     overflow-y: auto;
@@ -413,28 +575,110 @@
 .cmb-load-more {
     display: block;
     text-align: center;
-    padding: 10px;
+    padding: 12px;
     color: #2271b1;
     cursor: pointer;
-    border: 1px dashed #ddd;
-    margin-top: 4px;
+    border: 1px dashed #c3c4c7;
+    border-radius: 4px;
+    margin-top: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    background: #fafafa;
+    transition: background 0.15s ease, border-color 0.15s ease;
 }
 
 .cmb-load-more:hover {
-    background: #f0f0f1;
+    background: #f0f6fc;
+    border-color: #2271b1;
+}
+
+/* === File Field === */
+.cmb-file-field {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.cmb-file-preview img {
+    border-radius: 4px;
+    border: 1px solid #dcdcde;
+}
+
+.cmb-file-upload,
+.cmb-file-remove {
+    font-size: 13px !important;
+}
+
+/* === Radio & Checkbox === */
+.cmb-radio-group label,
+.cmb-taxonomy-checklist label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 0;
+    cursor: pointer;
+    font-size: 13px;
+    color: #2c3338;
+}
+
+.cmb-radio-group label:hover,
+.cmb-taxonomy-checklist label:hover {
+    color: #1e1e1e;
 }
 
 /* === Print === */
 @media print {
     .cmb-add-row,
-    .cmb-remove-row,
-    .cmb-duplicate-row,
+    .cmb-group-item-actions,
+    .cmb-group-index,
     .toggle-indicator,
     .cmb-group-actions,
-    .cmb-tab-nav {
+    .cmb-tab-nav,
+    .cmb-group-search {
         display: none !important;
     }
     .cmb-tab-panel {
         display: block !important;
+    }
+    .cmb-group-item-body {
+        display: flex !important;
+    }
+    .cmb-field .cmb-label {
+        background: none;
+    }
+}
+
+/* === Responsive === */
+@media (max-width: 782px) {
+    .cmb-field .cmb-label {
+        width: 100%;
+        border-right: 0;
+        border-bottom: 1px solid #e2e4e7;
+        padding: 8px 12px;
+    }
+
+    .cmb-field {
+        flex-direction: column;
+    }
+
+    .cmb-group-index {
+        width: 32px;
+        min-width: 32px;
+        font-size: 11px;
+    }
+
+    .cmb-group-item-actions {
+        width: 36px;
+        min-width: 36px;
+    }
+
+    .cmb-tab-nav {
+        flex-wrap: wrap;
+    }
+
+    .cmb-tab-nav-item a {
+        padding: 8px 12px;
+        font-size: 12px;
     }
 }

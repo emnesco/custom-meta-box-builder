@@ -74,8 +74,8 @@ class GroupField extends AbstractField {
 
         $output .= '</div>';
         $output .= '<div class="cmb-group-item-actions">';
-        $output .= '<button type="button" class="cmb-duplicate-row" aria-label="Duplicate item" title="Duplicate">&#9851;</button>';
-        $output .= '<button type="button" class="cmb-remove-row" aria-label="Remove item" title="Remove">&times;</button>';
+        $output .= '<button type="button" class="cmb-duplicate-row" aria-label="Duplicate item" title="Duplicate"><span class="dashicons dashicons-admin-page"></span></button>';
+        $output .= '<button type="button" class="cmb-remove-row" aria-label="Remove item" title="Remove"><span class="dashicons dashicons-trash"></span></button>';
         $output .= '</div>';
         $output .= '</div>';
         $output .= '</div>';
