@@ -74,6 +74,11 @@ if (!function_exists('add_action')) {
     function apply_filters($tag, $value, ...$args) { return $value; }
     function get_post_type($post = null) { return 'post'; }
     function wp_localize_script(...$args) {}
+    function wp_safe_redirect($location, $status = 302) {}
+    function wp_unslash($value) { return is_string($value) ? stripslashes($value) : $value; }
+    function admin_url($path = '') { return 'http://example.com/wp-admin/' . $path; }
+    function wp_nonce_url($url, $action) { return $url . '&_wpnonce=test'; }
+    function get_locale() { return 'en_US'; }
 }
 
 if (!defined('DOING_AUTOSAVE')) {

@@ -371,6 +371,67 @@
         }
       });
 
+      // === Multi-language Tab Switching (8.3) ===
+      $(document).on('click', '.cmb-lang-tab-item a', function(event) {
+        event.preventDefault();
+        var $link = $(this);
+        var $tabNav = $link.closest('.cmb-lang-tab-nav');
+        var $langTabs = $link.closest('.cmb-lang-tabs');
+        var lang = $link.closest('.cmb-lang-tab-item').data('lang');
+
+        $tabNav.find('.cmb-lang-tab-item').removeClass('cmb-lang-tab-active');
+        $link.closest('.cmb-lang-tab-item').addClass('cmb-lang-tab-active');
+
+        $langTabs.find('.cmb-lang-panel').removeClass('cmb-lang-panel-active');
+        $langTabs.find('.cmb-lang-panel[data-lang="' + lang + '"]').addClass('cmb-lang-panel-active');
+      });
+
+      // === Search/Filter for Repeater Groups (8.4) ===
+      $(document).on('input', '.cmb-group-search input', function() {
+        var query = $(this).val().toLowerCase();
+        var $container = $(this).closest('.cmb-input').find('.cmb-group-items').first();
+
+        $container.children('.cmb-group-item').each(function() {
+          var $item = $(this);
+          var text = $item.text().toLowerCase();
+          if (query === '' || text.indexOf(query) !== -1) {
+            $item.removeClass('cmb-search-hidden');
+          } else {
+            $item.addClass('cmb-search-hidden');
+          }
+        });
+      });
+
+      // === Lazy Loading / Virtual Scrolling for Large Repeaters (8.5) ===
+      var CMB_LAZY_THRESHOLD = 20;
+      $('.cmb-group-items').each(function() {
+        var $container = $(this);
+        var $items = $container.children('.cmb-group-item');
+
+        if ($items.length > CMB_LAZY_THRESHOLD) {
+          $items.slice(CMB_LAZY_THRESHOLD).hide().addClass('cmb-lazy-hidden');
+          $container.after('<span class="cmb-load-more">Load more (' + ($items.length - CMB_LAZY_THRESHOLD) + ' remaining)</span>');
+        }
+      });
+
+      $(document).on('click', '.cmb-load-more', function() {
+        var $btn = $(this);
+        var $container = $btn.prev('.cmb-group-items');
+        if (!$container.length) {
+          $container = $btn.closest('.cmb-input').find('.cmb-group-items').first();
+        }
+        var $hidden = $container.children('.cmb-lazy-hidden');
+        var batch = $hidden.slice(0, CMB_LAZY_THRESHOLD);
+        batch.removeClass('cmb-lazy-hidden').slideDown(200);
+
+        var remaining = $hidden.length - batch.length;
+        if (remaining > 0) {
+          $btn.text('Load more (' + remaining + ' remaining)');
+        } else {
+          $btn.remove();
+        }
+      });
+
       // === Helper: update item count indicators ===
       function updateRowCounts() {
         $('.cmb-item-count').each(function() {

@@ -343,6 +343,87 @@
     outline-offset: 2px;
 }
 
+/* === Multi-language Tabs (8.3) === */
+.cmb-lang-tabs {
+    width: 100%;
+}
+
+.cmb-lang-tab-nav {
+    display: flex;
+    list-style: none;
+    margin: 0 0 8px;
+    padding: 0;
+    gap: 2px;
+}
+
+.cmb-lang-tab-item a {
+    display: block;
+    padding: 4px 10px;
+    text-decoration: none;
+    color: #555;
+    border: 1px solid #ddd;
+    border-radius: 3px 3px 0 0;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    background: #f4f4f4;
+}
+
+.cmb-lang-tab-item.cmb-lang-tab-active a {
+    background: #fff;
+    border-bottom-color: #fff;
+    color: #2271b1;
+}
+
+.cmb-lang-panel {
+    display: none;
+}
+
+.cmb-lang-panel.cmb-lang-panel-active {
+    display: block;
+}
+
+/* === Search/Filter (8.4) === */
+.cmb-group-search {
+    margin-bottom: 8px;
+}
+
+.cmb-group-search input {
+    width: 100%;
+    padding: 6px 10px;
+    border: 1px solid #ddd;
+    border-radius: 3px;
+}
+
+.cmb-group-item.cmb-search-hidden {
+    display: none !important;
+}
+
+/* === Virtual Scroll Container (8.5) === */
+.cmb-virtual-scroll {
+    max-height: 600px;
+    overflow-y: auto;
+    position: relative;
+}
+
+.cmb-virtual-scroll .cmb-group-items {
+    position: relative;
+}
+
+.cmb-load-more {
+    display: block;
+    text-align: center;
+    padding: 10px;
+    color: #2271b1;
+    cursor: pointer;
+    border: 1px dashed #ddd;
+    margin-top: 4px;
+}
+
+.cmb-load-more:hover {
+    background: #f0f0f1;
+}
+
 /* === Print === */
 @media print {
     .cmb-add-row,

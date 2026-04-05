@@ -13,6 +13,12 @@ final class Plugin {
 
         // Gutenberg sidebar panel (7.6)
         GutenbergPanel::register();
+
+        // Phase 8: Advanced Features
+        ImportExport::register();
+        AdminUI::register();
+        DependencyGraph::register();
+        BulkOperations::register();
     }
 
     private function registerAssets(): void {

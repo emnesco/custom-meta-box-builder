@@ -2,8 +2,11 @@
 namespace CMB\Core;
 
 use CMB\Core\Contracts\FieldInterface;
+use CMB\Core\Traits\MultiLanguageTrait;
 
 class FieldRenderer {
+    use MultiLanguageTrait;
+
     protected \WP_Post $post;
     private ?array $metaCache = null;
 
@@ -100,6 +103,11 @@ class FieldRenderer {
             $conditionalAttrs .= ' style="display:none"';
         }
 
+        // Multilingual rendering (8.3)
+        if ($this->isMultilingual($field) && !$parent) {
+            return $this->renderMultilingualField($field, $name, $htmlId);
+        }
+
         // Hook: cmb_before_render_field (7.1)
         do_action('cmb_before_render_field', $field, $this->post);
 
@@ -117,6 +125,12 @@ class FieldRenderer {
                     $output .= '<div class="cmb-group-actions">';
                     $output .= '<a href="#" class="cmb-expand-all">Expand All</a>';
                     $output .= '<a href="#" class="cmb-collapse-all">Collapse All</a>';
+                    $output .= '</div>';
+                }
+                // Search/filter for large groups (8.4)
+                if ($field['type'] === 'group' && !empty($field['searchable'])) {
+                    $output .= '<div class="cmb-group-search">';
+                    $output .= '<input type="text" placeholder="Search items..." class="cmb-group-search-input">';
                     $output .= '</div>';
                 }
                 $output .= $instance->render();
@@ -142,6 +156,53 @@ class FieldRenderer {
 
         // Hook: cmb_after_render_field (7.1)
         do_action('cmb_after_render_field', $field, $this->post);
+
+        return $output;
+    }
+
+    /**
+     * Render a multilingual field with language tabs (8.3).
+     */
+    private function renderMultilingualField(array $field, string $name, string $htmlId): string {
+        $locales = $this->getFieldLocales($field);
+        $currentLocale = $this->getCurrentLocale();
+        $layout = isset($field['layout']) ? 'cmb-' . $field['layout'] : 'cmb-horizontal';
+
+        $output = '<div class="cmb-field ' . $layout . ' cmb-type-' . $field['type'] . ' cmb-multilingual">';
+        $output .= '<div class="cmb-label">';
+        $output .= '<label>' . esc_html($field['label'] ?? '') . '</label>';
+        $output .= '</div>';
+        $output .= '<div class="cmb-input">';
+        $output .= $this->renderLanguageTabs($field['id'], $locales, $currentLocale);
+
+        foreach ($locales as $locale) {
+            $localizedKey = $this->getLocalizedKey($field['id'], $locale);
+            $localizedValue = $this->get_field_value($this->post->ID, array_merge($field, ['id' => $localizedKey]));
+            $active = ($locale === $currentLocale) ? ' cmb-lang-panel-active' : '';
+
+            $fieldClass = 'CMB\\Fields\\' . ucfirst($field['type']) . 'Field';
+            if (!class_exists($fieldClass)) {
+                continue;
+            }
+
+            $instance = new $fieldClass(array_merge($field, [
+                'id' => $localizedKey,
+                'name' => $localizedKey,
+                'html_id' => $htmlId . '-' . $locale,
+                'value' => $localizedValue,
+            ]));
+
+            $output .= '<div class="cmb-lang-panel' . $active . '" data-lang="' . esc_attr($locale) . '">';
+            $output .= $instance->render();
+            $output .= '</div>';
+        }
+
+        $output .= $this->closeLanguageTabs();
+
+        if (!empty($field['description'])) {
+            $output .= '<p class="cmb-description">' . esc_html($field['description']) . '</p>';
+        }
+        $output .= '</div></div>';
 
         return $output;
     }
