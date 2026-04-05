@@ -8,7 +8,11 @@ class PasswordField extends AbstractField {
         $value = $this->getValue();
         $htmlId = $this->config['html_id'] ?? '';
         $id_attr = $htmlId ? ' id="' . esc_attr($htmlId) . '"' : '';
-        return '<input type="password" name="' . esc_attr($this->getName()) . '"' . $id_attr . ' value="' . esc_attr($value ?? '') . '"' . $this->renderAttributes() . $this->requiredAttr() . '>';
+        $placeholder = '';
+        if (!empty($value)) {
+            $placeholder = ' placeholder="' . esc_attr('••••••••') . '"';
+        }
+        return '<input type="password" name="' . esc_attr($this->getName()) . '"' . $id_attr . ' value=""' . $placeholder . $this->renderAttributes() . $this->requiredAttr() . '>';
     }
 
     public function sanitize(mixed $value): mixed {

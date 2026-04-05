@@ -1,8 +1,17 @@
 <?php
 namespace CMB\Core;
 
+use CMB\Core\RenderContext\UserContext;
+use CMB\Core\Storage\StorageInterface;
+use CMB\Core\Storage\UserMetaStorage;
+
 class UserMetaManager {
     private array $fields = [];
+    private StorageInterface $storage;
+
+    public function __construct( ?StorageInterface $storage = null ) {
+        $this->storage = $storage ?? new UserMetaStorage();
+    }
 
     public function add(array $fields): void {
         $this->fields = array_merge($this->fields, $fields);
@@ -18,31 +27,19 @@ class UserMetaManager {
     public function renderFields($user): void {
         if (empty($this->fields)) return;
 
+        $context       = new UserContext((int) $user->ID, $this->storage);
+        $fieldRenderer = new FieldRenderer($context);
+
         echo '<h2>Additional Information</h2>';
         echo '<table class="form-table">';
 
         wp_nonce_field('cmb_user_save', 'cmb_user_nonce');
 
         foreach ($this->fields as $field) {
-            $value = get_user_meta($user->ID, $field['id'], true);
-
             echo '<tr>';
-            echo '<th><label for="' . esc_attr($field['id']) . '">' . esc_html($field['label'] ?? '') . '</label></th>';
+            echo '<th><label for="cmb-' . esc_attr($field['id']) . '">' . esc_html($field['label'] ?? '') . '</label></th>';
             echo '<td>';
-
-            $fieldClass = 'CMB\\Fields\\' . ucfirst($field['type']) . 'Field';
-            if (class_exists($fieldClass)) {
-                $instance = new $fieldClass(array_merge($field, [
-                    'name' => $field['id'],
-                    'html_id' => $field['id'],
-                    'value' => $value,
-                ]));
-                echo $instance->render();
-            }
-
-            if (!empty($field['description'])) {
-                echo '<p class="description">' . esc_html($field['description']) . '</p>';
-            }
+            echo $fieldRenderer->render($field);
             echo '</td></tr>';
         }
 
@@ -58,13 +55,15 @@ class UserMetaManager {
         }
 
         foreach ($this->fields as $field) {
-            $fieldClass = 'CMB\\Fields\\' . ucfirst($field['type']) . 'Field';
-            if (!class_exists($fieldClass)) continue;
-
-            $instance = new $fieldClass($field);
-            $raw = $_POST[$field['id']] ?? '';
+            $instance = FieldFactory::create($field['type'], $field);
+            if ( $instance === null ) {
+                continue;
+            }
+            $raw = wp_unslash( $_POST[$field['id']] ?? '' );
+            do_action('cmb_before_save_user_field', $field['id'], $raw, $userId, $field);
             $sanitized = $instance->sanitize($raw);
-            update_user_meta($userId, $field['id'], $sanitized);
+            $this->storage->set($userId, $field['id'], $sanitized);
+            do_action('cmb_after_save_user_field', $field['id'], $sanitized, $userId, $field);
         }
     }
 }

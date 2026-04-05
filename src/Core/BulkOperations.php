@@ -7,25 +7,30 @@ namespace CMB\Core;
  * Provides API and admin UI for applying meta values across multiple posts.
  */
 class BulkOperations {
-    public static function register(): void {
-        add_action('admin_menu', [self::class, 'addAdminPage']);
-        add_action('admin_init', [self::class, 'handleBulkUpdate']);
+    private MetaBoxManager $manager;
+
+    public function __construct( MetaBoxManager $manager ) {
+        $this->manager = $manager;
     }
 
-    public static function addAdminPage(): void {
+    public function register(): void {
+        add_action('admin_menu', [$this, 'addAdminPage']);
+        add_action('admin_init', [$this, 'handleBulkUpdate']);
+    }
+
+    public function addAdminPage(): void {
         add_submenu_page(
             'tools.php',
             'CMB Bulk Operations',
             'CMB Bulk Ops',
             'manage_options',
             'cmb-bulk-ops',
-            [self::class, 'renderPage']
+            [$this, 'renderPage']
         );
     }
 
-    public static function renderPage(): void {
-        $manager = MetaBoxManager::instance();
-        $boxes = $manager->getMetaBoxes();
+    public function renderPage(): void {
+        $boxes = $this->manager->getMetaBoxes();
 
         echo '<div class="wrap">';
         echo '<h1>CMB Bulk Meta Operations</h1>';
@@ -56,7 +61,7 @@ class BulkOperations {
         // Field selector
         echo '<tr><th>Field</th><td><select name="cmb_bulk_field_id">';
         foreach ($boxes as $box) {
-            $fields = self::flattenFields($box['fields']);
+            $fields = FieldUtils::flattenFields($box['fields']);
             foreach ($fields as $f) {
                 if (($f['type'] ?? '') === 'group') continue; // Skip groups for bulk
                 echo '<option value="' . esc_attr($f['id']) . '">' . esc_html(($f['label'] ?? $f['id']) . ' (' . $f['id'] . ')') . '</option>';
@@ -90,7 +95,7 @@ class BulkOperations {
         echo '</div>';
     }
 
-    public static function handleBulkUpdate(): void {
+    public function handleBulkUpdate(): void {
         if (empty($_POST['cmb_bulk_submit'])) {
             return;
         }
@@ -101,12 +106,12 @@ class BulkOperations {
             return;
         }
 
-        $postType = sanitize_text_field($_POST['cmb_bulk_post_type'] ?? '');
-        $fieldId = sanitize_text_field($_POST['cmb_bulk_field_id'] ?? '');
-        $operation = sanitize_text_field($_POST['cmb_bulk_operation'] ?? 'set');
-        $value = sanitize_text_field($_POST['cmb_bulk_value'] ?? '');
-        $find = sanitize_text_field($_POST['cmb_bulk_find'] ?? '');
-        $postIdsRaw = sanitize_text_field($_POST['cmb_bulk_post_ids'] ?? '');
+        $postType = sanitize_text_field( wp_unslash( $_POST['cmb_bulk_post_type'] ?? '' ) );
+        $fieldId = sanitize_text_field( wp_unslash( $_POST['cmb_bulk_field_id'] ?? '' ) );
+        $operation = sanitize_text_field( wp_unslash( $_POST['cmb_bulk_operation'] ?? 'set' ) );
+        $value = sanitize_text_field( wp_unslash( $_POST['cmb_bulk_value'] ?? '' ) );
+        $find = sanitize_text_field( wp_unslash( $_POST['cmb_bulk_find'] ?? '' ) );
+        $postIdsRaw = sanitize_text_field( wp_unslash( $_POST['cmb_bulk_post_ids'] ?? '' ) );
 
         if (empty($fieldId)) {
             return;
@@ -117,36 +122,50 @@ class BulkOperations {
         if (!empty($postIdsRaw)) {
             $postIds = array_map('absint', array_filter(explode(',', $postIdsRaw)));
         } else {
-            $posts = get_posts([
-                'post_type' => $postType,
-                'posts_per_page' => -1,
-                'fields' => 'ids',
-                'post_status' => 'any',
-            ]);
-            $postIds = $posts;
+            // Batch-fetch post IDs in pages of 500 to prevent memory exhaustion
+            $page = 1;
+            $batchSize = 500;
+            do {
+                $batch = get_posts([
+                    'post_type'      => $postType,
+                    'posts_per_page' => $batchSize,
+                    'paged'          => $page,
+                    'fields'         => 'ids',
+                    'post_status'    => 'any',
+                ]);
+                $postIds = array_merge($postIds, $batch);
+                $page++;
+            } while (count($batch) === $batchSize);
         }
 
         $count = 0;
-        foreach ($postIds as $postId) {
-            switch ($operation) {
-                case 'set':
-                    update_post_meta($postId, $fieldId, $value);
-                    $count++;
-                    break;
-
-                case 'delete':
-                    delete_post_meta($postId, $fieldId);
-                    $count++;
-                    break;
-
-                case 'replace':
-                    $current = get_post_meta($postId, $fieldId, true);
-                    if (is_string($current) && strpos($current, $find) !== false) {
-                        $newVal = str_replace($find, $value, $current);
-                        update_post_meta($postId, $fieldId, $newVal);
+        $batches = array_chunk($postIds, 100);
+        foreach ($batches as $batch) {
+            foreach ($batch as $postId) {
+                switch ($operation) {
+                    case 'set':
+                        update_post_meta($postId, $fieldId, $value);
                         $count++;
-                    }
-                    break;
+                        break;
+
+                    case 'delete':
+                        delete_post_meta($postId, $fieldId);
+                        $count++;
+                        break;
+
+                    case 'replace':
+                        $current = get_post_meta($postId, $fieldId, true);
+                        if (is_string($current) && strpos($current, $find) !== false) {
+                            $newVal = str_replace($find, $value, $current);
+                            update_post_meta($postId, $fieldId, $newVal);
+                            $count++;
+                        }
+                        break;
+                }
+            }
+            // Flush object cache between batches to manage memory
+            if (function_exists('wp_cache_flush')) {
+                wp_cache_flush();
             }
         }
 
@@ -158,7 +177,7 @@ class BulkOperations {
     /**
      * Programmatic bulk set for use in scripts/WP-CLI.
      */
-    public static function bulkSet(array $postIds, string $fieldId, mixed $value): int {
+    public function bulkSet(array $postIds, string $fieldId, mixed $value): int {
         $count = 0;
         foreach ($postIds as $postId) {
             update_post_meta((int)$postId, $fieldId, $value);
@@ -170,25 +189,12 @@ class BulkOperations {
     /**
      * Programmatic bulk delete for use in scripts/WP-CLI.
      */
-    public static function bulkDelete(array $postIds, string $fieldId): int {
+    public function bulkDelete(array $postIds, string $fieldId): int {
         $count = 0;
         foreach ($postIds as $postId) {
             delete_post_meta((int)$postId, $fieldId);
             $count++;
         }
         return $count;
-    }
-
-    private static function flattenFields(array $fields): array {
-        if (!empty($fields['tabs'])) {
-            $flat = [];
-            foreach ($fields['tabs'] as $tab) {
-                foreach ($tab['fields'] ?? [] as $field) {
-                    $flat[] = $field;
-                }
-            }
-            return $flat;
-        }
-        return $fields;
     }
 }

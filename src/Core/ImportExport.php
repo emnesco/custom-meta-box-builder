@@ -5,20 +5,25 @@ namespace CMB\Core;
  * Import/Export meta box configurations as JSON (8.1).
  */
 class ImportExport {
+    private MetaBoxManager $manager;
+
+    public function __construct( MetaBoxManager $manager ) {
+        $this->manager = $manager;
+    }
+
     /**
      * Register programmatic API only.
      * The admin UI for import/export is handled by AdminUI.
      */
-    public static function register(): void {
+    public function register(): void {
         // No admin page needed — AdminUI handles the UI.
     }
 
     /**
      * Export configuration programmatically (for API use).
      */
-    public static function exportToJson(): string {
-        $manager = MetaBoxManager::instance();
-        $boxes = $manager->getMetaBoxes();
+    public function exportToJson(): string {
+        $boxes = $this->manager->getMetaBoxes();
 
         return json_encode([
             'version' => '1.0',
@@ -31,19 +36,18 @@ class ImportExport {
     /**
      * Import configuration programmatically (for API use).
      */
-    public static function importFromJson(string $json): int {
+    public function importFromJson(string $json): int {
         $data = json_decode($json, true);
         if (json_last_error() !== JSON_ERROR_NONE || empty($data['meta_boxes'])) {
             return 0;
         }
 
-        $manager = MetaBoxManager::instance();
         $count = 0;
         foreach ($data['meta_boxes'] as $id => $box) {
             if (empty($box['title']) || empty($box['postTypes']) || empty($box['fields'])) {
                 continue;
             }
-            $manager->add($id, $box['title'], $box['postTypes'], $box['fields'], $box['context'] ?? 'advanced', $box['priority'] ?? 'default');
+            $this->manager->add($id, $box['title'], $box['postTypes'], $box['fields'], $box['context'] ?? 'advanced', $box['priority'] ?? 'default');
             $count++;
         }
         return $count;

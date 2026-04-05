@@ -10,7 +10,13 @@ namespace CMB\Core;
  *   wp cmb set <post_id> <field_id> <value> — Set a meta value
  */
 class WpCliCommands {
-    public static function register(): void {
+    private MetaBoxManager $manager;
+
+    public function __construct( MetaBoxManager $manager ) {
+        $this->manager = $manager;
+    }
+
+    public function register(): void {
         if (!defined('WP_CLI') || !WP_CLI) {
             return;
         }
@@ -18,9 +24,9 @@ class WpCliCommands {
             return;
         }
 
-        \WP_CLI::add_command('cmb list', [self::class, 'listBoxes']);
-        \WP_CLI::add_command('cmb get', [self::class, 'getField']);
-        \WP_CLI::add_command('cmb set', [self::class, 'setField']);
+        \WP_CLI::add_command('cmb list', [$this, 'listBoxes']);
+        \WP_CLI::add_command('cmb get', [$this, 'getField']);
+        \WP_CLI::add_command('cmb set', [$this, 'setField']);
     }
 
     /**
@@ -32,9 +38,8 @@ class WpCliCommands {
      * @param array $args
      * @param array $assocArgs
      */
-    public static function listBoxes(array $args, array $assocArgs): void {
-        $manager = MetaBoxManager::instance();
-        $boxes = $manager->getMetaBoxes();
+    public function listBoxes(array $args, array $assocArgs): void {
+        $boxes = $this->manager->getMetaBoxes();
 
         if (empty($boxes)) {
             \WP_CLI::warning('No meta boxes registered.');
@@ -43,17 +48,10 @@ class WpCliCommands {
 
         $items = [];
         foreach ($boxes as $id => $box) {
+            $flatFields = FieldUtils::flattenFields($box['fields']);
             $fields = [];
-            if (!empty($box['fields']['tabs'])) {
-                foreach ($box['fields']['tabs'] as $tab) {
-                    foreach ($tab['fields'] ?? [] as $f) {
-                        $fields[] = $f['id'] ?? '(no id)';
-                    }
-                }
-            } else {
-                foreach ($box['fields'] as $f) {
-                    $fields[] = $f['id'] ?? '(no id)';
-                }
+            foreach ($flatFields as $f) {
+                $fields[] = $f['id'] ?? '(no id)';
             }
             $items[] = [
                 'ID' => $id,
@@ -78,7 +76,7 @@ class WpCliCommands {
      * @param array $args
      * @param array $assocArgs
      */
-    public static function getField(array $args, array $assocArgs): void {
+    public function getField(array $args, array $assocArgs): void {
         if (count($args) < 2) {
             \WP_CLI::error('Usage: wp cmb get <post_id> <field_id>');
             return;
@@ -105,7 +103,7 @@ class WpCliCommands {
      * @param array $args
      * @param array $assocArgs
      */
-    public static function setField(array $args, array $assocArgs): void {
+    public function setField(array $args, array $assocArgs): void {
         if (count($args) < 3) {
             \WP_CLI::error('Usage: wp cmb set <post_id> <field_id> <value>');
             return;
@@ -121,7 +119,31 @@ class WpCliCommands {
             $value = $decoded;
         }
 
+        // Sanitize through the field pipeline if a matching field config exists.
+        $fieldConfig = $this->findFieldConfig($fieldId);
+        if ($fieldConfig !== null) {
+            $instance = FieldFactory::create($fieldConfig['type'], $fieldConfig);
+            if ($instance !== null) {
+                $value = $instance->sanitize($value);
+            }
+        }
+
         update_post_meta($postId, $fieldId, $value);
         \WP_CLI::success(sprintf('Updated "%s" on post %d.', $fieldId, $postId));
+    }
+
+    /**
+     * Find a field config by ID across all registered meta boxes.
+     */
+    private function findFieldConfig(string $fieldId): ?array {
+        foreach ($this->manager->getMetaBoxes() as $box) {
+            $fields = FieldUtils::flattenFields($box['fields']);
+            foreach ($fields as $field) {
+                if (($field['id'] ?? '') === $fieldId) {
+                    return $field;
+                }
+            }
+        }
+        return null;
     }
 }
