@@ -368,7 +368,7 @@ Renders a `<select>` dropdown populated with WordPress users.
 
 ## Group
 
-Renders a collapsible container of nested sub-fields. Groups can be repeatable, sortable, and can contain other groups for unlimited nesting depth.
+Renders a collapsible container of nested sub-fields. Groups are **collapsed by default** and can be repeatable, sortable, and can contain other groups for unlimited nesting depth. Set `'collapsed' => false` to start expanded.
 
 **Type key:** `group`
 **Class:** `CMB\Fields\GroupField`

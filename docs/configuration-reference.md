@@ -78,7 +78,7 @@ Every field is defined as an associative array. The following keys are available
 | Key | Type | Default | Description |
 |---|---|---|---|
 | `fields` | `array` | `[]` | Array of nested field definitions. |
-| `collapsed` | `bool` | `false` | Whether the group starts collapsed. |
+| `collapsed` | `bool` | `true` | Whether the group starts collapsed. Set to `false` to start expanded. |
 | `row_title_field` | `string` | `''` | Sub-field ID whose value is displayed as the row title. |
 | `searchable` | `bool` | `false` | Adds a search/filter input above group items. |
 

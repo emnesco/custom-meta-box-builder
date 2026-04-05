@@ -41,7 +41,7 @@ Control the minimum and maximum number of repeater rows:
 
 ## Group Fields
 
-A group field is a container that holds sub-fields. It renders as a collapsible panel with a header, a sortable handle (index column), and action buttons.
+A group field is a container that holds sub-fields. It renders as a collapsible panel (collapsed by default) with a header, a sortable handle (index column), and action buttons. Set `'collapsed' => false` to start expanded.
 
 ```php
 [
