@@ -20,23 +20,35 @@ abstract class AbstractField implements FieldInterface {
         return $this->config['id'] ?? '';
     }
 
+    public function getType(): string {
+        return $this->config['type'] ?? '';
+    }
+
     public function getLabel(): string {
         return $this->config['label'] ?? '';
     }
 
+    public function getConfig(): array {
+        return $this->config;
+    }
+
+    public function enqueueAssets(): void {
+        // Override in field subclasses that need custom assets.
+    }
+
     public function getValue(): mixed {
-        if (!empty($this->config['value'])) {
+        if ( array_key_exists( 'value', $this->config ) && $this->config['value'] !== null ) {
             return $this->config['value'];
         }
 
         // Return default value if set
-        if (isset($this->config['default'])) {
+        if ( isset( $this->config['default'] ) ) {
             return $this->config['default'];
         }
 
         $isCollection = (
-            ($this->config['type'] ?? '') === 'group' ||
-            ($this->config['repeat'] ?? false) === true
+            ( $this->config['type'] ?? '' ) === 'group' ||
+            ( $this->config['repeat'] ?? false ) === true
         );
 
         return $isCollection ? [] : null;
@@ -91,8 +103,14 @@ abstract class AbstractField implements FieldInterface {
                     }
                     break;
                 case 'pattern':
-                    if ($ruleParam !== null && $value !== '' && !preg_match('/' . $ruleParam . '/', (string)$value)) {
-                        $errors[] = sprintf('%s format is invalid.', $label);
+                    if ($ruleParam !== null && $value !== '' && strlen($ruleParam) <= 500) {
+                        $result = @preg_match('/' . $ruleParam . '/u', (string)$value);
+                        if ($result === false) {
+                            break; // Invalid regex — skip silently.
+                        }
+                        if ($result === 0) {
+                            $errors[] = sprintf('%s format is invalid.', $label);
+                        }
                     }
                     break;
             }

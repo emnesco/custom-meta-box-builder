@@ -1,0 +1,21 @@
+<?php
+namespace CMB\Core\Storage;
+
+class TermMetaStorage implements StorageInterface {
+    public function get( int|string $objectId, string $key, bool $single = true ): mixed {
+        return get_term_meta( (int) $objectId, $key, $single );
+    }
+
+    public function set( int|string $objectId, string $key, mixed $value ): bool {
+        return (bool) update_term_meta( (int) $objectId, $key, $value );
+    }
+
+    public function delete( int|string $objectId, string $key ): bool {
+        return delete_term_meta( (int) $objectId, $key );
+    }
+
+    public function getAll( int|string $objectId ): array {
+        $meta = get_term_meta( (int) $objectId );
+        return is_array( $meta ) ? $meta : [];
+    }
+}

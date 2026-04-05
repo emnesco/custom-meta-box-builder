@@ -8,24 +8,29 @@ namespace CMB\Core;
  * to help developers debug and understand field relationships.
  */
 class DependencyGraph {
-    public static function register(): void {
-        add_action('admin_menu', [self::class, 'addAdminPage']);
+    private MetaBoxManager $manager;
+
+    public function __construct( MetaBoxManager $manager ) {
+        $this->manager = $manager;
     }
 
-    public static function addAdminPage(): void {
+    public function register(): void {
+        add_action('admin_menu', [$this, 'addAdminPage']);
+    }
+
+    public function addAdminPage(): void {
         add_submenu_page(
             'tools.php',
             'CMB Dependency Graph',
             'CMB Field Graph',
             'manage_options',
             'cmb-dependency-graph',
-            [self::class, 'renderPage']
+            [$this, 'renderPage']
         );
     }
 
-    public static function renderPage(): void {
-        $manager = MetaBoxManager::instance();
-        $boxes = $manager->getMetaBoxes();
+    public function renderPage(): void {
+        $boxes = $this->manager->getMetaBoxes();
 
         echo '<div class="wrap">';
         echo '<h1>CMB Field Dependency Graph</h1>';
@@ -39,38 +44,25 @@ class DependencyGraph {
         foreach ($boxes as $id => $box) {
             echo '<h2>' . esc_html($box['title']) . ' <code>' . esc_html($id) . '</code></h2>';
 
-            $fields = self::flattenFields($box['fields']);
-            $dependencies = self::extractDependencies($fields);
+            $fields = FieldUtils::flattenFields($box['fields']);
+            $dependencies = $this->extractDependencies($fields);
 
             if (empty($dependencies)) {
                 echo '<p style="color:#999">No conditional dependencies in this meta box.</p>';
-                echo self::renderFieldList($fields);
+                echo $this->renderFieldList($fields);
                 continue;
             }
 
             echo '<div class="cmb-graph-container" style="background:#f9f9f9;border:1px solid #ddd;padding:20px;margin-bottom:20px;overflow-x:auto">';
-            echo self::renderGraph($fields, $dependencies);
+            echo $this->renderGraph($fields, $dependencies);
             echo '</div>';
-            echo self::renderFieldList($fields);
+            echo $this->renderFieldList($fields);
         }
 
         echo '</div>';
     }
 
-    private static function flattenFields(array $fields): array {
-        if (!empty($fields['tabs'])) {
-            $flat = [];
-            foreach ($fields['tabs'] as $tab) {
-                foreach ($tab['fields'] ?? [] as $field) {
-                    $flat[] = $field;
-                }
-            }
-            return $flat;
-        }
-        return $fields;
-    }
-
-    private static function extractDependencies(array $fields): array {
+    private function extractDependencies(array $fields): array {
         $deps = [];
         foreach ($fields as $field) {
             if (!empty($field['conditional'])) {
@@ -85,7 +77,7 @@ class DependencyGraph {
         return $deps;
     }
 
-    private static function renderGraph(array $fields, array $dependencies): string {
+    private function renderGraph(array $fields, array $dependencies): string {
         $output = '<div style="font-family:monospace;font-size:13px">';
 
         // Build adjacency display
@@ -102,7 +94,7 @@ class DependencyGraph {
         return $output;
     }
 
-    private static function renderFieldList(array $fields): string {
+    private function renderFieldList(array $fields): string {
         $output = '<details style="margin-bottom:15px"><summary style="cursor:pointer;color:#2271b1">All fields (' . count($fields) . ')</summary>';
         $output .= '<table class="wp-list-table widefat fixed striped" style="margin-top:8px">';
         $output .= '<thead><tr><th>ID</th><th>Type</th><th>Label</th><th>Conditional</th></tr></thead><tbody>';
@@ -126,17 +118,16 @@ class DependencyGraph {
     /**
      * Get dependency data as array (for programmatic use or REST).
      */
-    public static function getDependencyData(): array {
-        $manager = MetaBoxManager::instance();
-        $boxes = $manager->getMetaBoxes();
+    public function getDependencyData(): array {
+        $boxes = $this->manager->getMetaBoxes();
 
         $result = [];
         foreach ($boxes as $id => $box) {
-            $fields = self::flattenFields($box['fields']);
+            $fields = FieldUtils::flattenFields($box['fields']);
             $result[$id] = [
                 'title' => $box['title'],
                 'fields' => count($fields),
-                'dependencies' => self::extractDependencies($fields),
+                'dependencies' => $this->extractDependencies($fields),
             ];
         }
         return $result;
