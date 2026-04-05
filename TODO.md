@@ -372,18 +372,18 @@ Organized into phases with priority and complexity labels.
 
 ## Phase 6: New Features
 
-### 6.1 Sortable / draggable repeater rows
+### 6.1 ~~Sortable / draggable repeater rows~~ [x]
 - **Problem:** Users can't reorder group items.
 - **Implementation:** jQuery UI Sortable on `.cmb-group-items`, update name indices after sort.
 - **Priority:** HIGH | **Complexity:** High
 
-### 6.2 Row title from field value
+### 6.2 ~~Row title from field value~~ [x]
 - **Problem:** Group headers all show the same generic label.
 - **Config:** `'row_title_field' => 'name'` — use the value of a sub-field as the header title.
 - **Implementation:** JS `change` event listener updates header text dynamically.
 - **Priority:** MEDIUM | **Complexity:** Medium
 
-### 6.3 Conditional field display (show/hide logic)
+### 6.3 ~~Conditional field display (show/hide logic)~~ [x]
 - **Config:**
   ```php
   'conditional' => [
@@ -395,7 +395,7 @@ Organized into phases with priority and complexity labels.
 - **Implementation:** JS event listeners on condition fields, toggle visibility of dependent fields.
 - **Priority:** MEDIUM | **Complexity:** High
 
-### 6.4 Tab support within a meta box
+### 6.4 ~~Tab support within a meta box~~ [x]
 - **Config:**
   ```php
   'tabs' => [
@@ -406,35 +406,37 @@ Organized into phases with priority and complexity labels.
 - **Implementation:** New HTML structure with tab headers + tab panels, JS switching.
 - **Priority:** MEDIUM | **Complexity:** High
 
-### 6.5 Taxonomy term meta support
+### 6.5 ~~Taxonomy term meta support~~ [x]
 - **Problem:** Plugin only works on post types — can't add meta boxes to category/tag edit screens.
 - **Implementation:** Hook into `{taxonomy}_edit_form_fields` and `edited_{taxonomy}`.
 - **Priority:** LOW | **Complexity:** High
 
-### 6.6 User profile meta support
+### 6.6 ~~User profile meta support~~ [x]
 - **Problem:** Can't add meta boxes to the user profile edit screen.
 - **Implementation:** Hook into `edit_user_profile` and `personal_options_update`.
 - **Priority:** LOW | **Complexity:** High
 
-### 6.7 Options page support
+### 6.7 ~~Options page support~~ [x]
 - **Problem:** Can't use this for global site settings (non-post-specific).
 - **Implementation:** Create admin menu pages, use `register_setting()` / `get_option()`.
 - **Priority:** LOW | **Complexity:** High
 
-### 6.8 Revision support for meta values
+### 6.8 ~~Revision support for meta values~~ [x]
 - **Problem:** WordPress revisions don't capture meta box changes.
 - **Implementation:** Copy meta on `_wp_put_post_revision`, restore on revision restore.
 - **Priority:** LOW | **Complexity:** High
 
-### 6.9 Duplicate / clone item button
+### 6.9 ~~Duplicate / clone item button~~ [x]
 - **Problem:** Users can only add blank rows or clone the last row.
 - **Fix:** Add a "duplicate" button on each group item that clones that specific item with its values.
 - **Priority:** LOW | **Complexity:** Medium
 
-### 6.10 Unsaved changes warning
+### 6.10 ~~Unsaved changes warning~~ [x]
 - **Problem:** No warning when navigating away with unsaved changes in meta box fields.
 - **Implementation:** JS `beforeunload` event tracking input changes.
 - **Priority:** LOW | **Complexity:** Low
+
+**Phase 6 Summary:** All 10 items completed. Added jQuery UI Sortable drag-and-drop reordering with index updates (6.1), dynamic row titles from sub-field values via data-row-title-field (6.2), conditional field show/hide with ==, !=, contains, empty, !empty operators (6.3), tab support with nav/panel switching in meta boxes via renderTabs() and flattenFields() (6.4), TaxonomyMetaManager for term meta on edit/add screens (6.5), UserMetaManager for user profile fields (6.6), OptionsManager for admin settings pages with register_setting/get_option (6.7), revision meta support with copy-on-revision and restore-on-restore hooks (6.8), duplicate/clone button per group item (6.9), unsaved changes warning via beforeunload (6.10). Added public API helpers: add_custom_taxonomy_meta(), add_custom_user_meta(), add_custom_options_page(). Added CSS for tabs, sortable placeholder, duplicate button. Updated test mocks.
 
 ---
 

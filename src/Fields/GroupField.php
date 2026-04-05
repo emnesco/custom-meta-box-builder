@@ -12,8 +12,14 @@ class GroupField extends AbstractField {
         $field = $this->config;
 
         $collapsed = !empty($field['collapsed']) ? '' : 'open';
+        $rowTitleField = $field['row_title_field'] ?? '';
+        $dataAttrs = '';
+        if ($rowTitleField) {
+            $dataAttrs .= ' data-row-title-field="' . esc_attr($rowTitleField) . '"';
+        }
+
         $output = '';
-        $output .= '<div class="cmb-group">';
+        $output .= '<div class="cmb-group"' . $dataAttrs . '>';
         $output .= '<div class="cmb-group-items">';
 
         if (empty($value)) {
@@ -35,11 +41,20 @@ class GroupField extends AbstractField {
     }
 
     private function group_item(string $collapsed, string $name, array $field, int $index, mixed $value): string {
+        $rowTitleField = $field['row_title_field'] ?? '';
+        $rowTitle = $field['label'] ?? '';
+        if ($rowTitleField && is_array($value) && isset($value[$index][$rowTitleField]) && $value[$index][$rowTitleField] !== '') {
+            $rowTitle .= ': ' . $value[$index][$rowTitleField];
+        }
+
         $output = '';
         $output .= '<div class="cmb-group-item ' . esc_attr($collapsed) . '" data-field-name="' . esc_attr($name) . '">';
-        $output .= '<div class="cmb-group-item-header" role="button" tabindex="0" aria-expanded="' . ($collapsed === 'open' ? 'true' : 'false') . '">' . esc_html($field['label'] ?? '') . ' <span class="toggle-indicator" aria-hidden="true"></span></div>';
+        $output .= '<div class="cmb-group-item-header" role="button" tabindex="0" aria-expanded="' . ($collapsed === 'open' ? 'true' : 'false') . '">';
+        $output .= '<span class="cmb-group-item-title">' . esc_html($rowTitle) . '</span>';
+        $output .= ' <span class="toggle-indicator" aria-hidden="true"></span>';
+        $output .= '</div>';
         $output .= '<div class="cmb-group-item-body">';
-        $output .= '<div class="cmb-group-index">' . $index . '</div>';
+        $output .= '<div class="cmb-group-index cmb-sortable-handle" title="Drag to reorder">' . $index . '</div>';
         $output .= '<div class="cmb-group-fields">';
 
         if (!empty($field['fields'])) {
@@ -47,12 +62,21 @@ class GroupField extends AbstractField {
                 $sub_field_value = $this->sub_field_value($value, $index, $field, $sub_field);
                 $fieldRenderer = new FieldRenderer(get_post(get_the_ID()));
                 $parent_prefix = $fieldRenderer->getChildPrefix($name, $field, $index);
+
+                // Add conditional data attributes
+                if (!empty($sub_field['conditional'])) {
+                    $sub_field['_conditional'] = $sub_field['conditional'];
+                }
+
                 $output .= $fieldRenderer->render($sub_field, $sub_field_value, $index, $parent_prefix);
             }
         }
 
         $output .= '</div>';
-        $output .= '<button type="button" class="cmb-remove-row" aria-label="Remove item">&times;</button>';
+        $output .= '<div class="cmb-group-item-actions">';
+        $output .= '<button type="button" class="cmb-duplicate-row" aria-label="Duplicate item" title="Duplicate">&#9851;</button>';
+        $output .= '<button type="button" class="cmb-remove-row" aria-label="Remove item" title="Remove">&times;</button>';
+        $output .= '</div>';
         $output .= '</div>';
         $output .= '</div>';
         return $output;

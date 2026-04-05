@@ -245,12 +245,115 @@
     border-color: #d63638;
 }
 
+/* === Tabs (6.4) === */
+.cmb-tabs {
+    width: 100%;
+}
+
+.cmb-tab-nav {
+    display: flex;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    border-bottom: 1px solid #e1e1e1;
+    background: #f9f9f9;
+}
+
+.cmb-tab-nav-item {
+    margin: 0;
+    padding: 0;
+}
+
+.cmb-tab-nav-item a {
+    display: block;
+    padding: 8px 16px;
+    text-decoration: none;
+    color: #555;
+    border-bottom: 2px solid transparent;
+    font-weight: 500;
+}
+
+.cmb-tab-nav-item a:hover {
+    color: #2271b1;
+    background: #f0f0f1;
+}
+
+.cmb-tab-nav-item.cmb-tab-active a {
+    color: #2271b1;
+    border-bottom-color: #2271b1;
+    background: #fff;
+}
+
+.cmb-tab-panel {
+    display: none;
+    padding: 0;
+}
+
+.cmb-tab-panel.cmb-tab-panel-active {
+    display: block;
+}
+
+/* === Sortable (6.1) === */
+.cmb-sortable-placeholder {
+    border: 2px dashed #b4b9be;
+    background: #f0f0f1;
+    min-height: 40px;
+    margin-top: -1px;
+}
+
+.cmb-sortable-handle {
+    cursor: move;
+}
+
+.ui-sortable-helper {
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    opacity: 0.9;
+}
+
+/* === Duplicate Button (6.9) === */
+.cmb-group-item-actions {
+    display: flex;
+    flex-direction: column;
+    border-left: 1px solid #e1e1e1;
+}
+
+.cmb-duplicate-row {
+    width: auto;
+    min-width: 32px;
+    background: #f4f4f4;
+    cursor: pointer;
+    color: #777;
+    text-shadow: #fff 0 1px 0;
+    padding: 8px;
+    border: none;
+    border-bottom: 1px solid #e1e1e1;
+    text-align: center;
+    box-sizing: border-box;
+    font-size: 14px;
+    line-height: 1;
+}
+
+.cmb-duplicate-row:hover {
+    background-color: #e8f0fe;
+    color: #2271b1;
+}
+
+.cmb-duplicate-row:focus-visible {
+    outline: 2px solid #2271b1;
+    outline-offset: 2px;
+}
+
 /* === Print === */
 @media print {
     .cmb-add-row,
     .cmb-remove-row,
+    .cmb-duplicate-row,
     .toggle-indicator,
-    .cmb-group-actions {
+    .cmb-group-actions,
+    .cmb-tab-nav {
         display: none !important;
+    }
+    .cmb-tab-panel {
+        display: block !important;
     }
 }

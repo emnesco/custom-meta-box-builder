@@ -55,6 +55,21 @@ if (!function_exists('add_action')) {
     function wp_get_attachment_image_url($id, $size = 'thumbnail') { return ''; }
     function wp_get_attachment_url($id) { return ''; }
     function wp_enqueue_media() {}
+    function get_term_meta($termId, $key = '', $single = false) { return $single ? '' : []; }
+    function update_term_meta($termId, $key, $value) { return true; }
+    function get_user_meta($userId, $key = '', $single = false) { return $single ? '' : []; }
+    function update_user_meta($userId, $key, $value) { return true; }
+    function get_option($option, $default = false) { return $default; }
+    function update_option($option, $value) { return true; }
+    function register_setting($optionGroup, $optionName, $args = []) {}
+    function add_settings_section(...$args) {}
+    function settings_fields($optionGroup) {}
+    function do_settings_sections($page) {}
+    function submit_button($text = 'Save Changes') { echo '<input type="submit" value="' . $text . '">'; }
+    function add_menu_page(...$args) {}
+    function add_submenu_page(...$args) {}
+    function wp_is_post_revision($postId) { return false; }
+    function __return_false() { return false; }
 }
 
 if (!defined('DOING_AUTOSAVE')) {

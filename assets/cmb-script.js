@@ -221,6 +221,156 @@
         $button.hide();
       });
 
+      // === Sortable Repeater Rows (6.1) ===
+      if ($.fn.sortable) {
+        $('.cmb-group-items').sortable({
+          handle: '.cmb-sortable-handle, .cmb-group-item-header',
+          items: '> .cmb-group-item',
+          placeholder: 'cmb-sortable-placeholder',
+          tolerance: 'pointer',
+          update: function() {
+            var $container = $(this);
+            $container.children('.cmb-group-item').each(function(newIndex) {
+              var $item = $(this);
+              $item.find('.cmb-group-index').first().text(newIndex);
+              $item.find(':input').each(function() {
+                var name = $(this).attr('name');
+                if (!name) return;
+                var parentLevel = $container.parents('.cmb-group').length;
+                var updated = updateNestedGroupName(name, parentLevel, newIndex);
+                $(this).attr('name', updated);
+              });
+            });
+            updateRowCounts();
+          }
+        });
+      }
+
+      // === Row Title from Field Value (6.2) ===
+      $(document).on('input change', '.cmb-group-item :input', function() {
+        var $input = $(this);
+        var $groupItem = $input.closest('.cmb-group-item');
+        var $group = $groupItem.closest('.cmb-group');
+        var rowTitleField = $group.data('row-title-field');
+        if (!rowTitleField) return;
+
+        var fieldId = $input.attr('name');
+        if (!fieldId) return;
+        // Check if the input corresponds to the row title field
+        if (fieldId.indexOf('[' + rowTitleField + ']') === -1 && fieldId !== rowTitleField) return;
+
+        var val = $input.val();
+        var $title = $groupItem.find('.cmb-group-item-title').first();
+        if ($title.length && val) {
+          $title.text(val);
+        }
+      });
+
+      // === Conditional Field Display (6.3) ===
+      function evaluateConditionals() {
+        $('[data-conditional-field]').each(function() {
+          var $field = $(this);
+          var condField = $field.data('conditional-field');
+          var condOperator = $field.data('conditional-operator') || '==';
+          var condValue = String($field.data('conditional-value') || '');
+
+          // Find the condition source input within the same container
+          var $container = $field.closest('.cmb-container, .cmb-tab-panel, .form-table');
+          var $source = $container.find('[name="' + condField + '"], [name$="[' + condField + ']"]').first();
+          if (!$source.length) return;
+
+          var sourceVal = $source.is(':checkbox') ? ($source.is(':checked') ? $source.val() : '') : $source.val();
+          sourceVal = String(sourceVal || '');
+
+          var show = false;
+          switch (condOperator) {
+            case '==': show = (sourceVal === condValue); break;
+            case '!=': show = (sourceVal !== condValue); break;
+            case 'contains': show = (sourceVal.indexOf(condValue) !== -1); break;
+            case '!empty': show = (sourceVal !== ''); break;
+            case 'empty': show = (sourceVal === ''); break;
+            default: show = (sourceVal === condValue);
+          }
+
+          if (show) {
+            $field.slideDown(200);
+          } else {
+            $field.slideUp(200);
+          }
+        });
+      }
+
+      // Run on load and on input change
+      evaluateConditionals();
+      $(document).on('input change', '.cmb-container :input, .cmb-tab-panel :input', function() {
+        evaluateConditionals();
+      });
+
+      // === Tab Switching (6.4) ===
+      $(document).on('click', '.cmb-tab-nav-item a', function(event) {
+        event.preventDefault();
+        var $link = $(this);
+        var $nav = $link.closest('.cmb-tab-nav');
+        var $tabs = $nav.closest('.cmb-tabs');
+        var tabId = $link.attr('href');
+
+        $nav.find('.cmb-tab-nav-item').removeClass('cmb-tab-active');
+        $link.closest('.cmb-tab-nav-item').addClass('cmb-tab-active');
+
+        $tabs.find('.cmb-tab-panel').removeClass('cmb-tab-panel-active');
+        $tabs.find(tabId).addClass('cmb-tab-panel-active');
+      });
+
+      // === Duplicate Row (6.9) ===
+      $(document).on('click', '.cmb-duplicate-row', function(event) {
+        event.preventDefault();
+        var $button = $(this);
+        var $groupItem = $button.closest('.cmb-group-item');
+        var $container = $groupItem.parent('.cmb-group-items');
+        var $addRow = $container.closest('.cmb-input').find('.cmb-add-row').first();
+
+        // Enforce max_rows
+        var maxRows = $addRow.data('max-rows');
+        if (maxRows && $container.children('.cmb-group-item').length >= maxRows) {
+          return;
+        }
+
+        var $clone = $groupItem.clone(false, false);
+        var newIndex = $container.children('.cmb-group-item').length;
+        var nestingLevel = $container.parents('.cmb-group').length;
+
+        // Update indices in cloned inputs
+        $clone.find(':input').each(function() {
+          var name = $(this).attr('name');
+          if (name) {
+            var updated = updateNestedGroupName(name, nestingLevel, newIndex);
+            $(this).attr('name', updated);
+          }
+        });
+
+        var $indexEl = $clone.find('.cmb-group-index').first();
+        if ($indexEl.length) {
+          $indexEl.text(newIndex);
+        }
+
+        $clone.hide().insertAfter($groupItem).slideDown(200);
+        updateRowCounts();
+      });
+
+      // === Unsaved Changes Warning (6.10) ===
+      var cmbFormDirty = false;
+      $(document).on('input change', '.cmb-container :input', function() {
+        cmbFormDirty = true;
+      });
+      $(document).on('submit', 'form', function() {
+        cmbFormDirty = false;
+      });
+      $(window).on('beforeunload', function() {
+        if (cmbFormDirty) {
+          return 'You have unsaved changes. Are you sure you want to leave?';
+        }
+      });
+
       // === Helper: update item count indicators ===
       function updateRowCounts() {
         $('.cmb-item-count').each(function() {

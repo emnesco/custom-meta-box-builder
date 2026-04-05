@@ -90,7 +90,17 @@ class FieldRenderer {
         $width = $field['width'] ?? '';
         $required_class = !empty($field['required']) ? 'cmb-required' : '';
 
-        $output = '<div class="cmb-field ' . $layout . ' cmb-type-' . $field['type'] . ' ' . $repeat . ' ' . $width . ' ' . $required_class . '">';
+        // Conditional display data attributes
+        $conditionalAttrs = '';
+        if (!empty($field['conditional'])) {
+            $cond = $field['conditional'];
+            $conditionalAttrs .= ' data-conditional-field="' . esc_attr($cond['field'] ?? '') . '"';
+            $conditionalAttrs .= ' data-conditional-operator="' . esc_attr($cond['operator'] ?? '==') . '"';
+            $conditionalAttrs .= ' data-conditional-value="' . esc_attr($cond['value'] ?? '') . '"';
+            $conditionalAttrs .= ' style="display:none"';
+        }
+
+        $output = '<div class="cmb-field ' . $layout . ' cmb-type-' . $field['type'] . ' ' . $repeat . ' ' . $width . ' ' . $required_class . '"' . $conditionalAttrs . '>';
             $output .= '<div class="cmb-label">';
                 $output .= '<label for="' . esc_attr($htmlId) . '">' . esc_html($field['label'] ?? '');
                 if (!empty($field['required'])) {

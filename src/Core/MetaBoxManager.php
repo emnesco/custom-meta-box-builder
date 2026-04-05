@@ -19,6 +19,10 @@ class MetaBoxManager {
         add_action('save_post', [$this, 'saveMetaBoxData']);
         add_action('delete_post', [$this, 'deletePostMetaData']);
         add_action('admin_notices', [$this, 'showValidationErrors']);
+        // Revision support
+        add_action('wp_creating_autosave', [$this, 'copyMetaToRevision']);
+        add_action('_wp_put_post_revision', [$this, 'copyMetaToRevision']);
+        add_action('wp_restore_post_revision', [$this, 'restoreMetaFromRevision'], 10, 2);
     }
 
     public function add(
@@ -32,6 +36,10 @@ class MetaBoxManager {
         $this->metaBoxes[$id] = compact('title', 'postTypes', 'fields', 'context', 'priority');
     }
 
+    public function getMetaBoxes(): array {
+        return $this->metaBoxes;
+    }
+
     public function addMetaBoxes(): void {
         foreach ($this->metaBoxes as $id => $metaBox) {
             foreach ($metaBox['postTypes'] as $postType) {
@@ -40,15 +48,23 @@ class MetaBoxManager {
                     $metaBox['title'],
                     function ($post) use ($id, $metaBox) {
                         $fieldRenderer = new FieldRenderer($post);
+                        $hasTabs = !empty($metaBox['fields']['tabs']);
+
                         echo '<div class="cmb-container cmb-fields">';
-                        foreach ($metaBox['fields'] as $field) {
-                            $fieldCopy = $field;
-                            if (isset($fieldCopy['fields']) && $fieldCopy['type'] === 'group' && !isset($fieldCopy['repeat'])) {
-                                $fieldCopy['repeat'] = true;
-                                $fieldCopy['repeat_fake'] = true;
+
+                        if ($hasTabs) {
+                            $this->renderTabs($fieldRenderer, $metaBox['fields']['tabs']);
+                        } else {
+                            foreach ($metaBox['fields'] as $field) {
+                                $fieldCopy = $field;
+                                if (isset($fieldCopy['fields']) && $fieldCopy['type'] === 'group' && !isset($fieldCopy['repeat'])) {
+                                    $fieldCopy['repeat'] = true;
+                                    $fieldCopy['repeat_fake'] = true;
+                                }
+                                echo $fieldRenderer->render($fieldCopy);
                             }
-                            echo $fieldRenderer->render($fieldCopy);
                         }
+
                         echo '</div>';
                         wp_nonce_field('cmb_save_' . $id, 'cmb_nonce_' . $id);
                     },
@@ -58,6 +74,37 @@ class MetaBoxManager {
                 );
             }
         }
+    }
+
+    private function renderTabs(FieldRenderer $fieldRenderer, array $tabs): void {
+        echo '<div class="cmb-tabs">';
+        echo '<ul class="cmb-tab-nav">';
+        $first = true;
+        foreach ($tabs as $tabId => $tab) {
+            $active = $first ? ' cmb-tab-active' : '';
+            echo '<li class="cmb-tab-nav-item' . $active . '" data-tab="' . esc_attr($tabId) . '">';
+            echo '<a href="#cmb-tab-' . esc_attr($tabId) . '">' . esc_html($tab['label'] ?? $tabId) . '</a>';
+            echo '</li>';
+            $first = false;
+        }
+        echo '</ul>';
+
+        $first = true;
+        foreach ($tabs as $tabId => $tab) {
+            $active = $first ? ' cmb-tab-panel-active' : '';
+            echo '<div class="cmb-tab-panel' . $active . '" id="cmb-tab-' . esc_attr($tabId) . '">';
+            foreach ($tab['fields'] ?? [] as $field) {
+                $fieldCopy = $field;
+                if (isset($fieldCopy['fields']) && $fieldCopy['type'] === 'group' && !isset($fieldCopy['repeat'])) {
+                    $fieldCopy['repeat'] = true;
+                    $fieldCopy['repeat_fake'] = true;
+                }
+                echo $fieldRenderer->render($fieldCopy);
+            }
+            echo '</div>';
+            $first = false;
+        }
+        echo '</div>';
     }
 
     public function saveMetaBoxData(int $postId): void {
@@ -71,10 +118,27 @@ class MetaBoxManager {
                 continue;
             }
 
-            foreach ($metaBox['fields'] as $field) {
+            $fields = $this->flattenFields($metaBox['fields']);
+            foreach ($fields as $field) {
                 $this->saveField($postId, $field);
             }
         }
+    }
+
+    /**
+     * Flatten fields from tabs or regular array into a single list.
+     */
+    private function flattenFields(array $fields): array {
+        if (!empty($fields['tabs'])) {
+            $flat = [];
+            foreach ($fields['tabs'] as $tab) {
+                foreach ($tab['fields'] ?? [] as $field) {
+                    $flat[] = $field;
+                }
+            }
+            return $flat;
+        }
+        return $fields;
     }
 
     private function saveField(int $postId, array $field): void {
@@ -141,7 +205,6 @@ class MetaBoxManager {
                 }
                 $subInstance = new $subClass($subField);
 
-                // Use custom sanitize_callback if set on sub-field
                 if (!empty($subField['sanitize_callback']) && is_callable($subField['sanitize_callback'])) {
                     $sanitizedGroup[$subId] = call_user_func($subField['sanitize_callback'], $subRaw);
                 } elseif ($subField['type'] === 'group' && is_array($subRaw) && !empty($subField['fields'])) {
@@ -172,8 +235,38 @@ class MetaBoxManager {
 
     public function deletePostMetaData(int $postId): void {
         foreach ($this->metaBoxes as $metaBox) {
-            foreach ($metaBox['fields'] as $field) {
+            $fields = $this->flattenFields($metaBox['fields']);
+            foreach ($fields as $field) {
                 delete_post_meta($postId, $field['id']);
+            }
+        }
+    }
+
+    // === Revision Support (6.8) ===
+    public function copyMetaToRevision(int $revisionId): void {
+        $parentId = function_exists('wp_is_post_revision') ? wp_is_post_revision($revisionId) : false;
+        if (!$parentId) return;
+
+        foreach ($this->metaBoxes as $metaBox) {
+            $fields = $this->flattenFields($metaBox['fields']);
+            foreach ($fields as $field) {
+                $values = get_post_meta($parentId, $field['id']);
+                foreach ($values as $value) {
+                    add_post_meta($revisionId, $field['id'], $value);
+                }
+            }
+        }
+    }
+
+    public function restoreMetaFromRevision(int $postId, int $revisionId): void {
+        foreach ($this->metaBoxes as $metaBox) {
+            $fields = $this->flattenFields($metaBox['fields']);
+            foreach ($fields as $field) {
+                delete_post_meta($postId, $field['id']);
+                $values = get_post_meta($revisionId, $field['id']);
+                foreach ($values as $value) {
+                    add_post_meta($postId, $field['id'], $value);
+                }
             }
         }
     }
