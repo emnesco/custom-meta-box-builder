@@ -800,3 +800,15 @@
 .cmb-has-error .cmb-input textarea {
     border-color: #d63638;
 }
+
+/* === Flexible Content === */
+.cmb-flexible-content { margin: 0; }
+.cmb-flexible-items { margin-bottom: 10px; }
+.cmb-flexible-item { border: 1px solid var(--cmb-border); margin-bottom: 8px; background: var(--cmb-bg); }
+.cmb-flexible-item .cmb-group-item-header { display: flex; align-items: center; padding: 8px 12px; background: var(--cmb-bg-alt); cursor: pointer; gap: 8px; }
+.cmb-flexible-layout-label { font-weight: 600; font-size: 13px; flex: 1; }
+.cmb-flexible-item .cmb-group-item-body { padding: 12px; }
+.cmb-flexible-add { margin-top: 8px; position: relative; }
+.cmb-flexible-layout-picker { position: absolute; bottom: 100%; left: 0; background: var(--cmb-bg); border: 1px solid var(--cmb-border); box-shadow: 0 2px 8px rgba(0,0,0,.12); padding: 8px; display: flex; flex-wrap: wrap; gap: 6px; z-index: 10; margin-bottom: 4px; }
+.cmb-flexible-layout-option { padding: 8px 14px; border: 1px solid var(--cmb-border); background: var(--cmb-bg); cursor: pointer; border-radius: 3px; font-size: 13px; }
+.cmb-flexible-layout-option:hover { border-color: var(--cmb-primary); color: var(--cmb-primary); }

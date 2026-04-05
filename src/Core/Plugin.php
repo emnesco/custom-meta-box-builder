@@ -1,4 +1,10 @@
 <?php
+/**
+ * Main plugin bootstrap — registers hooks, enqueues assets, and loads providers.
+ *
+ * @package CustomMetaBoxBuilder
+ * @since   2.0
+ */
 namespace CMB\Core;
 
 use CMB\Core\Contracts\ServiceProvider;
@@ -56,6 +62,18 @@ final class Plugin {
         // Register AJAX search endpoints for relational fields.
         $ajax = new AjaxHandler();
         $ajax->register();
+
+        // Local JSON sync for version-controlled field group configs.
+        LocalJson::register();
+
+        // WPGraphQL integration (conditional — only if WPGraphQL is active).
+        GraphQLIntegration::register();
+
+        // Frontend form processing.
+        FrontendForm::register();
+
+        // Gutenberg block registration.
+        BlockRegistration::init();
 
         $this->manager->register();
 

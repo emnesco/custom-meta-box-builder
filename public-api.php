@@ -74,7 +74,7 @@ if (!function_exists('cmb_get_field')) {
     function cmb_get_field(string $fieldId, ?int $postId = null): mixed {
         $postId = $postId ?: get_the_ID();
         $value = get_post_meta($postId, $fieldId, true);
-        return apply_filters('cmb_get_field_value', $value, $fieldId, $postId);
+        return apply_filters('cmbbuilder_get_field_value', $value, $fieldId, $postId);
     }
 }
 
@@ -98,7 +98,7 @@ if (!function_exists('cmb_get_term_field')) {
      */
     function cmb_get_term_field(string $fieldId, int $termId): mixed {
         $value = get_term_meta($termId, $fieldId, true);
-        return apply_filters('cmb_get_term_field_value', $value, $fieldId, $termId);
+        return apply_filters('cmbbuilder_get_term_field_value', $value, $fieldId, $termId);
     }
 }
 
@@ -109,7 +109,7 @@ if (!function_exists('cmb_get_user_field')) {
     function cmb_get_user_field(string $fieldId, ?int $userId = null): mixed {
         $userId = $userId ?: get_current_user_id();
         $value = get_user_meta($userId, $fieldId, true);
-        return apply_filters('cmb_get_user_field_value', $value, $fieldId, $userId);
+        return apply_filters('cmbbuilder_get_user_field_value', $value, $fieldId, $userId);
     }
 }
 
@@ -119,6 +119,41 @@ if (!function_exists('cmb_get_option')) {
      */
     function cmb_get_option(string $fieldId): mixed {
         $value = get_option($fieldId);
-        return apply_filters('cmb_get_option_value', $value, $fieldId);
+        return apply_filters('cmbbuilder_get_option_value', $value, $fieldId);
+    }
+}
+
+if (!function_exists('cmb_register_block')) {
+    /**
+     * Register a custom Gutenberg block backed by CMB fields.
+     *
+     * @param string $blockId Block identifier.
+     * @param array  $config  Block configuration (title, fields, render_callback/render_template).
+     */
+    function cmb_register_block(string $blockId, array $config): void {
+        \CMB\Core\BlockRegistration::register($blockId, $config);
+    }
+}
+
+if (!function_exists('cmb_render_form')) {
+    /**
+     * Render a meta box form on the frontend.
+     *
+     * @param string   $metaBoxId The meta box ID.
+     * @param int|null $postId    Optional post ID (defaults to current post).
+     * @param array    $args      Optional arguments (submit_text, form_id, method).
+     * @return string The form HTML.
+     */
+    function cmb_render_form(string $metaBoxId, ?int $postId = null, array $args = []): string {
+        return \CMB\Core\FrontendForm::render($metaBoxId, $postId, $args);
+    }
+}
+
+if (!function_exists('cmb_the_form')) {
+    /**
+     * Echo a meta box form on the frontend.
+     */
+    function cmb_the_form(string $metaBoxId, ?int $postId = null, array $args = []): void {
+        echo cmb_render_form($metaBoxId, $postId, $args);
     }
 }

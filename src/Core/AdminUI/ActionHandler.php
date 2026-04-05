@@ -1,4 +1,10 @@
 <?php
+/**
+ * Admin CRUD handler — saves, deletes, imports, and exports configurations.
+ *
+ * @package CustomMetaBoxBuilder
+ * @since   2.0
+ */
 namespace CMB\Core\AdminUI;
 
 use CMB\Core\MetaBoxManager;
@@ -154,7 +160,8 @@ class ActionHandler {
         }
 
         $configs = self::getConfigs();
-        $configs[$id] = [
+        $config = [
+            'id'           => $id,
             'title'        => $title,
             'postTypes'    => $postTypes,
             'fields'       => $fields,
@@ -162,8 +169,13 @@ class ActionHandler {
             'priority'     => $priority,
             'active'       => $active,
             'show_in_rest' => $showRest,
+            '_modified'    => time(),
         ];
+        $configs[$id] = $config;
         self::saveConfigs($configs);
+
+        /** @since 2.1 Fires after a field group config is saved. */
+        do_action('cmbbuilder_config_saved', $id, $config);
 
         wp_safe_redirect(admin_url('admin.php?page=cmb-builder&action=edit&id=' . urlencode($id) . '&updated=1'));
         exit;
@@ -185,6 +197,9 @@ class ActionHandler {
         $configs = self::getConfigs();
         unset($configs[$id]);
         self::saveConfigs($configs);
+
+        /** @since 2.1 Fires after a field group config is deleted. */
+        do_action('cmbbuilder_config_deleted', $id);
 
         wp_safe_redirect(admin_url('admin.php?page=cmb-builder&deleted=1'));
         exit;

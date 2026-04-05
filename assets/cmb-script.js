@@ -585,6 +585,51 @@
         }
       });
 
+      // === Flexible Content Field ===
+      $(document).on('click', '.cmb-flexible-add-btn', function() {
+        $(this).siblings('.cmb-flexible-layout-picker').toggle();
+      });
+
+      $(document).on('click', '.cmb-flexible-layout-option', function() {
+        const $btn = $(this);
+        const layout = $btn.data('layout');
+        const $container = $btn.closest('.cmb-flexible-content');
+        const $items = $container.find('.cmb-flexible-items').first();
+        const $template = $container.find('.cmb-flexible-template[data-layout="' + layout + '"]');
+
+        if (!$template.length) return;
+
+        const newIndex = $items.children('.cmb-flexible-item').length;
+        let html = $template.html().replace(/\{\{INDEX\}\}/g, newIndex);
+        const $row = $(html);
+        $row.hide().appendTo($items).slideDown(200);
+
+        // Re-init color pickers
+        if ($.fn.wpColorPicker && $row.find('.cmb-color-picker').length) {
+          $row.find('.cmb-color-picker').wpColorPicker();
+        }
+
+        // Hide picker
+        $btn.closest('.cmb-flexible-layout-picker').hide();
+        updateRowCounts();
+      });
+
+      // Sortable for flexible content items
+      if ($.fn.sortable) {
+        $('.cmb-flexible-items').sortable({
+          handle: '.cmb-sortable-handle',
+          items: '> .cmb-flexible-item',
+          placeholder: 'cmb-sortable-placeholder',
+          tolerance: 'pointer',
+          update: function() {
+            const $container = $(this);
+            $container.children('.cmb-flexible-item').each(function(idx) {
+              $(this).find('.cmb-group-index').first().text(idx);
+            });
+          }
+        });
+      }
+
       // === Color Picker Initialization ===
       if ($.fn.wpColorPicker) {
         $('.cmb-color-picker').each(function() {
