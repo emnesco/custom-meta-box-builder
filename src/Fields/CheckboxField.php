@@ -11,6 +11,9 @@ class CheckboxField extends AbstractField {
     }
 
     public function sanitize($value) {
+        if (is_array($value)) {
+            return array_map([$this, 'sanitize'], $value);
+        }
         return in_array($value, ['1', 1, true, 'true'], true) ? '1' : '0';
     }
 }

@@ -5,8 +5,7 @@ final class Plugin {
     public function boot(): void {
         $this->registerAssets();
 
-        $manager = new MetaBoxManager();
-
+        $manager = MetaBoxManager::instance();
         $manager->register();
     }
 

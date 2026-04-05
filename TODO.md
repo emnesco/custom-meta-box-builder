@@ -92,52 +92,54 @@ Organized into phases with priority and complexity labels.
 
 ## Phase 2: Security & Data Integrity
 
-### 2.1 Add capability check to save handler
+### 2.1 ~~Add capability check to save handler~~ [x]
 - **File:** `src/Core/MetaBoxManager.php:39-61`
 - **Problem:** No `current_user_can('edit_post', $postId)` check before saving.
 - **Fix:** Add `if (!current_user_can('edit_post', $postId)) return;` after nonce verification.
 - **Priority:** CRITICAL | **Complexity:** Low
 
-### 2.2 Use unique nonce per meta box
+### 2.2 ~~Use unique nonce per meta box~~ [x]
 - **File:** `src/Core/MetaBoxManager.php:33, 40`
 - **Problem:** All meta boxes share the hardcoded nonce `'cmb_nonce'`.
 - **Fix:** Use `'cmb_nonce_' . $id` for the nonce action and name.
 - **Priority:** HIGH | **Complexity:** Low
 
-### 2.3 Nested group field sanitization is shallow
+### 2.3 ~~Nested group field sanitization is shallow~~ [x]
 - **File:** `src/Fields/GroupField.php:71-77`
 - **Problem:** `map_deep($value, 'sanitize_text_field')` applies text sanitization to ALL nested values regardless of their field type. Nested select options validation, checkbox sanitization, etc. are all bypassed.
 - **Fix:** Implement recursive sanitization that instantiates the correct field class for each sub-field and calls its own `sanitize()` method.
 - **Priority:** HIGH | **Complexity:** High
 
-### 2.4 CheckboxField/SelectField `sanitize()` don't handle arrays
+### 2.4 ~~CheckboxField/SelectField `sanitize()` don't handle arrays~~ [x]
 - **Files:** `src/Fields/CheckboxField.php:14-16`, `src/Fields/SelectField.php:21-23`
 - **Problem:** If used in a repeatable context, `$value` is an array, but `sanitize()` only handles scalars.
 - **Fix:** Add `if (is_array($value))` branch with `array_map()`.
 - **Priority:** MEDIUM | **Complexity:** Low
 
-### 2.5 Silent failure when field class doesn't exist
+### 2.5 ~~Silent failure when field class doesn't exist~~ [x]
 - **File:** `src/Core/MetaBoxManager.php:44-45`
 - **Problem:** If a field type class doesn't exist, the field is silently skipped during save — data is lost without any indication.
 - **Fix:** Log a `_doing_it_wrong()` notice or `error_log()` warning.
 - **Priority:** MEDIUM | **Complexity:** Low
 
-### 2.6 Add meta cleanup on post delete
+### 2.6 ~~Add meta cleanup on post delete~~ [x]
 - **Problem:** When a post is deleted, orphaned meta data remains in the database.
 - **Fix:** Add `delete_post` hook to `MetaBoxManager::register()` that removes all registered field meta keys.
 - **Priority:** MEDIUM | **Complexity:** Medium
 
-### 2.7 Two separate MetaBoxManager instances
+### 2.7 ~~Two separate MetaBoxManager instances~~ [x]
 - **Files:** `src/Core/Plugin.php:8`, `public-api.php:7`
 - **Problem:** `Plugin::boot()` creates one manager, `add_custom_meta_box()` creates another. Both register `add_meta_boxes` and `save_post` hooks independently.
 - **Fix:** Use a singleton or share the instance via the global, created once in `Plugin::boot()`.
 - **Priority:** HIGH | **Complexity:** Medium
 
-### 2.8 Field config mutation via `repeat_fake` flag
+### 2.8 ~~Field config mutation via `repeat_fake` flag~~ [x]
 - **File:** `src/Core/MetaBoxManager.php:26-29`
 - **Problem:** The original field config array is mutated in place, adding `repeat` and `repeat_fake` keys.
 - **Fix:** Clone the field array before modifying.
 - **Priority:** LOW | **Complexity:** Low
+
+**Phase 2 Summary:** All 8 items completed. Added current_user_can() check, unique nonce per meta box (cmb_nonce_{id}/cmb_save_{id}), recursive group field sanitization using proper field classes, array handling in Checkbox/Select sanitize(), _doing_it_wrong() logging for missing field classes, delete_post meta cleanup hook, singleton MetaBoxManager shared between Plugin and public API, cloned field config to prevent mutation.
 
 ---
 

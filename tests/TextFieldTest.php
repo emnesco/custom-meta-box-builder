@@ -6,12 +6,13 @@ final class TextFieldTest extends TestCase {
     public function testRenderTextFieldOutputsInput(): void {
         $field = new TextField([
             'id' => 'my_text',
-            'label' => 'My Text Field'
+            'name' => 'my_text',
+            'label' => 'My Text Field',
         ]);
 
         $html = $field->render();
         $this->assertStringContainsString('input', $html);
-        $this->assertStringContainsString('name=\"my_text\"', $html);
+        $this->assertStringContainsString('name="my_text"', $html);
     }
 
     public function testSanitizeTextField(): void {

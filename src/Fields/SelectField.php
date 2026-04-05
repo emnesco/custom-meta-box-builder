@@ -18,6 +18,9 @@ class SelectField extends AbstractField {
     }
 
     public function sanitize($value) {
+        if (is_array($value)) {
+            return array_map([$this, 'sanitize'], $value);
+        }
         return array_key_exists($value, $this->config['options'] ?? []) ? $value : '';
     }
 }

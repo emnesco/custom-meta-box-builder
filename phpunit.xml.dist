@@ -6,4 +6,5 @@
         <testsuite name="Plugin Test Suite">
             <directory>tests</directory>
         </testsuite>
-    </testsui
+    </testsuites>
+</phpunit>
