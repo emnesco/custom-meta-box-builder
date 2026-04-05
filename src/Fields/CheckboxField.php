@@ -9,7 +9,8 @@ class CheckboxField extends AbstractField {
         $checked = checked(in_array($value, [true, 'true', 1, '1'], true), true, false);
         $htmlId = $this->config['html_id'] ?? '';
         $id_attr = $htmlId ? ' id="' . esc_attr($htmlId) . '"' : '';
-        return '<label><input type="checkbox" name="' . esc_attr($this->getName()) . '"' . $id_attr . ' value="1" ' . $checked . $this->renderAttributes() . ' />' . esc_html($this->getLabel()) . '</label>';
+        return '<input type="hidden" name="' . esc_attr($this->getName()) . '" value="0">'
+             . '<input type="checkbox" name="' . esc_attr($this->getName()) . '"' . $id_attr . ' value="1" ' . $checked . $this->renderAttributes() . ' />';
     }
 
     public function sanitize(mixed $value): mixed {

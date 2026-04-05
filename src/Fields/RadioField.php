@@ -9,6 +9,7 @@ class RadioField extends AbstractField {
         $name = esc_attr($this->getName());
         $htmlId = $this->config['html_id'] ?? 'cmb-radio';
         $output = '<fieldset class="cmb-radio-group">';
+        $output .= '<legend class="screen-reader-text">' . esc_html($this->config['label'] ?? '') . '</legend>';
 
         foreach ($this->config['options'] ?? [] as $key => $label) {
             $optionId = esc_attr($htmlId . '-' . $key);
