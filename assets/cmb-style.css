@@ -1,3 +1,19 @@
+/* === CSS Custom Properties === */
+:root {
+    --cmb-primary: #2271b1;
+    --cmb-primary-hover: #135e96;
+    --cmb-border: #dcdcde;
+    --cmb-bg: #fff;
+    --cmb-bg-alt: #f6f7f7;
+    --cmb-text: #1d2327;
+    --cmb-text-muted: #50575e;
+    --cmb-text-description: #595959;
+    --cmb-error: #d63638;
+    --cmb-success: #00a32a;
+    --cmb-radius: 4px;
+    --cmb-spacing: 15px;
+}
+
 /* === CMB Base Layout === */
 [id^="cmb-"] .inside {
     padding: 0;
@@ -19,7 +35,14 @@
 .cmb-field.w-50 { flex: 1 1 calc(50%); }
 .cmb-field.w-75 { flex: 1 1 calc(75%); }
 
-@media (max-width: 1495px) {
+@media (max-width: 1200px) {
+    .cmb-field.w-25,
+    .cmb-field.w-33 {
+        flex: 1 1 50%;
+        min-width: 50%;
+    }
+}
+@media (max-width: 782px) {
     .cmb-field,
     .cmb-field.w-25,
     .cmb-field.w-33,
@@ -65,7 +88,7 @@
     display: block;
     margin-top: 6px;
     margin-bottom: 0;
-    color: #757575;
+    color: #595959;
     font-size: 12px;
     line-height: 1.5;
     font-style: italic;
@@ -180,7 +203,7 @@
     font-family: dashicons;
     font-size: 20px;
     line-height: 1;
-    color: #787c82;
+    color: #50575e;
     width: 44px;
     height: 44px;
     flex-shrink: 0;
@@ -244,7 +267,7 @@
 }
 
 .cmb-group-index:hover::before {
-    color: #787c82;
+    color: #50575e;
 }
 
 /* -- Group Fields Container -- */
@@ -359,7 +382,7 @@
     margin-left: 10px;
     padding: 3px 10px;
     background: #f0f0f1;
-    color: #787c82;
+    color: #50575e;
     font-size: 12px;
     border-radius: 10px;
     font-weight: 500;
@@ -385,30 +408,31 @@
     font-size: 12px;
 }
 
-.cmb-group-actions a {
+.cmb-group-actions button {
     cursor: pointer;
     color: #2271b1;
-    text-decoration: none;
     padding: 4px 10px;
     border: 1px solid #e2e4e7;
     border-radius: 3px;
     background: #f6f7f7;
     font-weight: 500;
+    font-size: 12px;
+    line-height: inherit;
     transition: background 0.15s ease, border-color 0.15s ease;
 }
 
-.cmb-group-actions a:hover {
+.cmb-group-actions button:hover {
     background: #f0f0f1;
     border-color: #c3c4c7;
     color: #135e96;
-    text-decoration: none;
 }
 
 /* === Focus Styles (Accessibility) === */
 .cmb-add-row:focus-visible,
 .cmb-group-item-actions button:focus-visible,
 .cmb-group-item-header:focus-visible,
-.cmb-group-actions a:focus-visible {
+.cmb-group-actions button:focus-visible,
+.cmb-load-more:focus-visible {
     outline: 2px solid #2271b1;
     outline-offset: 1px;
     z-index: 1;
@@ -455,6 +479,11 @@
 .cmb-tab-nav-item a:hover {
     color: #2271b1;
     background: #f0f0f1;
+}
+
+.cmb-tab-nav-item a:focus-visible {
+    outline: 2px solid #2271b1;
+    outline-offset: -2px;
 }
 
 .cmb-tab-nav-item.cmb-tab-active a {
@@ -574,6 +603,7 @@
 
 .cmb-load-more {
     display: block;
+    width: 100%;
     text-align: center;
     padding: 12px;
     color: #2271b1;
@@ -584,6 +614,7 @@
     font-size: 13px;
     font-weight: 500;
     background: #fafafa;
+    line-height: inherit;
     transition: background 0.15s ease, border-color 0.15s ease;
 }
 
@@ -681,4 +712,91 @@
         padding: 8px 12px;
         font-size: 12px;
     }
+}
+
+/* === Toggle Switch === */
+.cmb-toggle-switch {
+    position: relative;
+    display: inline-block;
+    width: 44px;
+    height: 24px;
+    cursor: pointer;
+}
+.cmb-toggle-switch input[type="checkbox"] {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+.cmb-toggle-slider {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    border-radius: 24px;
+    transition: background-color 0.2s;
+}
+.cmb-toggle-slider::before {
+    content: "";
+    position: absolute;
+    height: 18px;
+    width: 18px;
+    left: 3px;
+    bottom: 3px;
+    background-color: #fff;
+    border-radius: 50%;
+    transition: transform 0.2s;
+}
+.cmb-toggle-switch input:checked + .cmb-toggle-slider {
+    background-color: #2271b1;
+}
+.cmb-toggle-switch input:checked + .cmb-toggle-slider::before {
+    transform: translateX(20px);
+}
+.cmb-toggle-switch input:focus-visible + .cmb-toggle-slider {
+    outline: 2px solid #2271b1;
+    outline-offset: 2px;
+}
+
+/* === Range Field === */
+.cmb-range-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.cmb-range-value {
+    min-width: 30px;
+    text-align: center;
+    font-weight: 600;
+}
+
+/* === Message Field === */
+.cmb-message {
+    padding: 10px 0;
+}
+
+/* === Divider Field === */
+.cmb-divider {
+    border: 0;
+    border-top: 1px solid #dcdcde;
+    margin: 15px 0;
+}
+
+/* === Checkbox List === */
+.cmb-checkbox-list label {
+    display: block;
+    margin-bottom: 4px;
+}
+
+/* === Validation Errors === */
+.cmb-field-error {
+    color: #d63638;
+    font-size: 12px;
+    margin: 4px 0 0;
+}
+.cmb-has-error .cmb-input input,
+.cmb-has-error .cmb-input select,
+.cmb-has-error .cmb-input textarea {
+    border-color: #d63638;
 }

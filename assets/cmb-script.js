@@ -41,6 +41,21 @@
           $clone = $groupItems.last().clone(false, false);
           $clone = processNestedGroups($clone, nestingLevel, currentItemCount);
           $clone.hide().appendTo($groupItemsContainer).slideDown(200);
+
+          // Re-initialize sortable on nested groups within the new row
+          if ($.fn.sortable) {
+            $clone.find('.cmb-group-items').sortable({
+              handle: '.cmb-sortable-handle, .cmb-group-item-header',
+              items: '> .cmb-group-item',
+              placeholder: 'cmb-sortable-placeholder',
+              tolerance: 'pointer'
+            });
+          }
+        }
+
+        // Re-initialize color pickers in cloned row
+        if ($.fn.wpColorPicker && $clone.find('.cmb-color-picker').length) {
+          $clone.find('.cmb-color-picker').wpColorPicker();
         }
 
         updateRowCounts();
@@ -187,6 +202,7 @@
         var $wrapper = $button.closest('.cmb-file-field');
 
         if (typeof wp === 'undefined' || typeof wp.media === 'undefined') {
+          alert('Media library is not available. Please ensure it is loaded on this page.');
           return;
         }
 
@@ -201,9 +217,13 @@
           var $preview = $wrapper.find('.cmb-file-preview');
           $preview.empty();
           if (attachment.type === 'image' && attachment.sizes && attachment.sizes.thumbnail) {
-            $preview.html('<img src="' + attachment.sizes.thumbnail.url + '" style="max-width:150px;max-height:150px;">');
+            $preview.empty().append(
+              $('<img>').attr('src', attachment.sizes.thumbnail.url).css({maxWidth:'150px',maxHeight:'150px'})
+            );
           } else {
-            $preview.html('<a href="' + attachment.url + '" target="_blank">' + attachment.filename + '</a>');
+            $preview.empty().append(
+              $('<a>').attr({href: attachment.url, target: '_blank'}).text(attachment.filename)
+            );
           }
           $wrapper.find('.cmb-file-remove').show();
         });
@@ -228,16 +248,24 @@
           items: '> .cmb-group-item',
           placeholder: 'cmb-sortable-placeholder',
           tolerance: 'pointer',
-          update: function() {
+          start: function(e, ui) {
+            ui.item.data('cmb-start-index', ui.item.index());
+          },
+          update: function(e, ui) {
             var $container = $(this);
-            $container.children('.cmb-group-item').each(function(newIndex) {
-              var $item = $(this);
-              $item.find('.cmb-group-index').first().text(newIndex);
-              $item.find(':input').each(function() {
+            var oldIndex = ui.item.data('cmb-start-index');
+            var newIndex = ui.item.index();
+            var start = Math.min(oldIndex, newIndex);
+            var end = Math.max(oldIndex, newIndex);
+            var parentLevel = $container.parents('.cmb-group').length;
+
+            $container.children('.cmb-group-item').slice(start, end + 1).each(function() {
+              var idx = $(this).index();
+              $(this).find('.cmb-group-index').first().text(idx);
+              $(this).find(':input').each(function() {
                 var name = $(this).attr('name');
                 if (!name) return;
-                var parentLevel = $container.parents('.cmb-group').length;
-                var updated = updateNestedGroupName(name, parentLevel, newIndex);
+                var updated = updateNestedGroupName(name, parentLevel, idx);
                 $(this).attr('name', updated);
               });
             });
@@ -267,29 +295,70 @@
       });
 
       // === Conditional Field Display (6.3) ===
+      function evaluateCondition(rule, $container) {
+        var condField = rule.field || '';
+        var condOperator = rule.operator || '==';
+        var condValue = String(rule.value || '');
+
+        var $source = $container.find('[name="' + condField + '"], [name$="[' + condField + ']"]').first();
+        if (!$source.length) return false;
+
+        var sourceVal = $source.is(':checkbox') ? ($source.is(':checked') ? $source.val() : '') : $source.val();
+        sourceVal = String(sourceVal || '');
+
+        switch (condOperator) {
+          case '==': return sourceVal === condValue;
+          case '!=': return sourceVal !== condValue;
+          case 'contains': return sourceVal.indexOf(condValue) !== -1;
+          case '!empty': return sourceVal !== '';
+          case 'empty': return sourceVal === '';
+          default: return sourceVal === condValue;
+        }
+      }
+
       function evaluateConditionals() {
+        // Simple single-condition format
         $('[data-conditional-field]').each(function() {
           var $field = $(this);
-          var condField = $field.data('conditional-field');
-          var condOperator = $field.data('conditional-operator') || '==';
-          var condValue = String($field.data('conditional-value') || '');
-
-          // Find the condition source input within the same container
           var $container = $field.closest('.cmb-container, .cmb-tab-panel, .form-table');
-          var $source = $container.find('[name="' + condField + '"], [name$="[' + condField + ']"]').first();
-          if (!$source.length) return;
+          var show = evaluateCondition({
+            field: $field.data('conditional-field'),
+            operator: $field.data('conditional-operator'),
+            value: $field.data('conditional-value')
+          }, $container);
 
-          var sourceVal = $source.is(':checkbox') ? ($source.is(':checked') ? $source.val() : '') : $source.val();
-          sourceVal = String(sourceVal || '');
+          if (show) {
+            $field.slideDown(200);
+          } else {
+            $field.slideUp(200);
+          }
+        });
+
+        // AND/OR group format
+        $('[data-conditional-groups]').each(function() {
+          var $field = $(this);
+          var groups = $field.data('conditional-groups');
+          var relation = ($field.data('conditional-relation') || 'OR').toUpperCase();
+          var $container = $field.closest('.cmb-container, .cmb-tab-panel, .form-table');
+
+          if (!Array.isArray(groups) || !groups.length) return;
 
           var show = false;
-          switch (condOperator) {
-            case '==': show = (sourceVal === condValue); break;
-            case '!=': show = (sourceVal !== condValue); break;
-            case 'contains': show = (sourceVal.indexOf(condValue) !== -1); break;
-            case '!empty': show = (sourceVal !== ''); break;
-            case 'empty': show = (sourceVal === ''); break;
-            default: show = (sourceVal === condValue);
+          if (relation === 'AND') {
+            show = groups.every(function(group) {
+              if (!Array.isArray(group.rules)) return true;
+              return group.rules.every(function(rule) {
+                return evaluateCondition(rule, $container);
+              });
+            });
+          } else {
+            // OR — any group fully matching is enough
+            show = groups.some(function(group) {
+              if (!Array.isArray(group.rules)) return false;
+              return group.rules.every(function(rule) {
+                return evaluateCondition(rule, $container);
+              });
+            });
           }
 
           if (show) {
@@ -300,25 +369,52 @@
         });
       }
 
-      // Run on load and on input change
+      // Run on load and on input change (debounced)
       evaluateConditionals();
+      var conditionalTimer;
       $(document).on('input change', '.cmb-container :input, .cmb-tab-panel :input', function() {
-        evaluateConditionals();
+        clearTimeout(conditionalTimer);
+        conditionalTimer = setTimeout(evaluateConditionals, 150);
       });
 
       // === Tab Switching (6.4) ===
-      $(document).on('click', '.cmb-tab-nav-item a', function(event) {
-        event.preventDefault();
-        var $link = $(this);
+      function activateTab($link) {
         var $nav = $link.closest('.cmb-tab-nav');
         var $tabs = $nav.closest('.cmb-tabs');
         var tabId = $link.attr('href');
 
+        $nav.find('[role="tab"]').attr({'aria-selected': 'false', 'tabindex': '-1'});
+        $link.attr({'aria-selected': 'true', 'tabindex': '0'}).focus();
+
         $nav.find('.cmb-tab-nav-item').removeClass('cmb-tab-active');
         $link.closest('.cmb-tab-nav-item').addClass('cmb-tab-active');
 
-        $tabs.find('.cmb-tab-panel').removeClass('cmb-tab-panel-active');
-        $tabs.find(tabId).addClass('cmb-tab-panel-active');
+        $tabs.find('.cmb-tab-panel').removeClass('cmb-tab-panel-active').attr('hidden', '');
+        $tabs.find(tabId).addClass('cmb-tab-panel-active').removeAttr('hidden');
+      }
+
+      $(document).on('click', '.cmb-tab-nav-item a[role="tab"]', function(event) {
+        event.preventDefault();
+        activateTab($(this));
+      });
+
+      // Arrow key navigation for tabs
+      $(document).on('keydown', '[role="tab"]', function(e) {
+        var $tabs = $(this).closest('[role="tablist"]').find('[role="tab"]');
+        var idx = $tabs.index(this);
+        if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+          e.preventDefault();
+          activateTab($tabs.eq((idx + 1) % $tabs.length));
+        } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+          e.preventDefault();
+          activateTab($tabs.eq((idx - 1 + $tabs.length) % $tabs.length));
+        } else if (e.key === 'Home') {
+          e.preventDefault();
+          activateTab($tabs.first());
+        } else if (e.key === 'End') {
+          e.preventDefault();
+          activateTab($tabs.last());
+        }
       });
 
       // === Duplicate Row (6.9) ===
@@ -410,7 +506,7 @@
 
         if ($items.length > CMB_LAZY_THRESHOLD) {
           $items.slice(CMB_LAZY_THRESHOLD).hide().addClass('cmb-lazy-hidden');
-          $container.after('<span class="cmb-load-more">Load more (' + ($items.length - CMB_LAZY_THRESHOLD) + ' remaining)</span>');
+          $container.after('<button type="button" class="cmb-load-more">Load more (' + ($items.length - CMB_LAZY_THRESHOLD) + ' remaining)</button>');
         }
       });
 
@@ -443,6 +539,63 @@
           }
         });
       }
+      // === Client-Side Validation ===
+      function validateField($field) {
+        var $input = $field.find(':input:not([type="hidden"])').first();
+        if (!$input.length) return true;
+        var val = $input.val();
+        var errors = [];
+
+        if ($field.data('validate-required') && (!val || val === '')) {
+          errors.push('This field is required.');
+        }
+        if ($field.data('validate-min') && val && val.length < parseInt($field.data('validate-min'))) {
+          errors.push('Must be at least ' + $field.data('validate-min') + ' characters.');
+        }
+        if ($field.data('validate-max') && val && val.length > parseInt($field.data('validate-max'))) {
+          errors.push('Must be no more than ' + $field.data('validate-max') + ' characters.');
+        }
+        if ($field.data('validate-numeric') && val && isNaN(val)) {
+          errors.push('Must be a number.');
+        }
+
+        $field.find('.cmb-field-error').remove();
+        if (errors.length) {
+          $field.addClass('cmb-has-error');
+          $field.find('.cmb-input').append('<p class="cmb-field-error">' + errors[0] + '</p>');
+          return false;
+        }
+        $field.removeClass('cmb-has-error');
+        return true;
+      }
+
+      $(document).on('blur', '.cmb-field[data-validate-required] :input, .cmb-field[data-validate-min] :input, .cmb-field[data-validate-max] :input', function() {
+        validateField($(this).closest('.cmb-field'));
+      });
+
+      // Prevent form submission with validation errors
+      $(document).on('submit', 'form#post', function(e) {
+        var hasErrors = false;
+        $(this).find('.cmb-field[data-validate-required], .cmb-field[data-validate-min], .cmb-field[data-validate-max]').each(function() {
+          if (!validateField($(this))) hasErrors = true;
+        });
+        if (hasErrors) {
+          e.preventDefault();
+          $('html, body').animate({ scrollTop: $('.cmb-has-error').first().offset().top - 50 }, 300);
+        }
+      });
+
+      // === Color Picker Initialization ===
+      if ($.fn.wpColorPicker) {
+        $('.cmb-color-picker').each(function() {
+          var opts = {};
+          if ($(this).data('alpha-enabled')) {
+            opts.palettes = true;
+          }
+          $(this).wpColorPicker(opts);
+        });
+      }
+
     });
 
   })(jQuery);

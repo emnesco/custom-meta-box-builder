@@ -255,6 +255,14 @@
                     setTimeout(function () {
                         $btn.html('<span class="dashicons dashicons-clipboard"></span> Copy Code');
                     }, 2000);
+                }).catch(function () {
+                    // Fallback for older browsers
+                    var textarea = document.createElement('textarea');
+                    textarea.value = code;
+                    document.body.appendChild(textarea);
+                    textarea.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(textarea);
                 });
             }
         });

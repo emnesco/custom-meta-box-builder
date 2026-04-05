@@ -2,7 +2,8 @@
     'use strict';
 
     var el = wp.element.createElement;
-    var PluginDocumentSettingPanel = wp.editPost.PluginDocumentSettingPanel;
+    var PluginDocumentSettingPanel = (wp.editor && wp.editor.PluginDocumentSettingPanel)
+        || wp.editPost.PluginDocumentSettingPanel;
     var TextControl = wp.components.TextControl;
     var TextareaControl = wp.components.TextareaControl;
     var SelectControl = wp.components.SelectControl;
@@ -17,9 +18,6 @@
 
     function CmbField(props) {
         var field = props.field;
-        var postId = useSelect(function(select) {
-            return select('core/editor').getCurrentPostId();
-        });
 
         var meta = useSelect(function(select) {
             return select('core/editor').getEditedPostAttribute('meta') || {};
