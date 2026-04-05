@@ -2,16 +2,23 @@
 namespace CMB\Core;
 
 use CMB\Core\Contracts\FieldInterface;
+use CMB\Core\RenderContext\RenderContextInterface;
+use CMB\Core\RenderContext\PostContext;
 use CMB\Core\Traits\MultiLanguageTrait;
 
 class FieldRenderer {
     use MultiLanguageTrait;
 
-    protected \WP_Post $post;
+    protected RenderContextInterface $context;
     private ?array $metaCache = null;
 
-    public function __construct(\WP_Post $post) {
-        $this->post = $post;
+    public function __construct(RenderContextInterface|\WP_Post $context) {
+        // Back-compat: allow a bare WP_Post to be passed (wraps it in PostContext).
+        if ($context instanceof \WP_Post) {
+            $this->context = new PostContext($context);
+        } else {
+            $this->context = $context;
+        }
     }
 
     public function getname($field, $group_index, $parent): string {
@@ -61,28 +68,34 @@ class FieldRenderer {
     }
 
     public function render(array $field, mixed $value = null, int $index = 0, mixed $parent = []): string {
+        // Hook: cmb_field_config filter — allows modifying field config before render.
+        $field = apply_filters('cmb_field_config', $field, $this->context->getObjectId());
+
         $name = $this->getname($field, $index, $parent);
 
         if (!$parent) {
-            $value = $this->get_field_value($this->post->ID, $field);
+            $value = $this->get_field_value($field);
         }
 
         $parent_is_array = is_array($parent);
 
-        $fieldClass = 'CMB\\Fields\\' . ucfirst($field['type']) . 'Field';
-        if (!class_exists($fieldClass)) {
-            return '';
-        }
-
         $htmlId = $this->generateHtmlId($name);
 
-        /** @var FieldInterface $instance */
-        $instance = new $fieldClass(array_merge($field, [
+        $mergedConfig = array_merge($field, [
             'id' => $name,
             'name' => $name,
             'html_id' => $htmlId,
             'value' => $value,
-        ]));
+        ]);
+        if ($field['type'] === 'group') {
+            $mergedConfig['_renderer'] = $this;
+        }
+
+        /** @var FieldInterface|null $instance */
+        $instance = FieldFactory::create($field['type'], $mergedConfig);
+        if ( $instance === null ) {
+            return '';
+        }
 
         $layout = isset($field['layout']) ? 'cmb-' . $field['layout'] : 'cmb-horizontal';
 
@@ -97,9 +110,16 @@ class FieldRenderer {
         $conditionalAttrs = '';
         if (!empty($field['conditional'])) {
             $cond = $field['conditional'];
-            $conditionalAttrs .= ' data-conditional-field="' . esc_attr($cond['field'] ?? '') . '"';
-            $conditionalAttrs .= ' data-conditional-operator="' . esc_attr($cond['operator'] ?? '==') . '"';
-            $conditionalAttrs .= ' data-conditional-value="' . esc_attr($cond['value'] ?? '') . '"';
+            if (isset($cond['groups'])) {
+                // AND/OR group format
+                $conditionalAttrs .= ' data-conditional-groups="' . esc_attr(wp_json_encode($cond['groups'])) . '"';
+                $conditionalAttrs .= ' data-conditional-relation="' . esc_attr($cond['relation'] ?? 'OR') . '"';
+            } else {
+                // Simple format (single condition)
+                $conditionalAttrs .= ' data-conditional-field="' . esc_attr($cond['field'] ?? '') . '"';
+                $conditionalAttrs .= ' data-conditional-operator="' . esc_attr($cond['operator'] ?? '==') . '"';
+                $conditionalAttrs .= ' data-conditional-value="' . esc_attr($cond['value'] ?? '') . '"';
+            }
             $conditionalAttrs .= ' style="display:none"';
         }
 
@@ -108,10 +128,27 @@ class FieldRenderer {
             return $this->renderMultilingualField($field, $name, $htmlId);
         }
 
-        // Hook: cmb_before_render_field (7.1)
-        do_action('cmb_before_render_field', $field, $this->post);
+        // Resolve the object to pass to hooks — WP_Post for post context, objectId otherwise.
+        $hookObject = $this->getHookObject();
 
-        $output = '<div class="cmb-field ' . $layout . ' cmb-type-' . $field['type'] . ' ' . $repeat . ' ' . $width . ' ' . $required_class . '"' . $conditionalAttrs . '>';
+        // Hook: cmb_before_render_field (7.1)
+        do_action('cmb_before_render_field', $field, $hookObject);
+
+        // Validation data attributes for client-side validation
+        $validationAttrs = '';
+        if (!empty($field['required'])) {
+            $validationAttrs .= ' data-validate-required="true"';
+        }
+        if (!empty($field['validation'])) {
+            foreach ((array) $field['validation'] as $rule) {
+                if (strpos($rule, ':') !== false) {
+                    [$ruleName, $ruleVal] = explode(':', $rule, 2);
+                    $validationAttrs .= ' data-validate-' . esc_attr($ruleName) . '="' . esc_attr($ruleVal) . '"';
+                }
+            }
+        }
+
+        $output = '<div class="cmb-field ' . esc_attr($layout) . ' cmb-type-' . esc_attr($field['type']) . ' ' . esc_attr($repeat) . ' ' . esc_attr($width) . ' ' . esc_attr($required_class) . '"' . $conditionalAttrs . $validationAttrs . '>';
             $output .= '<div class="cmb-label">';
                 $output .= '<label for="' . esc_attr($htmlId) . '">' . esc_html($field['label'] ?? '');
                 if (!empty($field['required'])) {
@@ -123,14 +160,16 @@ class FieldRenderer {
                 // Expand/Collapse all for group fields
                 if ($field['type'] === 'group' && $has_field_repeat && empty($field['repeat_fake'])) {
                     $output .= '<div class="cmb-group-actions">';
-                    $output .= '<a href="#" class="cmb-expand-all">Expand All</a>';
-                    $output .= '<a href="#" class="cmb-collapse-all">Collapse All</a>';
+                    $output .= '<button type="button" class="cmb-expand-all">Expand All</button>';
+                    $output .= '<button type="button" class="cmb-collapse-all">Collapse All</button>';
                     $output .= '</div>';
                 }
                 // Search/filter for large groups (8.4)
                 if ($field['type'] === 'group' && !empty($field['searchable'])) {
+                    $searchId = $htmlId . '-search';
                     $output .= '<div class="cmb-group-search">';
-                    $output .= '<input type="text" placeholder="Search items..." class="cmb-group-search-input">';
+                    $output .= '<label for="' . esc_attr($searchId) . '" class="screen-reader-text">Search items</label>';
+                    $output .= '<input id="' . esc_attr($searchId) . '" type="text" placeholder="Search items..." class="cmb-group-search-input">';
                     $output .= '</div>';
                 }
                 $output .= $instance->render();
@@ -142,7 +181,7 @@ class FieldRenderer {
                     if (isset($field['max_rows'])) {
                         $dataAttrs .= ' data-max-rows="' . (int)$field['max_rows'] . '"';
                     }
-                    $output .= '<span class="cmb-add-row"' . $dataAttrs . '>Add Row</span>';
+                    $output .= '<button type="button" class="cmb-add-row"' . $dataAttrs . '>Add Row</button>';
                     $output .= ' <span class="cmb-item-count"></span>';
                 }
                 if (!empty($field['description'])) {
@@ -152,10 +191,10 @@ class FieldRenderer {
          $output .= '</div>';
 
         // Hook: cmb_field_html filter (7.1)
-        $output = apply_filters('cmb_field_html', $output, $field, $this->post);
+        $output = apply_filters('cmb_field_html', $output, $field, $hookObject);
 
         // Hook: cmb_after_render_field (7.1)
-        do_action('cmb_after_render_field', $field, $this->post);
+        do_action('cmb_after_render_field', $field, $hookObject);
 
         return $output;
     }
@@ -168,7 +207,7 @@ class FieldRenderer {
         $currentLocale = $this->getCurrentLocale();
         $layout = isset($field['layout']) ? 'cmb-' . $field['layout'] : 'cmb-horizontal';
 
-        $output = '<div class="cmb-field ' . $layout . ' cmb-type-' . $field['type'] . ' cmb-multilingual">';
+        $output = '<div class="cmb-field ' . esc_attr($layout) . ' cmb-type-' . esc_attr($field['type']) . ' cmb-multilingual">';
         $output .= '<div class="cmb-label">';
         $output .= '<label>' . esc_html($field['label'] ?? '') . '</label>';
         $output .= '</div>';
@@ -177,20 +216,18 @@ class FieldRenderer {
 
         foreach ($locales as $locale) {
             $localizedKey = $this->getLocalizedKey($field['id'], $locale);
-            $localizedValue = $this->get_field_value($this->post->ID, array_merge($field, ['id' => $localizedKey]));
+            $localizedValue = $this->get_field_value(array_merge($field, ['id' => $localizedKey]));
             $active = ($locale === $currentLocale) ? ' cmb-lang-panel-active' : '';
 
-            $fieldClass = 'CMB\\Fields\\' . ucfirst($field['type']) . 'Field';
-            if (!class_exists($fieldClass)) {
-                continue;
-            }
-
-            $instance = new $fieldClass(array_merge($field, [
+            $instance = FieldFactory::create($field['type'], array_merge($field, [
                 'id' => $localizedKey,
                 'name' => $localizedKey,
                 'html_id' => $htmlId . '-' . $locale,
                 'value' => $localizedValue,
             ]));
+            if ( $instance === null ) {
+                continue;
+            }
 
             $output .= '<div class="cmb-lang-panel' . $active . '" data-lang="' . esc_attr($locale) . '">';
             $output .= $instance->render();
@@ -207,32 +244,98 @@ class FieldRenderer {
         return $output;
     }
 
-    private function get_field_value(int $post_id, array $field): mixed {
-        // Bulk-fetch all meta on first call
+    /**
+     * Return the object to pass to hooks.
+     * For post context, returns WP_Post for back-compatibility.
+     * For other contexts, returns the object ID.
+     */
+    private function getHookObject(): mixed {
+        if ($this->context instanceof PostContext) {
+            return $this->context->getPost();
+        }
+        return $this->context->getObjectId();
+    }
+
+    /**
+     * Retrieve a field value via the context storage.
+     *
+     * For option context, OptionStorage::getAll() returns [] (options are keyed by
+     * option name rather than a single object), so we fall back to get_option()
+     * on a per-key basis which OptionStorage::get() already handles correctly.
+     */
+    private function get_field_value(array $field): mixed {
+        $objectId = $this->context->getObjectId();
+        $storage  = $this->context->getStorage();
+        $key      = $field['id'];
+        $isCollection = ($field['type'] === 'group') || !empty($field['repeat']);
+
+        // Populate cache on first call.
+        // OptionStorage::getAll() intentionally returns [] because WP options are
+        // independent keys; in that case we skip the cache and always call get().
         if ($this->metaCache === null) {
-            $all = get_post_meta($post_id);
+            $all = $storage->getAll($objectId);
             $this->metaCache = is_array($all) ? $all : [];
         }
 
-        $key = $field['id'];
-        $isCollection = ($field['type'] === 'group') || !empty($field['repeat']);
-
         if ($isCollection) {
-            $meta = $this->metaCache[$key] ?? [];
-            if (!empty($meta)) {
-                // Unserialize if needed (get_post_meta without key returns raw rows)
+            // If metaCache has data for this key, use it.
+            if (!empty($this->metaCache[$key])) {
+                $meta = $this->metaCache[$key];
                 return array_map(function ($v) {
-                    return is_serialized($v) ? maybe_unserialize($v) : $v;
+                    return self::safeUnserialize($v);
                 }, $meta);
             }
+
+            // For option context (empty cache) or missing key, fall back to storage->get().
+            if (empty($this->metaCache)) {
+                $val = $storage->get($objectId, $key, false);
+                if (!empty($val)) {
+                    return is_array($val) ? $val : [$val];
+                }
+            }
+
             return $field['type'] === 'group' ? [[]] : [''];
         }
 
-        $meta = $this->metaCache[$key] ?? [null];
-        $val = $meta[0] ?? null;
-        $val = is_serialized($val) ? maybe_unserialize($val) : $val;
+        // Scalar field.
+        if (!empty($this->metaCache[$key])) {
+            $meta = $this->metaCache[$key];
+            $val  = $meta[0] ?? null;
+            $val  = self::safeUnserialize($val);
+        } else {
+            // Option context or key not yet in cache — call storage directly.
+            $val = $storage->get($objectId, $key);
+            $val = self::safeUnserialize($val);
+        }
 
         // Hook: cmb_field_value filter (7.1)
-        return apply_filters('cmb_field_value', $val, $key, $this->post->ID);
+        return apply_filters('cmb_field_value', $val, $key, $objectId);
+    }
+
+    /**
+     * Safely unserialize a value, rejecting PHP objects to prevent object injection.
+     */
+    private static function safeUnserialize( mixed $value ): mixed {
+        if ( ! is_string( $value ) || ! is_serialized( $value ) ) {
+            return $value;
+        }
+
+        $unserialized = maybe_unserialize( $value );
+
+        // Reject objects — only arrays and scalars are safe for meta values.
+        if ( is_object( $unserialized ) ) {
+            return $value; // Return original string rather than instantiated object.
+        }
+
+        // Recursively check arrays for nested objects.
+        if ( is_array( $unserialized ) ) {
+            array_walk_recursive( $unserialized, function ( &$item ) use ( $value ) {
+                if ( is_object( $item ) ) {
+                    $item = null;
+                }
+            });
+        }
+
+        return $unserialized;
     }
 }

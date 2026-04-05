@@ -2,6 +2,7 @@
 namespace CMB\Fields;
 
 use CMB\Core\Contracts\Abstracts\AbstractField;
+use CMB\Core\FieldFactory;
 use CMB\Core\FieldRenderer;
 
 class GroupField extends AbstractField {
@@ -58,9 +59,9 @@ class GroupField extends AbstractField {
         $output .= '<div class="cmb-group-fields">';
 
         if (!empty($field['fields'])) {
+            $fieldRenderer = $this->config['_renderer'] ?? new FieldRenderer(get_post(get_the_ID()));
             foreach ($field['fields'] as $sub_field) {
                 $sub_field_value = $this->sub_field_value($value, $index, $field, $sub_field);
-                $fieldRenderer = new FieldRenderer(get_post(get_the_ID()));
                 $parent_prefix = $fieldRenderer->getChildPrefix($name, $field, $index);
 
                 // Add conditional data attributes
@@ -86,7 +87,38 @@ class GroupField extends AbstractField {
         if (!is_array($value)) {
             return [];
         }
-        return map_deep($value, 'sanitize_text_field');
+
+        $subFields = $this->config['fields'] ?? [];
+        if ( empty( $subFields ) ) {
+            return map_deep($value, 'sanitize_text_field');
+        }
+
+        $sanitized = [];
+        foreach ($value as $index => $groupData) {
+            if (!is_array($groupData)) {
+                continue;
+            }
+            $sanitizedGroup = [];
+            foreach ($subFields as $subField) {
+                $subId = $subField['id'];
+                $subRaw = $groupData[$subId] ?? '';
+
+                if ( !empty($subField['sanitize_callback']) && is_callable($subField['sanitize_callback']) ) {
+                    $sanitizedGroup[$subId] = call_user_func($subField['sanitize_callback'], $subRaw);
+                    continue;
+                }
+
+                $subInstance = FieldFactory::create($subField['type'], $subField);
+                if ( $subInstance === null ) {
+                    $sanitizedGroup[$subId] = sanitize_text_field( is_string($subRaw) ? $subRaw : '' );
+                    continue;
+                }
+
+                $sanitizedGroup[$subId] = $subInstance->sanitize($subRaw);
+            }
+            $sanitized[$index] = $sanitizedGroup;
+        }
+        return $sanitized;
     }
 
     private function sub_field_value(mixed $value, int $index, array $field, array $sub_field): mixed {

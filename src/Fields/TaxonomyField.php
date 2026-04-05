@@ -4,6 +4,8 @@ namespace CMB\Fields;
 use CMB\Core\Contracts\Abstracts\AbstractField;
 
 class TaxonomyField extends AbstractField {
+    private static array $termCache = [];
+
     public function render(): string {
         $value = $this->getValue();
         $currentValues = is_array($value) ? $value : [$value];
@@ -16,10 +18,13 @@ class TaxonomyField extends AbstractField {
             return '<p>Taxonomy terms not available.</p>';
         }
 
-        $terms = get_terms([
-            'taxonomy'   => $taxonomy,
-            'hide_empty' => false,
-        ]);
+        if (!isset(self::$termCache[$taxonomy])) {
+            self::$termCache[$taxonomy] = get_terms([
+                'taxonomy'   => $taxonomy,
+                'hide_empty' => false,
+            ]);
+        }
+        $terms = self::$termCache[$taxonomy];
 
         if (is_wp_error($terms) || empty($terms)) {
             return '<p>No terms found.</p>';
@@ -38,6 +43,7 @@ class TaxonomyField extends AbstractField {
 
         // Checkbox list (default)
         $output = '<fieldset class="cmb-taxonomy-checklist">';
+        $output .= '<legend class="screen-reader-text">' . esc_html($this->config['label'] ?? '') . '</legend>';
         foreach ($terms as $term) {
             $optionId = esc_attr($htmlId . '-' . $term->term_id);
             $isChecked = in_array($term->term_id, $currentValues) ? ' checked' : '';

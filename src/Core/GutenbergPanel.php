@@ -8,13 +8,18 @@ namespace CMB\Core;
  * the WordPress block editor's PluginDocumentSettingPanel.
  */
 class GutenbergPanel {
-    public static function register(): void {
-        add_action('enqueue_block_editor_assets', [self::class, 'enqueueEditorAssets']);
+    private MetaBoxManager $manager;
+
+    public function __construct( MetaBoxManager $manager ) {
+        $this->manager = $manager;
     }
 
-    public static function enqueueEditorAssets(): void {
-        $manager = MetaBoxManager::instance();
-        $boxes = $manager->getMetaBoxes();
+    public function register(): void {
+        add_action('enqueue_block_editor_assets', [$this, 'enqueueEditorAssets']);
+    }
+
+    public function enqueueEditorAssets(): void {
+        $boxes = $this->manager->getMetaBoxes();
 
         $sidebarBoxes = [];
         foreach ($boxes as $id => $box) {
@@ -33,12 +38,12 @@ class GutenbergPanel {
             if (!empty($rawFields['tabs'])) {
                 foreach ($rawFields['tabs'] as $tab) {
                     foreach ($tab['fields'] ?? [] as $f) {
-                        $fields[] = self::fieldToJsConfig($f);
+                        $fields[] = $this->fieldToJsConfig($f);
                     }
                 }
             } else {
                 foreach ($rawFields as $f) {
-                    $fields[] = self::fieldToJsConfig($f);
+                    $fields[] = $this->fieldToJsConfig($f);
                 }
             }
 
@@ -53,18 +58,25 @@ class GutenbergPanel {
             return;
         }
 
+        $baseUrl  = plugin_dir_url(dirname(__DIR__, 1) . '/../custom-meta-box-builder.php');
+        $basePath = plugin_dir_path(dirname(__DIR__, 1) . '/../custom-meta-box-builder.php');
+        $suffix   = ( defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG ) ? '' : '.min';
+        $jsFile   = 'assets/cmb-gutenberg' . $suffix . '.js';
+        if ( $suffix && ! file_exists( $basePath . $jsFile ) ) {
+            $jsFile = 'assets/cmb-gutenberg.js';
+        }
         wp_enqueue_script(
             'cmb-gutenberg-panel',
-            plugin_dir_url(dirname(__DIR__, 1) . '/../custom-meta-box-builder.php') . 'assets/cmb-gutenberg.js',
-            ['wp-plugins', 'wp-edit-post', 'wp-components', 'wp-data', 'wp-element'],
-            null,
+            $baseUrl . $jsFile,
+            ['wp-plugins', 'wp-editor', 'wp-edit-post', 'wp-components', 'wp-data', 'wp-element'],
+            @filemtime( $basePath . $jsFile ) ?: null,
             true
         );
 
         wp_localize_script('cmb-gutenberg-panel', 'cmbGutenbergPanels', $sidebarBoxes);
     }
 
-    private static function fieldToJsConfig(array $field): array {
+    private function fieldToJsConfig(array $field): array {
         return [
             'id' => $field['id'],
             'type' => $field['type'] ?? 'text',

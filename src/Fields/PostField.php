@@ -4,25 +4,31 @@ namespace CMB\Fields;
 use CMB\Core\Contracts\Abstracts\AbstractField;
 
 class PostField extends AbstractField {
+    private static array $postCache = [];
+
     public function render(): string {
         $value = $this->getValue();
         $htmlId = $this->config['html_id'] ?? '';
         $id_attr = $htmlId ? ' id="' . esc_attr($htmlId) . '"' : '';
         $name = esc_attr($this->getName());
         $postType = $this->config['post_type'] ?? 'post';
+        $limit = $this->config['limit'] ?? 100;
 
         $output = '<select name="' . $name . '"' . $id_attr . $this->renderAttributes() . $this->requiredAttr() . '>';
         $output .= '<option value="">&mdash; Select &mdash;</option>';
 
         if (function_exists('get_posts')) {
-            $posts = get_posts([
-                'post_type'      => $postType,
-                'posts_per_page' => $this->config['limit'] ?? 100,
-                'orderby'        => 'title',
-                'order'          => 'ASC',
-                'post_status'    => 'publish',
-            ]);
-            foreach ($posts as $post) {
+            $cacheKey = $postType . '_' . $limit;
+            if (!isset(self::$postCache[$cacheKey])) {
+                self::$postCache[$cacheKey] = get_posts([
+                    'post_type'      => $postType,
+                    'posts_per_page' => $limit,
+                    'orderby'        => 'title',
+                    'order'          => 'ASC',
+                    'post_status'    => 'publish',
+                ]);
+            }
+            foreach (self::$postCache[$cacheKey] as $post) {
                 $sel = selected($value, $post->ID, false);
                 $output .= '<option value="' . esc_attr($post->ID) . '"' . $sel . '>' . esc_html($post->post_title) . '</option>';
             }

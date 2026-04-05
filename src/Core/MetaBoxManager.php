@@ -1,13 +1,35 @@
 <?php
 namespace CMB\Core;
 use CMB\Core\Contracts\FieldInterface;
+use CMB\Core\RenderContext\PostContext;
+use CMB\Core\Storage\PostMetaStorage;
+use CMB\Core\Storage\StorageInterface;
 
 class MetaBoxManager {
     private array $metaBoxes = [];
     private static ?MetaBoxManager $instance = null;
     private array $validationErrors = [];
-    private static array $customFieldTypes = [];
+    private StorageInterface $storage;
 
+    public function __construct( ?StorageInterface $storage = null ) {
+        $this->storage = $storage ?? new PostMetaStorage();
+    }
+
+    public function getStorage(): StorageInterface {
+        return $this->storage;
+    }
+
+    /**
+     * Set the shared instance (called by Plugin::boot()).
+     */
+    public static function setInstance( self $instance ): void {
+        self::$instance = $instance;
+    }
+
+    /**
+     * Get the shared instance.
+     * Prefer constructor injection for new code.
+     */
     public static function instance(): self {
         if (self::$instance === null) {
             self::$instance = new self();
@@ -17,15 +39,10 @@ class MetaBoxManager {
 
     /**
      * Register a custom field type class (7.2).
+     * Delegates to FieldFactory for centralized type registry.
      */
     public static function registerFieldType(string $type, string $className): void {
-        if (!class_exists($className)) {
-            if (function_exists('_doing_it_wrong')) {
-                _doing_it_wrong(__METHOD__, sprintf('Class "%s" does not exist.', $className), '2.1');
-            }
-            return;
-        }
-        self::$customFieldTypes[$type] = $className;
+        FieldFactory::registerType($type, $className);
     }
 
     public function register(): void {
@@ -68,7 +85,11 @@ class MetaBoxManager {
                     $id,
                     $metaBox['title'],
                     function ($post) use ($id, $metaBox) {
-                        $fieldRenderer = new FieldRenderer($post);
+                        // Location rules check
+                        if (!empty($metaBox['location']) && !LocationMatcher::matches($metaBox['location'], $post)) {
+                            return;
+                        }
+                        $fieldRenderer = new FieldRenderer(new PostContext($post));
                         $hasTabs = !empty($metaBox['fields']['tabs']);
 
                         echo '<div class="cmb-container cmb-fields">';
@@ -99,12 +120,14 @@ class MetaBoxManager {
 
     private function renderTabs(FieldRenderer $fieldRenderer, array $tabs): void {
         echo '<div class="cmb-tabs">';
-        echo '<ul class="cmb-tab-nav">';
+        echo '<ul class="cmb-tab-nav" role="tablist">';
         $first = true;
         foreach ($tabs as $tabId => $tab) {
             $active = $first ? ' cmb-tab-active' : '';
-            echo '<li class="cmb-tab-nav-item' . $active . '" data-tab="' . esc_attr($tabId) . '">';
-            echo '<a href="#cmb-tab-' . esc_attr($tabId) . '">' . esc_html($tab['label'] ?? $tabId) . '</a>';
+            $selected = $first ? 'true' : 'false';
+            $tabIndex = $first ? '0' : '-1';
+            echo '<li class="cmb-tab-nav-item' . $active . '" role="presentation" data-tab="' . esc_attr($tabId) . '">';
+            echo '<a href="#cmb-tab-' . esc_attr($tabId) . '" role="tab" id="cmb-tab-trigger-' . esc_attr($tabId) . '" aria-selected="' . $selected . '" aria-controls="cmb-tab-' . esc_attr($tabId) . '" tabindex="' . $tabIndex . '">' . esc_html($tab['label'] ?? $tabId) . '</a>';
             echo '</li>';
             $first = false;
         }
@@ -113,7 +136,8 @@ class MetaBoxManager {
         $first = true;
         foreach ($tabs as $tabId => $tab) {
             $active = $first ? ' cmb-tab-panel-active' : '';
-            echo '<div class="cmb-tab-panel' . $active . '" id="cmb-tab-' . esc_attr($tabId) . '">';
+            $hidden = $first ? '' : ' hidden';
+            echo '<div class="cmb-tab-panel' . $active . '" id="cmb-tab-' . esc_attr($tabId) . '" role="tabpanel" aria-labelledby="cmb-tab-trigger-' . esc_attr($tabId) . '"' . $hidden . '>';
             foreach ($tab['fields'] ?? [] as $field) {
                 $fieldCopy = $field;
                 if (isset($fieldCopy['fields']) && $fieldCopy['type'] === 'group' && !isset($fieldCopy['repeat'])) {
@@ -132,14 +156,20 @@ class MetaBoxManager {
         if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) return;
         if (!current_user_can('edit_post', $postId)) return;
 
+        $postType = get_post_type($postId);
+        if (!$postType) return;
+
         foreach ($this->metaBoxes as $id => $metaBox) {
+            if (!in_array($postType, $metaBox['postTypes'], true)) {
+                continue;
+            }
             $nonceField = 'cmb_nonce_' . $id;
             $nonceAction = 'cmb_save_' . $id;
             if (!isset($_POST[$nonceField]) || !wp_verify_nonce($_POST[$nonceField], $nonceAction)) {
                 continue;
             }
 
-            $fields = $this->flattenFields($metaBox['fields']);
+            $fields = FieldUtils::flattenFields($metaBox['fields']);
             foreach ($fields as $field) {
                 $this->saveField($postId, $field);
             }
@@ -149,18 +179,6 @@ class MetaBoxManager {
     /**
      * Flatten fields from tabs or regular array into a single list.
      */
-    private function flattenFields(array $fields): array {
-        if (!empty($fields['tabs'])) {
-            $flat = [];
-            foreach ($fields['tabs'] as $tab) {
-                foreach ($tab['fields'] ?? [] as $field) {
-                    $flat[] = $field;
-                }
-            }
-            return $flat;
-        }
-        return $fields;
-    }
 
     private function saveField(int $postId, array $field): void {
         $fieldClass = $this->resolveFieldClass($field['type']);
@@ -171,7 +189,7 @@ class MetaBoxManager {
         $fieldId = $field['id'];
         /** @var FieldInterface $instance */
         $instance = new $fieldClass($field);
-        $raw = $_POST[$fieldId] ?? '';
+        $raw = wp_unslash( $_POST[$fieldId] ?? '' );
 
         // Validate
         $errors = $instance->validate($raw);
@@ -198,13 +216,13 @@ class MetaBoxManager {
             $sanitized = array_slice($sanitized, 0, (int)$field['max_rows']);
         }
 
-        delete_post_meta($postId, $fieldId);
         if (is_array($sanitized)) {
+            $this->storage->delete($postId, $fieldId);
             foreach ($sanitized as $s) {
                 add_post_meta($postId, $fieldId, $s);
             }
         } else {
-            update_post_meta($postId, $fieldId, $sanitized);
+            $this->storage->set($postId, $fieldId, $sanitized);
         }
 
         // Hook: cmb_after_save_field (7.1)
@@ -249,23 +267,7 @@ class MetaBoxManager {
     }
 
     private function resolveFieldClass(string $type): ?string {
-        // Check custom registered types first (7.2)
-        if (isset(self::$customFieldTypes[$type])) {
-            return self::$customFieldTypes[$type];
-        }
-
-        $fieldClass = 'CMB\\Fields\\' . ucfirst($type) . 'Field';
-        if (!class_exists($fieldClass)) {
-            if (function_exists('_doing_it_wrong')) {
-                _doing_it_wrong(
-                    __METHOD__,
-                    sprintf('CMB field type "%s" does not have a corresponding class "%s".', $type, $fieldClass),
-                    '2.1'
-                );
-            }
-            return null;
-        }
-        return $fieldClass;
+        return FieldFactory::resolveClass($type);
     }
 
     /**
@@ -318,17 +320,22 @@ class MetaBoxManager {
      */
     public function registerRestFields(): void {
         foreach ($this->metaBoxes as $metaBox) {
-            $fields = $this->flattenFields($metaBox['fields']);
+            $fields = FieldUtils::flattenFields($metaBox['fields']);
             foreach ($fields as $field) {
                 if (empty($field['show_in_rest'])) {
                     continue;
                 }
                 foreach ($metaBox['postTypes'] as $postType) {
+                    $fieldCopy = $field;
                     $restArgs = [
                         'show_in_rest' => true,
                         'single' => empty($field['repeat']) && ($field['type'] ?? '') !== 'group',
                         'type' => $this->getRestType($field['type'] ?? 'text'),
                         'description' => $field['description'] ?? '',
+                        'sanitize_callback' => function ($value) use ($fieldCopy) {
+                            $instance = FieldFactory::create($fieldCopy['type'], $fieldCopy);
+                            return $instance ? $instance->sanitize($value) : $value;
+                        },
                     ];
                     register_post_meta($postType, $field['id'], $restArgs);
                 }
@@ -346,10 +353,18 @@ class MetaBoxManager {
     }
 
     public function deletePostMetaData(int $postId): void {
+        $postType = get_post_type( $postId );
+        if ( ! $postType ) {
+            return;
+        }
+
         foreach ($this->metaBoxes as $metaBox) {
-            $fields = $this->flattenFields($metaBox['fields']);
+            if ( ! in_array( $postType, $metaBox['postTypes'], true ) ) {
+                continue;
+            }
+            $fields = FieldUtils::flattenFields($metaBox['fields']);
             foreach ($fields as $field) {
-                delete_post_meta($postId, $field['id']);
+                $this->storage->delete($postId, $field['id']);
             }
         }
     }
@@ -359,28 +374,41 @@ class MetaBoxManager {
         $parentId = function_exists('wp_is_post_revision') ? wp_is_post_revision($revisionId) : false;
         if (!$parentId) return;
 
-        foreach ($this->metaBoxes as $metaBox) {
-            $fields = $this->flattenFields($metaBox['fields']);
-            foreach ($fields as $field) {
-                $values = get_post_meta($parentId, $field['id']);
-                foreach ($values as $value) {
-                    add_post_meta($revisionId, $field['id'], $value);
-                }
+        $fieldKeys = $this->getAllFieldKeys();
+        if (empty($fieldKeys)) return;
+
+        $allMeta = $this->storage->getAll($parentId);
+        foreach ($fieldKeys as $key) {
+            if (!isset($allMeta[$key])) continue;
+            foreach ($allMeta[$key] as $value) {
+                add_post_meta($revisionId, $key, $value);
             }
         }
     }
 
     public function restoreMetaFromRevision(int $postId, int $revisionId): void {
-        foreach ($this->metaBoxes as $metaBox) {
-            $fields = $this->flattenFields($metaBox['fields']);
-            foreach ($fields as $field) {
-                delete_post_meta($postId, $field['id']);
-                $values = get_post_meta($revisionId, $field['id']);
-                foreach ($values as $value) {
-                    add_post_meta($postId, $field['id'], $value);
-                }
+        $fieldKeys = $this->getAllFieldKeys();
+        if (empty($fieldKeys)) return;
+
+        $allMeta = $this->storage->getAll($revisionId);
+        foreach ($fieldKeys as $key) {
+            $this->storage->delete($postId, $key);
+            if (!isset($allMeta[$key])) continue;
+            foreach ($allMeta[$key] as $value) {
+                add_post_meta($postId, $key, $value);
             }
         }
+    }
+
+    private function getAllFieldKeys(): array {
+        $keys = [];
+        foreach ($this->metaBoxes as $metaBox) {
+            $fields = FieldUtils::flattenFields($metaBox['fields']);
+            foreach ($fields as $field) {
+                $keys[] = $field['id'];
+            }
+        }
+        return array_unique($keys);
     }
 
     public function showValidationErrors(): void {
