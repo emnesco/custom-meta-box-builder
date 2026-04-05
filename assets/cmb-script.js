@@ -122,7 +122,7 @@
       }
 
       // === Remove Row (with confirmation and min_rows enforcement) ===
-      $(document).on('click', '.cmb-group > .cmb-group-items > .cmb-group-item > .cmb-group-item-body > .cmb-remove-row', function(event) {
+      $(document).on('click', '.cmb-group-item-actions > .cmb-remove-row', function(event) {
         event.preventDefault();
 
         if (!confirm('Remove this item?')) {
