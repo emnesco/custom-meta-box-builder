@@ -122,7 +122,7 @@
       }
 
       // === Remove Row (with confirmation and min_rows enforcement) ===
-      $(document).on('click', '.cmb-group-item-actions > .cmb-remove-row', function(event) {
+      $(document).on('click', '.cmb-remove-row', function(event) {
         event.preventDefault();
 
         if (!confirm('Remove this item?')) {
@@ -152,7 +152,7 @@
       });
 
       // === Toggle group item (click + keyboard) ===
-      $(document).on('click keydown', '.cmb-group > .cmb-group-items > .cmb-group-item > .cmb-group-item-header', function(event) {
+      $(document).on('click keydown', '.cmb-group-item-header', function(event) {
         if (event.type === 'keydown' && event.key !== 'Enter' && event.key !== ' ') {
           return;
         }
