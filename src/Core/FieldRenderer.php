@@ -99,6 +99,13 @@ class FieldRenderer {
                 $output .= '</label>';
             $output .= '</div>';
             $output .= '<div class="cmb-input">';
+                // Expand/Collapse all for group fields
+                if ($field['type'] === 'group' && $has_field_repeat && empty($field['repeat_fake'])) {
+                    $output .= '<div class="cmb-group-actions">';
+                    $output .= '<a href="#" class="cmb-expand-all">Expand All</a>';
+                    $output .= '<a href="#" class="cmb-collapse-all">Collapse All</a>';
+                    $output .= '</div>';
+                }
                 $output .= $instance->render();
                 if ($has_field_repeat && empty($field['repeat_fake'])) {
                     $dataAttrs = '';
@@ -109,6 +116,7 @@ class FieldRenderer {
                         $dataAttrs .= ' data-max-rows="' . (int)$field['max_rows'] . '"';
                     }
                     $output .= '<span class="cmb-add-row"' . $dataAttrs . '>Add Row</span>';
+                    $output .= ' <span class="cmb-item-count"></span>';
                 }
                 if (!empty($field['description'])) {
                     $output .= '<p class="cmb-description">' . esc_html($field['description']) . '</p>';

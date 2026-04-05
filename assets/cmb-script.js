@@ -3,7 +3,7 @@
 
     $(document).ready(function() {
 
-      // Add Row
+      // === Add Row ===
       $(document).on('click', '.cmb-repeat > .cmb-input > .cmb-add-row', function(event) {
         event.preventDefault();
 
@@ -33,11 +33,14 @@
           $clone = $lastInput.clone(false, false);
 
           $clone = processField($clone, inputCount);
-          $clone.insertAfter($lastInput);
+          $clone.hide().insertAfter($lastInput).fadeIn(200);
         } else {
+          // Remove empty state message if present
+          $groupItemsContainer.find('.cmb-empty-state').remove();
+
           $clone = $groupItems.last().clone(false, false);
           $clone = processNestedGroups($clone, nestingLevel, currentItemCount);
-          $groupItemsContainer.append($clone);
+          $clone.hide().appendTo($groupItemsContainer).slideDown(200);
         }
 
         updateRowCounts();
@@ -118,9 +121,14 @@
                inputName.slice(target.end);
       }
 
-      // Remove Row (with min_rows enforcement)
+      // === Remove Row (with confirmation and min_rows enforcement) ===
       $(document).on('click', '.cmb-group > .cmb-group-items > .cmb-group-item > .cmb-group-item-body > .cmb-remove-row', function(event) {
         event.preventDefault();
+
+        if (!confirm('Remove this item?')) {
+          return;
+        }
+
         const $removeRowButton = $(this);
         const $groupItem = $removeRowButton.closest('.cmb-group-item');
         const $container = $groupItem.parent('.cmb-group-items');
@@ -132,11 +140,18 @@
           return;
         }
 
-        $groupItem.remove();
-        updateRowCounts();
+        $groupItem.slideUp(200, function() {
+          $(this).remove();
+          updateRowCounts();
+
+          // Show empty state if no items remain
+          if ($container.children('.cmb-group-item').length === 0) {
+            $container.append('<div class="cmb-empty-state">No items yet. Click "Add Row" to add one.</div>');
+          }
+        });
       });
 
-      // Toggle group item (click + keyboard)
+      // === Toggle group item (click + keyboard) ===
       $(document).on('click keydown', '.cmb-group > .cmb-group-items > .cmb-group-item > .cmb-group-item-header', function(event) {
         if (event.type === 'keydown' && event.key !== 'Enter' && event.key !== ' ') {
           return;
@@ -149,13 +164,29 @@
         $header.attr('aria-expanded', $toggleElement.hasClass('open') ? 'true' : 'false');
       });
 
-      // Helper: update item count indicators
+      // === Expand All / Collapse All ===
+      $(document).on('click', '.cmb-expand-all', function(event) {
+        event.preventDefault();
+        const $group = $(this).closest('.cmb-input').find('.cmb-group').first();
+        $group.find('.cmb-group-item').addClass('open')
+              .children('.cmb-group-item-header').attr('aria-expanded', 'true');
+      });
+
+      $(document).on('click', '.cmb-collapse-all', function(event) {
+        event.preventDefault();
+        const $group = $(this).closest('.cmb-input').find('.cmb-group').first();
+        $group.find('.cmb-group-item').removeClass('open')
+              .children('.cmb-group-item-header').attr('aria-expanded', 'false');
+      });
+
+      // === Helper: update item count indicators ===
       function updateRowCounts() {
         $('.cmb-item-count').each(function() {
           const $counter = $(this);
           const $container = $counter.closest('.cmb-input').find('.cmb-group-items').first();
           if ($container.length) {
-            $counter.text($container.children('.cmb-group-item').length + ' items');
+            const count = $container.children('.cmb-group-item').length;
+            $counter.text(count + (count === 1 ? ' item' : ' items'));
           }
         });
       }

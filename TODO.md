@@ -207,89 +207,91 @@ Organized into phases with priority and complexity labels.
 
 ## Phase 4: UI/UX Improvements
 
-### 4.1 Fix CSS: toggle indicator icon syntax
+### 4.1 ~~Fix CSS: toggle indicator icon syntax~~ [x]
 - **File:** `assets/cmb-style.css:91-96`
 - **Problem:** `content: "\f140" / '' !important;` is invalid CSS syntax.
 - **Fix:** `content: "\f140"; font-family: dashicons;`
 - **Priority:** HIGH | **Complexity:** Low
 
-### 4.2 Fix CSS: `min-width: 450px` causes mobile overflow
+### 4.2 ~~Fix CSS: `min-width: 450px` causes mobile overflow~~ [x]
 - **File:** `assets/cmb-style.css:12`
 - **Problem:** Forces horizontal scroll on screens smaller than 450px.
 - **Fix:** Remove `min-width` or move it inside a min-width media query.
 - **Priority:** HIGH | **Complexity:** Low
 
-### 4.3 Consolidate duplicate `.cmb-remove-row` styles
+### 4.3 ~~Consolidate duplicate `.cmb-remove-row` styles~~ [x]
 - **File:** `assets/cmb-style.css:131-140` and `:156-167`
 - **Problem:** Two declarations for same class with conflicting `width` values.
 - **Fix:** Merge into one rule block.
 - **Priority:** LOW | **Complexity:** Low
 
-### 4.4 Consolidate duplicate `.cmb-add-row` styles
+### 4.4 ~~Consolidate duplicate `.cmb-add-row` styles~~ [x]
 - **File:** `assets/cmb-style.css:152-153` and `:173-185`
 - **Problem:** Two declarations for same class.
 - **Fix:** Merge into one rule block.
 - **Priority:** LOW | **Complexity:** Low
 
-### 4.5 Add delete confirmation dialog
+### 4.5 ~~Add delete confirmation dialog~~ [x]
 - **File:** `assets/cmb-script.js:151-161`
 - **Problem:** Clicking remove instantly deletes a group row with no confirmation.
 - **Fix:** Add `if (!confirm('Remove this item?')) return;` before removal.
 - **Priority:** HIGH | **Complexity:** Low
 
-### 4.6 Add visual feedback on add/remove
+### 4.6 ~~Add visual feedback on add/remove~~ [x]
 - **Problem:** No animation or feedback when rows are added or removed.
 - **Fix:** Use jQuery `fadeIn()`/`slideDown()` for added rows, `fadeOut()` for removed rows.
 - **Priority:** MEDIUM | **Complexity:** Low
 
-### 4.7 Add `:focus-visible` styles for keyboard accessibility
+### 4.7 ~~Add `:focus-visible` styles for keyboard accessibility~~ [x]
 - **File:** `assets/cmb-style.css`
 - **Problem:** No focus indicators on buttons (`.cmb-add-row`, `.cmb-remove-row`, group headers).
 - **Fix:** Add `outline: 2px solid #0073aa;` on `:focus-visible`.
 - **Priority:** HIGH | **Complexity:** Low
 
-### 4.8 Make group toggle keyboard-accessible
+### 4.8 ~~Make group toggle keyboard-accessible~~ [x]
 - **File:** `assets/cmb-script.js:163-171`
 - **Problem:** Toggle only works on click. No `tabindex`, no `role="button"`, no Enter/Space key handling.
 - **Fix:** Add `tabindex="0"` and `role="button"` to header HTML. Add `keydown` handler for Enter/Space.
 - **Priority:** HIGH | **Complexity:** Low
 
-### 4.9 Add `aria-label` to icon-only buttons
+### 4.9 ~~Add `aria-label` to icon-only buttons~~ [x]
 - **File:** `src/Fields/GroupField.php:49, 63`
 - **Problem:** Remove button (`x`) and toggle indicator have no accessible labels.
 - **Fix:** Add `aria-label="Remove item"` and `aria-label="Toggle group"`.
 - **Priority:** MEDIUM | **Complexity:** Low
 
-### 4.10 Add `aria-expanded` state to toggle
+### 4.10 ~~Add `aria-expanded` state to toggle~~ [x]
 - **Problem:** Screen readers don't know whether a group is expanded or collapsed.
 - **Fix:** Set `aria-expanded="true"` / `"false"` on the header, toggle in JS.
 - **Priority:** MEDIUM | **Complexity:** Low
 
-### 4.11 Add empty state message for groups
+### 4.11 ~~Add empty state message for groups~~ [x]
 - **Problem:** When all group items are removed, there's no indication of what to do next.
 - **Fix:** Show "No items yet. Click Add Row to begin." when group container is empty.
 - **Priority:** LOW | **Complexity:** Low
 
-### 4.12 Add Expand All / Collapse All buttons for groups
+### 4.12 ~~Add Expand All / Collapse All buttons for groups~~ [x]
 - **Problem:** With many group items, toggling each one individually is tedious.
 - **Fix:** Add "Expand All" / "Collapse All" links above the group items container.
 - **Priority:** LOW | **Complexity:** Low
 
-### 4.13 Add item count indicator
+### 4.13 ~~Add item count indicator~~ [x]
 - **Problem:** No way to see how many items exist without expanding/scrolling.
 - **Fix:** Show `"3 items"` next to the Add Row button.
 - **Priority:** LOW | **Complexity:** Low
 
-### 4.14 Fix `cursor: move` on group index without drag support
+### 4.14 ~~Fix `cursor: move` on group index without drag support~~ [x]
 - **File:** `assets/cmb-style.css:123`
 - **Problem:** The index column shows a drag cursor but dragging doesn't do anything.
 - **Fix:** Either implement sortable drag (Phase 6) or change to `cursor: default`.
 - **Priority:** LOW | **Complexity:** Low
 
-### 4.15 Add print stylesheet
+### 4.15 ~~Add print stylesheet~~ [x]
 - **Problem:** Action buttons (Add Row, Remove) appear when printing.
 - **Fix:** Add `@media print { .cmb-add-row, .cmb-remove-row { display: none; } }`.
 - **Priority:** LOW | **Complexity:** Low
+
+**Phase 4 Summary:** All 15 items completed. Rewrote CSS: fixed toggle icon syntax (dashicons font-family), removed min-width:450px mobile overflow, consolidated duplicate .cmb-remove-row/.cmb-add-row rules, changed cursor:move to cursor:default on group index. Added delete confirmation dialog, slide/fade animations on add/remove, :focus-visible keyboard accessibility styles, keyboard Enter/Space on group toggle headers (role=button, tabindex=0), aria-label on remove button, aria-expanded toggle state, empty state message when all items removed, Expand All/Collapse All links, item count indicator, print stylesheet hiding controls.
 
 ---
 
