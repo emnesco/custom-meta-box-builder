@@ -7,8 +7,7 @@ class CheckboxField extends AbstractField {
     public function render(): string {
         $value = $this->getValue();
         $checked = checked(in_array($value, [true, 'true', 1, '1'], true), true, false);
-        return '<label><input type="checkbox" name="' . esc_attr($this->getId()) . '" value="1" ' . $checked . ' />' . esc_html($this->getLabel()) . '</label>' .
-               '';
+        return '<label><input type="checkbox" name="' . esc_attr($this->getName()) . '" value="1" ' . $checked . ' />' . esc_html($this->getLabel()) . '</label>';
     }
 
     public function sanitize($value) {

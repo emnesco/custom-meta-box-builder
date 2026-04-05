@@ -9,8 +9,11 @@ class TextField extends AbstractField {
         $attrs = $this->renderAttributes();
         $output = '';
         if (isset($this->config['repeat']) && $this->config['repeat'] === true) {
-            foreach ($value as $key => $valu) {
-                $output .= '<input type="text" name="' . esc_attr($this->getName()) . '" value="' . esc_attr($valu ?? '') . '"' . $attrs . '>';
+            if (empty($value)) {
+                $value = [''];
+            }
+            foreach ($value as $val) {
+                $output .= '<input type="text" name="' . esc_attr($this->getName()) . '" value="' . esc_attr($val ?? '') . '"' . $attrs . '>';
             }
         } else {
             $output .= '<input type="text" name="' . esc_attr($this->getName()) . '" value="' . esc_attr($value ?? '') . '"' . $attrs . '>';

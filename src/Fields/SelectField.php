@@ -6,8 +6,7 @@ use CMB\Core\Contracts\Abstracts\AbstractField;
 class SelectField extends AbstractField {
     public function render(): string {
         $value = $this->getValue();
-        $output = '<label>' . esc_html($this->getLabel()) . '</label>';
-        $output .= '<select name="' . esc_attr($this->getId()) . '">';
+        $output = '<select name="' . esc_attr($this->getName()) . '"' . $this->renderAttributes() . '>';
 
         foreach ($this->config['options'] ?? [] as $key => $label) {
             $selected = selected($value, $key, false);

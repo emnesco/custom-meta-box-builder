@@ -69,7 +69,6 @@ class FieldRenderer {
             $value = $this->get_field_value($this->post->ID, $field);
         }
 
-        $layout = isset($field['layout']) ? 'cmb-'.$field['layout'] : 'cmb-horizontal';
         $parent_is_array = is_array($parent);
         $repeat = (isset($field['repeat']) && $field['repeat'] === true || ($parent_is_array && isset($parent['repeat']) && $parent['repeat'] === true)) ? 'cmb-repeat' : '';
 
@@ -96,7 +95,7 @@ class FieldRenderer {
 
         $output = '<div class="cmb-field ' . $layout . ' cmb-type-'.$field['type'].' ' . $repeat . ' '.$width.'">';
             $output .= '<div class="cmb-label">';
-                $output .= esc_html($field['label'] ?? '') . '</label>';
+                $output .= '<label>' . esc_html($field['label'] ?? '') . '</label>';
             $output .= '</div>';
             $output .= '<div class="cmb-input">';
                 $output .= $instance->render();
@@ -115,7 +114,11 @@ class FieldRenderer {
 
     private function get_field_value($post_id, $field) {
         if ($field['type'] === 'group' || (isset($field['repeat']) && $field['repeat'] === true)) {
-            return get_post_meta($post_id, $field['id']) ? : array(0);
+            $meta = get_post_meta($post_id, $field['id']);
+            if (!empty($meta)) {
+                return $meta;
+            }
+            return $field['type'] === 'group' ? [[]] : [''];
         }
         return get_post_meta($post_id, $field['id'], true);
     }

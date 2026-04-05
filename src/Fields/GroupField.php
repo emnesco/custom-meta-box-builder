@@ -17,7 +17,7 @@ class GroupField extends AbstractField {
         $name = $this->getName();
         $field = $this->config;
 
-        $collapsed = isset($field['collapsed']) && $field['collapsed'] === true ? 'open' : 'open';
+        $collapsed = isset($field['collapsed']) && $field['collapsed'] === true ? '' : 'open';
         $output = '';
         $output .=  '<div class="cmb-group">';
         $output .=  '<div class="cmb-group-items">';
