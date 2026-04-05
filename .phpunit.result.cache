@@ -1,0 +1,1 @@
+{"version":2,"defects":{"PluginTest::testPluginBoots":5,"TextFieldTest::testRenderTextFieldOutputsInput":7},"times":{"MetaBoxManagerTest::testSingletonReturnsSameInstance":0.002,"MetaBoxManagerTest::testCanAddMetaBox":0.001,"PluginTest::testPluginBoots":0,"TextFieldTest::testRenderTextFieldOutputsInput":0.001,"TextFieldTest::testSanitizeTextField":0}}

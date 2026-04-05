@@ -145,31 +145,31 @@ Organized into phases with priority and complexity labels.
 
 ## Phase 3: Improve Existing Features
 
-### 3.1 Add `default` value support
+### 3.1 ~~Add `default` value support~~ [x]
 - **Problem:** No way to set a default value that shows when post meta is empty.
 - **Fix:** Check for `'default'` key in `AbstractField::getValue()` and `FieldRenderer::get_field_value()`.
 - **Config:** `'default' => 'Draft'`
 - **Priority:** HIGH | **Complexity:** Low
 
-### 3.2 Add meta box `context` and `priority` options
+### 3.2 ~~Add meta box `context` and `priority` options~~ [x]
 - **File:** `src/Core/MetaBoxManager.php:20`
 - **Problem:** `add_meta_box()` is called without context/priority, defaulting to `'advanced'`/`'default'`.
 - **Fix:** Accept `'context'` and `'priority'` in the meta box config and pass to `add_meta_box()`.
 - **Config:** `add_custom_meta_box($id, $title, $postTypes, $fields, 'side', 'high')`
 - **Priority:** HIGH | **Complexity:** Low
 
-### 3.3 Add `required` field validation
+### 3.3 ~~Add `required` field validation~~ [x]
 - **Problem:** No way to mark fields as required or validate before save.
 - **Fix:** Add `'required' => true` config key. Render `required` HTML attribute. Add server-side validation in `saveMetaBoxData()` with admin notices for errors.
 - **Priority:** HIGH | **Complexity:** Medium
 
-### 3.4 Add proper HTML `id` attributes and label association
+### 3.4 ~~Add proper HTML `id` attributes and label association~~ [x]
 - **File:** `src/Core/FieldRenderer.php:82-84`
 - **Problem:** Both `id` and `name` config are set to the resolved name (with brackets), which is invalid as an HTML `id`. Labels have no `for` attribute.
 - **Fix:** Generate a sanitized HTML `id` (replace brackets with hyphens), add `for` attribute to labels.
 - **Priority:** MEDIUM | **Complexity:** Medium
 
-### 3.5 Add field validation system
+### 3.5 ~~Add field validation system~~ [x]
 - **Problem:** Only sanitization exists, no validation with user-facing error messages.
 - **Implementation:**
   - `'validate' => ['required', 'email']` or `'validate' => ['min:3', 'max:100']`
@@ -177,29 +177,31 @@ Organized into phases with priority and complexity labels.
   - Collect errors in `saveMetaBoxData()` and show via `admin_notices`
 - **Priority:** HIGH | **Complexity:** High
 
-### 3.6 Add `sanitize_callback` override per field
+### 3.6 ~~Add `sanitize_callback` override per field~~ [x]
 - **Problem:** Sanitization is hardcoded per field type. No way to customize without extending.
 - **Fix:** If `'sanitize_callback'` is set in field config, use it instead of the default.
 - **Config:** `'sanitize_callback' => 'my_custom_sanitizer'`
 - **Priority:** MEDIUM | **Complexity:** Low
 
-### 3.7 Add `max_rows` / `min_rows` for repeaters
+### 3.7 ~~Add `max_rows` / `min_rows` for repeaters~~ [x]
 - **Problem:** No limit on how many rows can be added to repeatable fields.
 - **Fix:** Add config keys, enforce in JS (disable Add button) and PHP (server-side trim).
 - **Config:** `'min_rows' => 1, 'max_rows' => 10`
 - **Priority:** MEDIUM | **Complexity:** Medium
 
-### 3.8 Performance: bulk meta fetch instead of per-field queries
+### 3.8 ~~Performance: bulk meta fetch instead of per-field queries~~ [x]
 - **File:** `src/Core/FieldRenderer.php:116-121`
 - **Problem:** Each field triggers a separate `get_post_meta()` call. 20 fields = 20 queries.
 - **Fix:** Fetch all post meta once with `get_post_meta($post_id)` (no key) and look up from that.
 - **Priority:** MEDIUM | **Complexity:** Medium
 
-### 3.9 Add type declarations and null safety
+### 3.9 ~~Add type declarations and null safety~~ [x]
 - **Files:** Multiple across `src/`
 - **Problem:** Missing return types on `FieldInterface::sanitize()` and `getValue()`, missing parameter types, inconsistent null handling.
 - **Fix:** Add PHP 8 type declarations throughout.
 - **Priority:** LOW | **Complexity:** Medium
+
+**Phase 3 Summary:** All 9 items completed. Added default value support in AbstractField::getValue(), context/priority params to add_custom_meta_box() and add_meta_box(), required field validation with HTML required attr + red asterisk + server-side validation, proper HTML id generation (cmb-* prefix, bracket-safe) with label for association, full validation system (required/email/url/min/max/numeric/pattern rules) via validate() method on FieldInterface, sanitize_callback override per field, min_rows/max_rows for repeaters (JS enforcement + PHP array_slice), bulk meta fetch via metaCache in FieldRenderer, PHP 8 type declarations (mixed) on FieldInterface and all field classes.
 
 ---
 

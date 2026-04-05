@@ -46,6 +46,8 @@ if (!function_exists('add_action')) {
     function register_post_meta(...$args) {}
     function get_post($id = null) { return null; }
     function get_the_ID() { return 0; }
+    function is_serialized($data) { return false; }
+    function maybe_unserialize($data) { return $data; }
 }
 
 if (!defined('DOING_AUTOSAVE')) {

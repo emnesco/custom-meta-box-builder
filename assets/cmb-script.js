@@ -3,57 +3,58 @@
 
     $(document).ready(function() {
 
+      // Add Row
       $(document).on('click', '.cmb-repeat > .cmb-input > .cmb-add-row', function(event) {
         event.preventDefault();
 
         const $addRowButton = $(this);
+
+        // Enforce max_rows
+        const maxRows = $addRowButton.data('max-rows');
         const $repeatedField = $addRowButton.closest('.cmb-input');
         const $groupItemsContainer = $repeatedField.find('.cmb-group-items').first();
         const $groupItems = $groupItemsContainer.children('.cmb-group-item');
+        const currentItemCount = $groupItems.length;
+
+        if (maxRows && currentItemCount >= maxRows) {
+          return;
+        }
+
         const $parentGroups = $repeatedField.parents('.cmb-group');
         const nestingLevel = $parentGroups.length;
-        const currentItemCount = $groupItems.length;
 
         let $clone;
 
         if ($groupItemsContainer.length === 0) {
+          // Flat repeatable field (no group container)
           const $inputs = $repeatedField.find(':input');
           const inputCount = $inputs.length;
           const $lastInput = $inputs.last();
           $clone = $lastInput.clone(false, false);
 
           $clone = processField($clone, inputCount);
-
           $clone.insertAfter($lastInput);
         } else {
           $clone = $groupItems.last().clone(false, false);
           $clone = processNestedGroups($clone, nestingLevel, currentItemCount);
-
           $groupItemsContainer.append($clone);
         }
+
+        updateRowCounts();
       });
 
       function processField($clone, currentItemCount) {
         let name = $clone.attr('name');
         if (name) {
-          // For bracket-indexed names like field[0], increment the index
           const bracketMatch = name.match(/^(.+)\[(\d+)\]$/);
           if (bracketMatch) {
             $clone.attr('name', bracketMatch[1] + '[' + currentItemCount + ']');
           }
-          // For names ending with [], keep as-is (server handles array append)
         }
         $clone.val('');
         return $clone;
       }
 
-      /**
-      * Processes nested groups recursively, updating input names based on nesting level.
-      * @param {jQuery} $clone - Cloned group item.
-      * @param {number} nestingLevel - The current nesting level (starts at 1 for the top-level group).
-      * @param {number} parentItemIndex - Index of the new item being added in the parent group.
-      * @returns {jQuery} Modified clone.
-      */
       function processNestedGroups($clone, nestingLevel, parentItemIndex) {
         $clone.find(':input').each(function() {
           const $input = $(this);
@@ -85,16 +86,13 @@
           }
         });
 
+        // Update aria-expanded on header
+        const $header = $clone.children('.cmb-group-item-header');
+        $header.attr('aria-expanded', $clone.hasClass('open') ? 'true' : 'false');
+
         return $clone;
       }
 
-      /**
-      * Updates input name attribute for nested groups, targeting replacement by level.
-      * @param {string} inputName - Original input name.
-      * @param {number} nestingLevel - Current nesting level.
-      * @param {number} currentItemIndex - Index of the new item.
-      * @returns {string} Updated input name.
-      */
       function updateNestedGroupName(inputName, nestingLevel, currentItemIndex) {
         const regex = /\[(\d+)\]/g;
         const matches = [];
@@ -120,21 +118,47 @@
                inputName.slice(target.end);
       }
 
+      // Remove Row (with min_rows enforcement)
       $(document).on('click', '.cmb-group > .cmb-group-items > .cmb-group-item > .cmb-group-item-body > .cmb-remove-row', function(event) {
         event.preventDefault();
         const $removeRowButton = $(this);
-        const $repeatedField = $removeRowButton.closest('.cmb-group-item');
+        const $groupItem = $removeRowButton.closest('.cmb-group-item');
+        const $container = $groupItem.parent('.cmb-group-items');
 
-        $repeatedField.remove();
+        // Enforce min_rows
+        const $addRow = $container.closest('.cmb-input').find('.cmb-add-row').first();
+        const minRows = $addRow.data('min-rows') || 0;
+        if ($container.children('.cmb-group-item').length <= minRows) {
+          return;
+        }
+
+        $groupItem.remove();
+        updateRowCounts();
       });
 
-      $(document).on('click', '.cmb-group > .cmb-group-items > .cmb-group-item > .cmb-group-item-header', function(event) {
+      // Toggle group item (click + keyboard)
+      $(document).on('click keydown', '.cmb-group > .cmb-group-items > .cmb-group-item > .cmb-group-item-header', function(event) {
+        if (event.type === 'keydown' && event.key !== 'Enter' && event.key !== ' ') {
+          return;
+        }
         event.preventDefault();
-        const $toggleButton = $(this);
-        const $toggleElement = $toggleButton.parent('.cmb-group-item');
+        const $header = $(this);
+        const $toggleElement = $header.parent('.cmb-group-item');
 
         $toggleElement.toggleClass('open');
+        $header.attr('aria-expanded', $toggleElement.hasClass('open') ? 'true' : 'false');
       });
+
+      // Helper: update item count indicators
+      function updateRowCounts() {
+        $('.cmb-item-count').each(function() {
+          const $counter = $(this);
+          const $container = $counter.closest('.cmb-input').find('.cmb-group-items').first();
+          if ($container.length) {
+            $counter.text($container.children('.cmb-group-item').length + ' items');
+          }
+        });
+      }
     });
 
   })(jQuery);

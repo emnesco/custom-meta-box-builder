@@ -5,6 +5,7 @@ use CMB\Core\Contracts\FieldInterface;
 class MetaBoxManager {
     private array $metaBoxes = [];
     private static ?MetaBoxManager $instance = null;
+    private array $validationErrors = [];
 
     public static function instance(): self {
         if (self::$instance === null) {
@@ -17,30 +18,44 @@ class MetaBoxManager {
         add_action('add_meta_boxes', [$this, 'addMetaBoxes']);
         add_action('save_post', [$this, 'saveMetaBoxData']);
         add_action('delete_post', [$this, 'deletePostMetaData']);
+        add_action('admin_notices', [$this, 'showValidationErrors']);
     }
 
-    public function add(string $id, string $title, array $postTypes, array $fields): void {
-        $this->metaBoxes[$id] = compact('title', 'postTypes', 'fields');
+    public function add(
+        string $id,
+        string $title,
+        array $postTypes,
+        array $fields,
+        string $context = 'advanced',
+        string $priority = 'default'
+    ): void {
+        $this->metaBoxes[$id] = compact('title', 'postTypes', 'fields', 'context', 'priority');
     }
 
     public function addMetaBoxes(): void {
         foreach ($this->metaBoxes as $id => $metaBox) {
             foreach ($metaBox['postTypes'] as $postType) {
-                add_meta_box($id, $metaBox['title'], function ($post) use ($id, $metaBox) {
-                    $fieldRenderer = new FieldRenderer($post);
-                    echo '<div class="cmb-container cmb-fields">';
-                    foreach ($metaBox['fields'] as $field) {
-                        // Clone to avoid mutating original config
-                        $fieldCopy = $field;
-                        if (isset($fieldCopy['fields']) && $fieldCopy['type'] === 'group' && !isset($fieldCopy['repeat'])) {
-                            $fieldCopy['repeat'] = true;
-                            $fieldCopy['repeat_fake'] = true;
+                add_meta_box(
+                    $id,
+                    $metaBox['title'],
+                    function ($post) use ($id, $metaBox) {
+                        $fieldRenderer = new FieldRenderer($post);
+                        echo '<div class="cmb-container cmb-fields">';
+                        foreach ($metaBox['fields'] as $field) {
+                            $fieldCopy = $field;
+                            if (isset($fieldCopy['fields']) && $fieldCopy['type'] === 'group' && !isset($fieldCopy['repeat'])) {
+                                $fieldCopy['repeat'] = true;
+                                $fieldCopy['repeat_fake'] = true;
+                            }
+                            echo $fieldRenderer->render($fieldCopy);
                         }
-                        echo $fieldRenderer->render($fieldCopy);
-                    }
-                    echo '</div>';
-                    wp_nonce_field('cmb_save_' . $id, 'cmb_nonce_' . $id);
-                }, $postType);
+                        echo '</div>';
+                        wp_nonce_field('cmb_save_' . $id, 'cmb_nonce_' . $id);
+                    },
+                    $postType,
+                    $metaBox['context'],
+                    $metaBox['priority']
+                );
             }
         }
     }
@@ -72,7 +87,25 @@ class MetaBoxManager {
         /** @var FieldInterface $instance */
         $instance = new $fieldClass($field);
         $raw = $_POST[$fieldId] ?? '';
-        $sanitized = $this->sanitizeFieldValue($instance, $field, $raw);
+
+        // Validate
+        $errors = $instance->validate($raw);
+        if (!empty($errors)) {
+            $this->validationErrors = array_merge($this->validationErrors, $errors);
+            return;
+        }
+
+        // Sanitize (support custom callback)
+        if (!empty($field['sanitize_callback']) && is_callable($field['sanitize_callback'])) {
+            $sanitized = call_user_func($field['sanitize_callback'], $raw);
+        } else {
+            $sanitized = $this->sanitizeFieldValue($instance, $field, $raw);
+        }
+
+        // Enforce max_rows
+        if (is_array($sanitized) && isset($field['max_rows'])) {
+            $sanitized = array_slice($sanitized, 0, (int)$field['max_rows']);
+        }
 
         delete_post_meta($postId, $fieldId);
         if (is_array($sanitized)) {
@@ -84,19 +117,13 @@ class MetaBoxManager {
         }
     }
 
-    /**
-     * Recursively sanitize field values, using proper field classes for nested groups.
-     */
-    private function sanitizeFieldValue(FieldInterface $instance, array $field, $raw) {
+    private function sanitizeFieldValue(FieldInterface $instance, array $field, mixed $raw): mixed {
         if ($field['type'] === 'group' && is_array($raw) && !empty($field['fields'])) {
             return $this->sanitizeGroupValue($field, $raw);
         }
         return $instance->sanitize($raw);
     }
 
-    /**
-     * Sanitize group values by instantiating each sub-field's class.
-     */
     private function sanitizeGroupValue(array $field, array $rawGroups): array {
         $sanitized = [];
         foreach ($rawGroups as $index => $groupData) {
@@ -113,7 +140,11 @@ class MetaBoxManager {
                     continue;
                 }
                 $subInstance = new $subClass($subField);
-                if ($subField['type'] === 'group' && is_array($subRaw) && !empty($subField['fields'])) {
+
+                // Use custom sanitize_callback if set on sub-field
+                if (!empty($subField['sanitize_callback']) && is_callable($subField['sanitize_callback'])) {
+                    $sanitizedGroup[$subId] = call_user_func($subField['sanitize_callback'], $subRaw);
+                } elseif ($subField['type'] === 'group' && is_array($subRaw) && !empty($subField['fields'])) {
                     $sanitizedGroup[$subId] = $this->sanitizeGroupValue($subField, $subRaw);
                 } else {
                     $sanitizedGroup[$subId] = $subInstance->sanitize($subRaw);
@@ -145,5 +176,17 @@ class MetaBoxManager {
                 delete_post_meta($postId, $field['id']);
             }
         }
+    }
+
+    public function showValidationErrors(): void {
+        if (empty($this->validationErrors)) {
+            return;
+        }
+        echo '<div class="notice notice-error is-dismissible"><p><strong>Meta Box Validation Errors:</strong></p><ul>';
+        foreach ($this->validationErrors as $error) {
+            echo '<li>' . esc_html($error) . '</li>';
+        }
+        echo '</ul></div>';
+        $this->validationErrors = [];
     }
 }

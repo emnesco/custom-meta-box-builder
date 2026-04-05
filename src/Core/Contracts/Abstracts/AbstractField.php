@@ -4,84 +4,104 @@ namespace CMB\Core\Contracts\Abstracts;
 
 use CMB\Core\Contracts\FieldInterface;
 
-/**
- * Class AbstractField
- * * Provides a base implementation for configuration-driven fields.
- * * @package CMB\Core\Contracts\Abstracts
- */
 abstract class AbstractField implements FieldInterface {
 
-    /**
-     * Internal configuration storage.
-     * @var array
-     */
     protected array $config;
 
-    /**
-     * AbstractField constructor.
-     * * @param array $config Configuration array containing field settings.
-     */
     public function __construct(array $config) {
         $this->config = $config;
     }
 
-    /**
-     * Retrieves the field name.
-     * * @return string The field name or an empty string if not set.
-     */
     public function getName(): string {
         return $this->config['name'] ?? '';
     }
 
-    /**
-     * Retrieves the field unique ID.
-     * * @return string The field ID or an empty string if not set.
-     */
     public function getId(): string {
         return $this->config['id'] ?? '';
     }
 
-    /**
-     * Retrieves the field display label.
-     * * @return string The field label or an empty string if not set.
-     */
     public function getLabel(): string {
         return $this->config['label'] ?? '';
     }
 
-    /**
-     * Resolves the current value of the field.
-     * * If a value is explicitly set in config, it is returned. 
-     * Otherwise, it returns an empty array for group/repeater types 
-     * or null for standard fields.
-     * * @return mixed Array for collections, mixed value, or null.
-     */
-    public function getValue() {
-        // Return existing value if it is provided and not empty
+    public function getValue(): mixed {
         if (!empty($this->config['value'])) {
             return $this->config['value'];
         }
 
-        /**
-         * Determine the fallback return type.
-         * A "collection" is defined as a group field or a field marked as repeatable.
-         */
+        // Return default value if set
+        if (isset($this->config['default'])) {
+            return $this->config['default'];
+        }
+
         $isCollection = (
             ($this->config['type'] ?? '') === 'group' ||
-            (isset($this->config['repeat']) && $this->config['repeat'] ?? false) === true
+            ($this->config['repeat'] ?? false) === true
         );
 
         return $isCollection ? [] : null;
     }
 
     /**
-     * Renders extra HTML attributes from the 'attributes' config key.
-     * Supports any key-value pairs; values are escaped with esc_attr().
-     *
-     * @return string Space-prefixed attribute string, or empty string.
+     * Validate a value against field rules. Returns array of error messages (empty = valid).
      */
-    protected function renderAttributes(): string
-    {
+    public function validate(mixed $value): array {
+        $errors = [];
+        $rules = $this->config['validate'] ?? [];
+
+        if (!empty($this->config['required']) && !in_array('required', $rules, true)) {
+            array_unshift($rules, 'required');
+        }
+
+        foreach ($rules as $rule) {
+            $parts = explode(':', $rule, 2);
+            $ruleName = $parts[0];
+            $ruleParam = $parts[1] ?? null;
+            $label = $this->getLabel() ?: $this->getId();
+
+            switch ($ruleName) {
+                case 'required':
+                    if ($value === '' || $value === null || $value === []) {
+                        $errors[] = sprintf('%s is required.', $label);
+                    }
+                    break;
+                case 'email':
+                    if ($value !== '' && !filter_var($value, FILTER_VALIDATE_EMAIL)) {
+                        $errors[] = sprintf('%s must be a valid email address.', $label);
+                    }
+                    break;
+                case 'url':
+                    if ($value !== '' && !filter_var($value, FILTER_VALIDATE_URL)) {
+                        $errors[] = sprintf('%s must be a valid URL.', $label);
+                    }
+                    break;
+                case 'min':
+                    if ($ruleParam !== null && strlen((string)$value) < (int)$ruleParam) {
+                        $errors[] = sprintf('%s must be at least %s characters.', $label, $ruleParam);
+                    }
+                    break;
+                case 'max':
+                    if ($ruleParam !== null && strlen((string)$value) > (int)$ruleParam) {
+                        $errors[] = sprintf('%s must be no more than %s characters.', $label, $ruleParam);
+                    }
+                    break;
+                case 'numeric':
+                    if ($value !== '' && !is_numeric($value)) {
+                        $errors[] = sprintf('%s must be a number.', $label);
+                    }
+                    break;
+                case 'pattern':
+                    if ($ruleParam !== null && $value !== '' && !preg_match('/' . $ruleParam . '/', (string)$value)) {
+                        $errors[] = sprintf('%s format is invalid.', $label);
+                    }
+                    break;
+            }
+        }
+
+        return $errors;
+    }
+
+    protected function renderAttributes(): string {
         $attrs = $this->config['attributes'] ?? [];
         if (empty($attrs) || !is_array($attrs)) {
             return '';
@@ -91,5 +111,13 @@ abstract class AbstractField implements FieldInterface {
             $html .= ' ' . esc_attr($attr) . '="' . esc_attr((string) $val) . '"';
         }
         return $html;
+    }
+
+    protected function isRequired(): bool {
+        return !empty($this->config['required']);
+    }
+
+    protected function requiredAttr(): string {
+        return $this->isRequired() ? ' required' : '';
     }
 }

@@ -6,7 +6,9 @@ use CMB\Core\Contracts\Abstracts\AbstractField;
 class SelectField extends AbstractField {
     public function render(): string {
         $value = $this->getValue();
-        $output = '<select name="' . esc_attr($this->getName()) . '"' . $this->renderAttributes() . '>';
+        $htmlId = $this->config['html_id'] ?? '';
+        $id_attr = $htmlId ? ' id="' . esc_attr($htmlId) . '"' : '';
+        $output = '<select name="' . esc_attr($this->getName()) . '"' . $id_attr . $this->renderAttributes() . $this->requiredAttr() . '>';
 
         foreach ($this->config['options'] ?? [] as $key => $label) {
             $selected = selected($value, $key, false);
@@ -17,7 +19,7 @@ class SelectField extends AbstractField {
         return $output;
     }
 
-    public function sanitize($value) {
+    public function sanitize(mixed $value): mixed {
         if (is_array($value)) {
             return array_map([$this, 'sanitize'], $value);
         }
