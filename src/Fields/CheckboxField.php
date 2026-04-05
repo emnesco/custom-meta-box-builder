@@ -1,4 +1,10 @@
 <?php
+/**
+ * Checkbox field type — renders a single boolean toggle.
+ *
+ * @package CustomMetaBoxBuilder
+ * @since   2.0
+ */
 namespace CMB\Fields;
 
 use CMB\Core\Contracts\Abstracts\AbstractField;

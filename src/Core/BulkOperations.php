@@ -1,4 +1,10 @@
 <?php
+/**
+ * Bulk meta operations — set, delete, and export across multiple posts.
+ *
+ * @package CustomMetaBoxBuilder
+ * @since   2.0
+ */
 namespace CMB\Core;
 
 /**

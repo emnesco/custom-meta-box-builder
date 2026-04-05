@@ -1,4 +1,10 @@
 <?php
+/**
+ * Hidden field type — renders a hidden input.
+ *
+ * @package CustomMetaBoxBuilder
+ * @since   2.0
+ */
 namespace CMB\Fields;
 
 use CMB\Core\Contracts\Abstracts\AbstractField;

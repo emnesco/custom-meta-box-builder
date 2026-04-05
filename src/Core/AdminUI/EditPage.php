@@ -1,4 +1,10 @@
 <?php
+/**
+ * Admin edit page — renders the meta box configuration editor.
+ *
+ * @package CustomMetaBoxBuilder
+ * @since   2.0
+ */
 namespace CMB\Core\AdminUI;
 
 class EditPage {

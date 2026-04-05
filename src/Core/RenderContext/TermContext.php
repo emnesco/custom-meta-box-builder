@@ -1,4 +1,10 @@
 <?php
+/**
+ * Term render context implementation.
+ *
+ * @package CustomMetaBoxBuilder
+ * @since   2.0
+ */
 namespace CMB\Core\RenderContext;
 
 use CMB\Core\Storage\StorageInterface;

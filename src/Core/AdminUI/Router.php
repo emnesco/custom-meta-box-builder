@@ -1,4 +1,10 @@
 <?php
+/**
+ * Admin page router — registers menu pages, enqueues assets, dispatches actions.
+ *
+ * @package CustomMetaBoxBuilder
+ * @since   2.0
+ */
 namespace CMB\Core\AdminUI;
 
 class Router {

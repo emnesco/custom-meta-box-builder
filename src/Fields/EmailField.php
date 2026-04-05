@@ -1,4 +1,10 @@
 <?php
+/**
+ * Email field type — renders an email input with sanitization.
+ *
+ * @package CustomMetaBoxBuilder
+ * @since   2.0
+ */
 namespace CMB\Fields;
 
 use CMB\Core\Contracts\Abstracts\AbstractField;

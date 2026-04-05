@@ -1,4 +1,10 @@
 <?php
+/**
+ * AND/OR location rule matching for conditional meta box display.
+ *
+ * @package CustomMetaBoxBuilder
+ * @since   2.0
+ */
 namespace CMB\Core;
 
 class LocationMatcher {

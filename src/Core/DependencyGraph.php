@@ -1,4 +1,10 @@
 <?php
+/**
+ * Dependency resolution and topological sorting for field configurations.
+ *
+ * @package CustomMetaBoxBuilder
+ * @since   2.0
+ */
 namespace CMB\Core;
 
 /**

@@ -1,4 +1,10 @@
 <?php
+/**
+ * Settings page registration and option field management.
+ *
+ * @package CustomMetaBoxBuilder
+ * @since   2.0
+ */
 namespace CMB\Core;
 
 use CMB\Core\RenderContext\OptionContext;

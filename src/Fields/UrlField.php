@@ -1,4 +1,10 @@
 <?php
+/**
+ * URL field type — renders a URL input with esc_url sanitization.
+ *
+ * @package CustomMetaBoxBuilder
+ * @since   2.0
+ */
 namespace CMB\Fields;
 
 use CMB\Core\Contracts\Abstracts\AbstractField;

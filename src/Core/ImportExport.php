@@ -1,4 +1,10 @@
 <?php
+/**
+ * JSON import/export of meta box configurations.
+ *
+ * @package CustomMetaBoxBuilder
+ * @since   2.0
+ */
 namespace CMB\Core;
 
 /**

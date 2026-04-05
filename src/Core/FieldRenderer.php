@@ -1,4 +1,10 @@
 <?php
+/**
+ * Renders individual fields with layout, conditionals, validation, and multilingual support.
+ *
+ * @package CustomMetaBoxBuilder
+ * @since   2.0
+ */
 namespace CMB\Core;
 
 use CMB\Core\Contracts\FieldInterface;
@@ -68,8 +74,15 @@ class FieldRenderer {
     }
 
     public function render(array $field, mixed $value = null, int $index = 0, mixed $parent = []): string {
-        // Hook: cmb_field_config filter — allows modifying field config before render.
-        $field = apply_filters('cmb_field_config', $field, $this->context->getObjectId());
+        /**
+         * Filters the field configuration array before rendering.
+         *
+         * @since 2.0
+         *
+         * @param array    $field    The field configuration array.
+         * @param int|string $objectId The current object ID (post, term, user, or option name).
+         */
+        $field = FieldUtils::applyFilters('field_config', $field, $this->context->getObjectId());
 
         $name = $this->getname($field, $index, $parent);
 
@@ -131,8 +144,15 @@ class FieldRenderer {
         // Resolve the object to pass to hooks — WP_Post for post context, objectId otherwise.
         $hookObject = $this->getHookObject();
 
-        // Hook: cmb_before_render_field (7.1)
-        do_action('cmb_before_render_field', $field, $hookObject);
+        /**
+         * Fires before a field is rendered.
+         *
+         * @since 2.0
+         *
+         * @param array          $field      The field configuration array.
+         * @param \WP_Post|int|string $hookObject The post object (post context) or object ID.
+         */
+        FieldUtils::doAction('before_render_field', $field, $hookObject);
 
         // Validation data attributes for client-side validation
         $validationAttrs = '';
@@ -190,11 +210,26 @@ class FieldRenderer {
             $output .= '</div>';
          $output .= '</div>';
 
-        // Hook: cmb_field_html filter (7.1)
-        $output = apply_filters('cmb_field_html', $output, $field, $hookObject);
+        /**
+         * Filters the complete HTML output of a rendered field.
+         *
+         * @since 2.0
+         *
+         * @param string         $output     The field HTML markup.
+         * @param array          $field      The field configuration array.
+         * @param \WP_Post|int|string $hookObject The post object (post context) or object ID.
+         */
+        $output = FieldUtils::applyFilters('field_html', $output, $field, $hookObject);
 
-        // Hook: cmb_after_render_field (7.1)
-        do_action('cmb_after_render_field', $field, $hookObject);
+        /**
+         * Fires after a field is rendered.
+         *
+         * @since 2.0
+         *
+         * @param array          $field      The field configuration array.
+         * @param \WP_Post|int|string $hookObject The post object (post context) or object ID.
+         */
+        FieldUtils::doAction('after_render_field', $field, $hookObject);
 
         return $output;
     }
@@ -308,8 +343,16 @@ class FieldRenderer {
             $val = self::safeUnserialize($val);
         }
 
-        // Hook: cmb_field_value filter (7.1)
-        return apply_filters('cmb_field_value', $val, $key, $objectId);
+        /**
+         * Filters a field value after retrieval from storage.
+         *
+         * @since 2.0
+         *
+         * @param mixed      $val      The retrieved field value.
+         * @param string     $key      The field key / meta key.
+         * @param int|string $objectId The object ID (post, term, user, or option name).
+         */
+        return FieldUtils::applyFilters('field_value', $val, $key, $objectId);
     }
 
     /**

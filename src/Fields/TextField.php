@@ -1,4 +1,10 @@
 <?php
+/**
+ * Text field type — renders a single-line text input.
+ *
+ * @package CustomMetaBoxBuilder
+ * @since   2.0
+ */
 namespace CMB\Fields;
 
 use CMB\Core\Contracts\Abstracts\AbstractField;

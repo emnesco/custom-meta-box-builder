@@ -1,4 +1,10 @@
 <?php
+/**
+ * Post meta storage implementation.
+ *
+ * @package CustomMetaBoxBuilder
+ * @since   2.0
+ */
 namespace CMB\Core\Storage;
 
 class PostMetaStorage implements StorageInterface {

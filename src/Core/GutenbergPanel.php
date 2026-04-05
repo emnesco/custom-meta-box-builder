@@ -1,4 +1,10 @@
 <?php
+/**
+ * Gutenberg document sidebar panel for CMB fields.
+ *
+ * @package CustomMetaBoxBuilder
+ * @since   2.0
+ */
 namespace CMB\Core;
 
 /**

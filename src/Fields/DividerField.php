@@ -1,4 +1,10 @@
 <?php
+/**
+ * Divider field type — renders an HR separator with no data storage.
+ *
+ * @package CustomMetaBoxBuilder
+ * @since   2.0
+ */
 namespace CMB\Fields;
 
 use CMB\Core\Contracts\Abstracts\AbstractField;

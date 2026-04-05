@@ -1,4 +1,10 @@
 <?php
+/**
+ * Group field type — renders repeatable/non-repeatable sub-field groups.
+ *
+ * @package CustomMetaBoxBuilder
+ * @since   2.0
+ */
 namespace CMB\Fields;
 
 use CMB\Core\Contracts\Abstracts\AbstractField;

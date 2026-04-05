@@ -1,4 +1,10 @@
 <?php
+/**
+ * Post relationship field type — renders a select of posts with static caching.
+ *
+ * @package CustomMetaBoxBuilder
+ * @since   2.0
+ */
 namespace CMB\Fields;
 
 use CMB\Core\Contracts\Abstracts\AbstractField;

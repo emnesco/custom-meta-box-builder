@@ -1,4 +1,10 @@
 <?php
+/**
+ * WP-CLI commands for field CRUD operations.
+ *
+ * @package CustomMetaBoxBuilder
+ * @since   2.0
+ */
 namespace CMB\Core;
 
 /**

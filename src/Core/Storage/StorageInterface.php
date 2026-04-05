@@ -1,4 +1,10 @@
 <?php
+/**
+ * Interface for meta/option storage abstraction.
+ *
+ * @package CustomMetaBoxBuilder
+ * @since   2.0
+ */
 namespace CMB\Core\Storage;
 
 /**

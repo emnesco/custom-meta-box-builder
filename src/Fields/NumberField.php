@@ -1,4 +1,10 @@
 <?php
+/**
+ * Number field type — renders a numeric input with min/max/step.
+ *
+ * @package CustomMetaBoxBuilder
+ * @since   2.0
+ */
 namespace CMB\Fields;
 
 use CMB\Core\Contracts\Abstracts\AbstractField;

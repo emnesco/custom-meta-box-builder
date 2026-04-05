@@ -1,4 +1,10 @@
 <?php
+/**
+ * WYSIWYG field type — integrates WordPress TinyMCE editor.
+ *
+ * @package CustomMetaBoxBuilder
+ * @since   2.0
+ */
 namespace CMB\Fields;
 
 use CMB\Core\Contracts\Abstracts\AbstractField;

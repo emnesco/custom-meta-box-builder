@@ -1,4 +1,10 @@
 <?php
+/**
+ * Service provider for the admin UI builder feature.
+ *
+ * @package CustomMetaBoxBuilder
+ * @since   2.0
+ */
 namespace CMB\Core\Providers;
 
 use CMB\Core\AdminUI;

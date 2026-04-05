@@ -1,4 +1,10 @@
 <?php
+/**
+ * File upload field type — integrates with WordPress media library.
+ *
+ * @package CustomMetaBoxBuilder
+ * @since   2.0
+ */
 namespace CMB\Fields;
 
 use CMB\Core\Contracts\Abstracts\AbstractField;

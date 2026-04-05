@@ -1,4 +1,10 @@
 <?php
+/**
+ * Abstract service provider for modular feature registration.
+ *
+ * @package CustomMetaBoxBuilder
+ * @since   2.0
+ */
 namespace CMB\Core\Contracts;
 
 use CMB\Core\Plugin;

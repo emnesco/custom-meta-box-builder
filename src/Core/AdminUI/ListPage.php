@@ -1,4 +1,10 @@
 <?php
+/**
+ * Admin list page — renders the meta box configuration list with pagination.
+ *
+ * @package CustomMetaBoxBuilder
+ * @since   2.0
+ */
 namespace CMB\Core\AdminUI;
 
 class ListPage {

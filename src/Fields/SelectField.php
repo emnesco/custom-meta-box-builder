@@ -1,4 +1,10 @@
 <?php
+/**
+ * Select field type — supports single and multi-select with placeholder.
+ *
+ * @package CustomMetaBoxBuilder
+ * @since   2.0
+ */
 namespace CMB\Fields;
 
 use CMB\Core\Contracts\Abstracts\AbstractField;

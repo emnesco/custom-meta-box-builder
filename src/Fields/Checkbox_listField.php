@@ -1,4 +1,10 @@
 <?php
+/**
+ * Checkbox list field type — renders multiple checkboxes from options config.
+ *
+ * @package CustomMetaBoxBuilder
+ * @since   2.0
+ */
 namespace CMB\Fields;
 
 use CMB\Core\Contracts\Abstracts\AbstractField;

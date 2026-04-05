@@ -1,4 +1,10 @@
 <?php
+/**
+ * Interface that all field types must implement.
+ *
+ * @package CustomMetaBoxBuilder
+ * @since   2.0
+ */
 namespace CMB\Core\Contracts;
 
 interface FieldInterface {

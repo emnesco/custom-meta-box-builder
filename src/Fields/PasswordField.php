@@ -1,4 +1,10 @@
 <?php
+/**
+ * Password field type — masked input that never renders stored values.
+ *
+ * @package CustomMetaBoxBuilder
+ * @since   2.0
+ */
 namespace CMB\Fields;
 
 use CMB\Core\Contracts\Abstracts\AbstractField;

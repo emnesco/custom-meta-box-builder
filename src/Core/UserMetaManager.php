@@ -1,4 +1,10 @@
 <?php
+/**
+ * User profile meta field registration, rendering, and save logic.
+ *
+ * @package CustomMetaBoxBuilder
+ * @since   2.0
+ */
 namespace CMB\Core;
 
 use CMB\Core\RenderContext\UserContext;
@@ -60,10 +66,12 @@ class UserMetaManager {
                 continue;
             }
             $raw = wp_unslash( $_POST[$field['id']] ?? '' );
-            do_action('cmb_before_save_user_field', $field['id'], $raw, $userId, $field);
+            /** @since 2.0 Fires before a user meta field is saved. */
+            FieldUtils::doAction('before_save_user_field', $field['id'], $raw, $userId, $field);
             $sanitized = $instance->sanitize($raw);
             $this->storage->set($userId, $field['id'], $sanitized);
-            do_action('cmb_after_save_user_field', $field['id'], $sanitized, $userId, $field);
+            /** @since 2.0 Fires after a user meta field has been saved. */
+            FieldUtils::doAction('after_save_user_field', $field['id'], $sanitized, $userId, $field);
         }
     }
 }

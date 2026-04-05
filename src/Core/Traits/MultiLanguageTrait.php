@@ -1,4 +1,10 @@
 <?php
+/**
+ * Trait providing multilingual field rendering with language tabs.
+ *
+ * @package CustomMetaBoxBuilder
+ * @since   2.0
+ */
 namespace CMB\Core\Traits;
 
 /**

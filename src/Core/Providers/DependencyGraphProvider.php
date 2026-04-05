@@ -1,4 +1,10 @@
 <?php
+/**
+ * Service provider for dependency graph feature.
+ *
+ * @package CustomMetaBoxBuilder
+ * @since   2.0
+ */
 namespace CMB\Core\Providers;
 
 use CMB\Core\Contracts\ServiceProvider;

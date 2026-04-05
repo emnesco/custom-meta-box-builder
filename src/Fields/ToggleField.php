@@ -1,4 +1,10 @@
 <?php
+/**
+ * Toggle/switch field type — renders a CSS toggle for boolean values.
+ *
+ * @package CustomMetaBoxBuilder
+ * @since   2.0
+ */
 namespace CMB\Fields;
 
 use CMB\Core\Contracts\Abstracts\AbstractField;

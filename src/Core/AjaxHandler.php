@@ -1,4 +1,10 @@
 <?php
+/**
+ * AJAX search endpoints for posts, users, and terms with nonce verification.
+ *
+ * @package CustomMetaBoxBuilder
+ * @since   2.0
+ */
 namespace CMB\Core;
 
 class AjaxHandler {

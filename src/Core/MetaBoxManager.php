@@ -1,4 +1,10 @@
 <?php
+/**
+ * Meta box registration, rendering, and save logic for post types.
+ *
+ * @package CustomMetaBoxBuilder
+ * @since   2.0
+ */
 namespace CMB\Core;
 use CMB\Core\Contracts\FieldInterface;
 use CMB\Core\RenderContext\PostContext;
@@ -77,8 +83,15 @@ class MetaBoxManager {
 
     public function addMetaBoxes(): void {
         foreach ($this->metaBoxes as $id => $metaBox) {
-            // Hook: cmb_meta_box_args filter (7.1)
-            $metaBox = apply_filters('cmb_meta_box_args', $metaBox, $id);
+            /**
+             * Filters the meta box arguments before registration.
+             *
+             * @since 2.0
+             *
+             * @param array  $metaBox The meta box configuration (title, postTypes, fields, context, priority).
+             * @param string $id      The meta box identifier.
+             */
+            $metaBox = FieldUtils::applyFilters('meta_box_args', $metaBox, $id);
 
             foreach ($metaBox['postTypes'] as $postType) {
                 add_meta_box(
@@ -198,8 +211,17 @@ class MetaBoxManager {
             return;
         }
 
-        // Hook: cmb_before_save_field (7.1)
-        do_action('cmb_before_save_field', $fieldId, $raw, $postId, $field);
+        /**
+         * Fires before a post meta field is saved.
+         *
+         * @since 2.0
+         *
+         * @param string $fieldId The field identifier / meta key.
+         * @param mixed  $raw     The raw unsanitized value from $_POST.
+         * @param int    $postId  The post ID.
+         * @param array  $field   The field configuration array.
+         */
+        FieldUtils::doAction('before_save_field', $fieldId, $raw, $postId, $field);
 
         // Sanitize (support custom callback)
         if (!empty($field['sanitize_callback']) && is_callable($field['sanitize_callback'])) {
@@ -208,8 +230,20 @@ class MetaBoxManager {
             $sanitized = $this->sanitizeFieldValue($instance, $field, $raw);
         }
 
-        // Hook: cmb_sanitize_{type} filter (7.1)
-        $sanitized = apply_filters('cmb_sanitize_' . $field['type'], $sanitized, $raw, $field, $postId);
+        /**
+         * Filters the sanitized value for a specific field type.
+         *
+         * The dynamic portion of the hook name, `$field['type']`, refers to
+         * the field type (e.g. 'text', 'select', 'group').
+         *
+         * @since 2.0
+         *
+         * @param mixed  $sanitized The sanitized value.
+         * @param mixed  $raw       The raw unsanitized value.
+         * @param array  $field     The field configuration array.
+         * @param int    $postId    The post ID.
+         */
+        $sanitized = FieldUtils::applyFilters('sanitize_' . $field['type'], $sanitized, $raw, $field, $postId);
 
         // Enforce max_rows
         if (is_array($sanitized) && isset($field['max_rows'])) {
@@ -225,8 +259,17 @@ class MetaBoxManager {
             $this->storage->set($postId, $fieldId, $sanitized);
         }
 
-        // Hook: cmb_after_save_field (7.1)
-        do_action('cmb_after_save_field', $fieldId, $sanitized, $postId, $field);
+        /**
+         * Fires after a post meta field has been saved.
+         *
+         * @since 2.0
+         *
+         * @param string $fieldId   The field identifier / meta key.
+         * @param mixed  $sanitized The sanitized value that was saved.
+         * @param int    $postId    The post ID.
+         * @param array  $field     The field configuration array.
+         */
+        FieldUtils::doAction('after_save_field', $fieldId, $sanitized, $postId, $field);
     }
 
     private function sanitizeFieldValue(FieldInterface $instance, array $field, mixed $raw): mixed {
@@ -293,7 +336,7 @@ class MetaBoxManager {
             if (function_exists('_doing_it_wrong')) {
                 _doing_it_wrong(
                     __METHOD__,
-                    sprintf('Meta box "%s" has a field without an "id" key.', $metaBoxId),
+                    sprintf('Meta box "%s" has a field without an "id" key. Every field requires a unique "id".', $metaBoxId),
                     '2.1'
                 );
             }
@@ -302,7 +345,7 @@ class MetaBoxManager {
             if (function_exists('_doing_it_wrong')) {
                 _doing_it_wrong(
                     __METHOD__,
-                    sprintf('Meta box "%s" field "%s" is missing a "type" key.', $metaBoxId, $field['id'] ?? '(unknown)'),
+                    sprintf('Meta box "%s" field "%s" is missing a "type" key. Supported types: text, textarea, number, select, checkbox, radio, etc.', $metaBoxId, $field['id'] ?? '(unknown)'),
                     '2.1'
                 );
             }

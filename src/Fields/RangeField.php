@@ -1,4 +1,10 @@
 <?php
+/**
+ * Range/slider field type — renders an HTML5 range input with value display.
+ *
+ * @package CustomMetaBoxBuilder
+ * @since   2.0
+ */
 namespace CMB\Fields;
 
 use CMB\Core\Contracts\Abstracts\AbstractField;

@@ -1,4 +1,10 @@
 <?php
+/**
+ * Base abstract class for all field types — provides config, render, sanitize, and validate scaffolding.
+ *
+ * @package CustomMetaBoxBuilder
+ * @since   2.0
+ */
 
 namespace CMB\Core\Contracts\Abstracts;
 

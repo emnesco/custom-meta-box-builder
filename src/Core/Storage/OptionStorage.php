@@ -1,4 +1,10 @@
 <?php
+/**
+ * WordPress options storage implementation.
+ *
+ * @package CustomMetaBoxBuilder
+ * @since   2.0
+ */
 namespace CMB\Core\Storage;
 
 class OptionStorage implements StorageInterface {

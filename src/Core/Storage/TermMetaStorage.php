@@ -1,4 +1,10 @@
 <?php
+/**
+ * Term meta storage implementation.
+ *
+ * @package CustomMetaBoxBuilder
+ * @since   2.0
+ */
 namespace CMB\Core\Storage;
 
 class TermMetaStorage implements StorageInterface {
