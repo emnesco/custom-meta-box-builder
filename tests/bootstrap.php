@@ -48,6 +48,13 @@ if (!function_exists('add_action')) {
     function get_the_ID() { return 0; }
     function is_serialized($data) { return false; }
     function maybe_unserialize($data) { return $data; }
+    function get_posts($args = []) { return []; }
+    function get_users($args = []) { return []; }
+    function get_terms($args = []) { return []; }
+    function is_wp_error($thing) { return false; }
+    function wp_get_attachment_image_url($id, $size = 'thumbnail') { return ''; }
+    function wp_get_attachment_url($id) { return ''; }
+    function wp_enqueue_media() {}
 }
 
 if (!defined('DOING_AUTOSAVE')) {

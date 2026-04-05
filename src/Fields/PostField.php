@@ -1,0 +1,45 @@
+<?php
+namespace CMB\Fields;
+
+use CMB\Core\Contracts\Abstracts\AbstractField;
+
+class PostField extends AbstractField {
+    public function render(): string {
+        $value = $this->getValue();
+        $htmlId = $this->config['html_id'] ?? '';
+        $id_attr = $htmlId ? ' id="' . esc_attr($htmlId) . '"' : '';
+        $name = esc_attr($this->getName());
+        $postType = $this->config['post_type'] ?? 'post';
+
+        $output = '<select name="' . $name . '"' . $id_attr . $this->renderAttributes() . $this->requiredAttr() . '>';
+        $output .= '<option value="">&mdash; Select &mdash;</option>';
+
+        if (function_exists('get_posts')) {
+            $posts = get_posts([
+                'post_type'      => $postType,
+                'posts_per_page' => $this->config['limit'] ?? 100,
+                'orderby'        => 'title',
+                'order'          => 'ASC',
+                'post_status'    => 'publish',
+            ]);
+            foreach ($posts as $post) {
+                $sel = selected($value, $post->ID, false);
+                $output .= '<option value="' . esc_attr($post->ID) . '"' . $sel . '>' . esc_html($post->post_title) . '</option>';
+            }
+        }
+
+        $output .= '</select>';
+        return $output;
+    }
+
+    public function sanitize(mixed $value): mixed {
+        if (is_array($value)) {
+            return array_map([$this, 'sanitize'], $value);
+        }
+        $id = absint($value);
+        if ($id && function_exists('get_post') && !get_post($id)) {
+            return 0;
+        }
+        return $id;
+    }
+}

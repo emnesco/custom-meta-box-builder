@@ -179,6 +179,48 @@
               .children('.cmb-group-item-header').attr('aria-expanded', 'false');
       });
 
+      // === File Upload (WP Media Library) ===
+      $(document).on('click', '.cmb-file-upload', function(event) {
+        event.preventDefault();
+        var $button = $(this);
+        var $target = $($button.data('target'));
+        var $wrapper = $button.closest('.cmb-file-field');
+
+        if (typeof wp === 'undefined' || typeof wp.media === 'undefined') {
+          return;
+        }
+
+        var frame = wp.media({
+          title: 'Select File',
+          multiple: false
+        });
+
+        frame.on('select', function() {
+          var attachment = frame.state().get('selection').first().toJSON();
+          $target.val(attachment.id);
+          var $preview = $wrapper.find('.cmb-file-preview');
+          $preview.empty();
+          if (attachment.type === 'image' && attachment.sizes && attachment.sizes.thumbnail) {
+            $preview.html('<img src="' + attachment.sizes.thumbnail.url + '" style="max-width:150px;max-height:150px;">');
+          } else {
+            $preview.html('<a href="' + attachment.url + '" target="_blank">' + attachment.filename + '</a>');
+          }
+          $wrapper.find('.cmb-file-remove').show();
+        });
+
+        frame.open();
+      });
+
+      $(document).on('click', '.cmb-file-remove', function(event) {
+        event.preventDefault();
+        var $button = $(this);
+        var $target = $($button.data('target'));
+        var $wrapper = $button.closest('.cmb-file-field');
+        $target.val('0');
+        $wrapper.find('.cmb-file-preview').empty();
+        $button.hide();
+      });
+
       // === Helper: update item count indicators ===
       function updateRowCounts() {
         $('.cmb-item-count').each(function() {
