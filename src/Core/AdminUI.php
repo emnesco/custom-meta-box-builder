@@ -1059,7 +1059,7 @@ class AdminUI {
             if (!empty($field['post_type']))    $f['post_type']   = $field['post_type'];
             if (!empty($field['taxonomy']))     $f['taxonomy']    = $field['taxonomy'];
             if (!empty($field['role']))         $f['role']        = $field['role'];
-            if (!empty($field['repeatable']))   $f['repeatable']  = true;
+            if (!empty($field['repeatable']))   $f['repeat']      = true;
             if (isset($field['collapsed']))     $f['collapsed']   = (bool) $field['collapsed'];
             if (!empty($field['min_rows']))     $f['min_rows']    = (int) $field['min_rows'];
             if (!empty($field['max_rows']))     $f['max_rows']    = (int) $field['max_rows'];
