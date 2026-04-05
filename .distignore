@@ -1,0 +1,14 @@
+/.github
+/tests
+/node_modules
+/.distignore
+/.gitignore
+/build.js
+/package.json
+/package-lock.json
+/phpunit.xml
+/phpunit.xml.dist
+/composer.lock
+/TODO_*.md
+/AUDIT_*.md
+*.map
