@@ -38,17 +38,34 @@ The bootstrap file at `tests/bootstrap.php` mocks core WordPress functions so te
 
 | Mocked Function | Behavior |
 |---|---|
-| `add_action()` | No-op |
-| `add_meta_box()` | No-op |
-| `update_post_meta()` | No-op |
+| `add_action()`, `add_meta_box()` | No-op |
+| `update_post_meta()`, `delete_post_meta()`, `add_post_meta()` | No-op |
 | `get_post_meta()` | Returns empty string |
-| `checked()` | Returns `checked="checked"` or empty |
-| `selected()` | Returns `selected="selected"` or empty |
-| `esc_attr()` | Uses `htmlspecialchars()` |
-| `esc_html()` | Uses `htmlspecialchars()` |
-| `esc_textarea()` | Uses `htmlspecialchars()` |
-| `wp_nonce_field()` | No-op |
-| `wp_verify_nonce()` | Returns `true` |
+| `get_term_meta()`, `update_term_meta()` | Returns empty/true |
+| `get_user_meta()`, `update_user_meta()` | Returns empty/true |
+| `get_option()`, `update_option()` | Returns default/true |
+| `register_setting()`, `settings_fields()`, `do_settings_sections()` | No-op |
+| `checked()`, `selected()` | Returns checked/selected attribute |
+| `esc_attr()`, `esc_html()`, `esc_textarea()` | Uses `htmlspecialchars()` |
+| `wp_nonce_field()`, `wp_verify_nonce()` | No-op / returns true |
+| `current_user_can()` | Returns true |
+| `sanitize_text_field()`, `sanitize_textarea_field()` | `strip_tags()` |
+| `sanitize_email()` | `FILTER_SANITIZE_EMAIL` |
+| `esc_url_raw()` | `FILTER_SANITIZE_URL` |
+| `absint()` | `abs((int)$val)` |
+| `wp_kses_post()` | Pass-through |
+| `map_deep()` | Recursive callback application |
+| `_doing_it_wrong()` | No-op |
+| `do_action()`, `apply_filters()` | No-op / pass-through |
+| `get_posts()`, `get_users()`, `get_terms()` | Returns empty array |
+| `wp_enqueue_style()`, `wp_enqueue_script()`, `wp_enqueue_media()` | No-op |
+| `plugin_dir_url()` | Returns static path |
+| `register_post_meta()` | No-op |
+| `get_post()`, `get_the_ID()` | Returns null/0 |
+| `is_serialized()`, `maybe_unserialize()` | Returns false/pass-through |
+| `wp_is_post_revision()` | Returns false |
+| `get_locale()` | Returns `'en_US'` |
+| `admin_url()` | Returns mock URL |
 
 ## Existing Tests
 
@@ -58,7 +75,7 @@ Tests that the `Plugin` class can be instantiated and `boot()` runs without erro
 
 ### MetaBoxManagerTest
 
-Tests that `MetaBoxManager::add()` correctly stores meta box definitions with the expected structure (title, post types, fields).
+Tests that `MetaBoxManager::add()` correctly stores meta box definitions with the expected structure (title, post types, fields). Uses reflection to reset the singleton instance between tests.
 
 ### TextFieldTest
 
@@ -91,9 +108,24 @@ final class NumberFieldTest extends TestCase {
     }
 
     public function testSanitizeReturnsInteger(): void {
-        $field = new NumberField(['id' => 'test']);
+        $field = new NumberField(['id' => 'test', 'name' => 'test']);
         $this->assertSame(42, $field->sanitize('42'));
         $this->assertSame(0, $field->sanitize('not-a-number'));
+    }
+
+    public function testValidateRequired(): void {
+        $field = new NumberField([
+            'id'       => 'test',
+            'name'     => 'test',
+            'required' => true,
+            'validate' => ['required'],
+        ]);
+
+        $errors = $field->validate('');
+        $this->assertNotEmpty($errors);
+
+        $errors = $field->validate('42');
+        $this->assertEmpty($errors);
     }
 }
 ```
@@ -103,6 +135,8 @@ final class NumberFieldTest extends TestCase {
 - Always provide both `id` and `name` in the config array when testing render output — in production these are set by `FieldRenderer`, but in unit tests you provide them directly.
 - Test both valid and invalid/malicious inputs in `sanitize()` tests.
 - Use `assertStringContainsString()` for HTML output checks rather than exact string matching, since attribute order may vary.
+- Test validation rules by passing `'validate' => ['required', 'min:3']` in the config.
+- The MetaBoxManager uses a singleton — reset it between tests using reflection on the `$instance` property.
 
 ---
 

@@ -33,7 +33,7 @@ The plugin directory lives at `web/app/plugins/custom-meta-box-builder`. Add it 
 
 ## Registering Your First Meta Box
 
-The plugin exposes a single global function: `add_custom_meta_box()`. Call it at any point before the `add_meta_boxes` action fires (e.g., in `functions.php` or an `init`/`plugins_loaded` hook).
+The plugin exposes a global function: `add_custom_meta_box()`. Call it at any point before the `add_meta_boxes` action fires (e.g., in `functions.php` or an `init`/`plugins_loaded` hook).
 
 ```php
 add_custom_meta_box(
@@ -42,9 +42,10 @@ add_custom_meta_box(
     ['post', 'page'],             // Post type(s) — string or array
     [
         [
-            'id'    => 'contact_email',
-            'type'  => 'text',
-            'label' => 'Email Address',
+            'id'       => 'contact_email',
+            'type'     => 'email',
+            'label'    => 'Email Address',
+            'required' => true,
         ],
         [
             'id'    => 'contact_phone',
@@ -52,34 +53,76 @@ add_custom_meta_box(
             'label' => 'Phone Number',
         ],
         [
+            'id'          => 'contact_website',
+            'type'        => 'url',
+            'label'       => 'Website',
+            'description' => 'Full URL including https://',
+        ],
+        [
             'id'          => 'contact_notes',
             'type'        => 'textarea',
             'label'       => 'Notes',
             'description' => 'Internal notes about this contact.',
         ],
-    ]
+    ],
+    'normal',  // Context: 'normal', 'side', or 'advanced'
+    'high'     // Priority: 'high', 'default', or 'low'
 );
 ```
 
-## Function Signature
+## Function Signatures
+
+### Post Meta Boxes
 
 ```php
 add_custom_meta_box(
-    string $id,            // Unique meta box identifier
-    string $title,         // Display title
-    string|array $postTypes,  // One or more post types
-    array $fields          // Array of field configuration arrays
+    string       $id,
+    string       $title,
+    string|array $postTypes,
+    array        $fields,
+    string       $context = 'advanced',
+    string       $priority = 'default'
 ): void
 ```
 
-The function is defined in [public-api.php](../public-api.php). It creates a `MetaBoxManager` instance (or reuses the existing global one), registers WordPress hooks, and stores the field definitions for rendering and saving.
+### Taxonomy Term Meta
+
+```php
+add_custom_taxonomy_meta(
+    string $taxonomy,   // e.g. 'category', 'post_tag'
+    array  $fields
+): void
+```
+
+### User Profile Meta
+
+```php
+add_custom_user_meta(
+    array $fields
+): void
+```
+
+### Options Pages
+
+```php
+add_custom_options_page(
+    string $pageSlug,
+    string $pageTitle,
+    string $menuTitle,
+    array  $fields,
+    string $capability = 'manage_options',
+    string $parentSlug = ''
+): void
+```
+
+All functions are defined in [public-api.php](../public-api.php). They use singleton/static managers under the hood.
 
 ## Retrieving Saved Data
 
 All field values are saved as standard WordPress post meta. Use the core `get_post_meta()` function:
 
 ```php
-// Single value fields (text, textarea, select, checkbox)
+// Single value fields (text, textarea, select, checkbox, etc.)
 $email = get_post_meta($post_id, 'contact_email', true);
 
 // Repeatable fields — stored as multiple meta rows
@@ -89,10 +132,13 @@ $phones = get_post_meta($post_id, 'contact_phone'); // returns array
 $group = get_post_meta($post_id, 'my_group_id');    // returns array of groups
 ```
 
+For taxonomy meta use `get_term_meta()`, for user meta use `get_user_meta()`, and for options use `get_option()`.
+
 See [Groups & Repeaters](groups-and-repeaters.md) for details on how nested data is stored and retrieved.
 
 ## Next Steps
 
-- [Field Types](field-types.md) — learn about every available field type
+- [Field Types](field-types.md) — learn about all 18 available field types
 - [Configuration Reference](configuration-reference.md) — all configuration keys
 - [Groups & Repeaters](groups-and-repeaters.md) — nested and repeatable fields
+- [Advanced Features](advanced-features.md) — tabs, conditional logic, and more
