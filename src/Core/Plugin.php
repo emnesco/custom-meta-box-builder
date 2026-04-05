@@ -7,6 +7,12 @@ final class Plugin {
 
         $manager = MetaBoxManager::instance();
         $manager->register();
+
+        // WP-CLI commands (7.5)
+        WpCliCommands::register();
+
+        // Gutenberg sidebar panel (7.6)
+        GutenbergPanel::register();
     }
 
     private function registerAssets(): void {

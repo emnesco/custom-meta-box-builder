@@ -70,6 +70,10 @@ if (!function_exists('add_action')) {
     function add_submenu_page(...$args) {}
     function wp_is_post_revision($postId) { return false; }
     function __return_false() { return false; }
+    function do_action($tag, ...$args) {}
+    function apply_filters($tag, $value, ...$args) { return $value; }
+    function get_post_type($post = null) { return 'post'; }
+    function wp_localize_script(...$args) {}
 }
 
 if (!defined('DOING_AUTOSAVE')) {

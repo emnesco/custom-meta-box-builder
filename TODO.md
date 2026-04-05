@@ -442,7 +442,7 @@ Organized into phases with priority and complexity labels.
 
 ## Phase 7: Developer Experience
 
-### 7.1 Add WordPress action/filter hooks
+### 7.1 ~~Add WordPress action/filter hooks~~ [x]
 - **Problem:** No way for developers to customize behavior without modifying core files.
 - **Hooks to add:**
 
@@ -459,34 +459,36 @@ Organized into phases with priority and complexity labels.
 
 - **Priority:** HIGH | **Complexity:** Medium
 
-### 7.2 Field type registration API
+### 7.2 ~~Field type registration API~~ [x]
 - **Problem:** Custom field types work automatically via naming convention, but there's no explicit registration or discovery.
 - **Fix:** Add `CMB::register_field_type('my_type', MyField::class)` for custom namespace/class support.
 - **Priority:** MEDIUM | **Complexity:** Medium
 
-### 7.3 REST API integration
+### 7.3 ~~REST API integration~~ [x]
 - **Problem:** Meta box fields are not available via WordPress REST API.
 - **Fix:** Use `register_post_meta()` with `'show_in_rest' => true` for each field. Handle complex types with custom REST schema.
 - **Config:** `'show_in_rest' => true`
 - **Priority:** MEDIUM | **Complexity:** High
 
-### 7.4 Add input validation for field configs at registration time
+### 7.4 ~~Add input validation for field configs at registration time~~ [x]
 - **Files:** `public-api.php`, `src/Core/MetaBoxManager.php`
 - **Problem:** Invalid field configs (missing `id`, missing `type`, unknown type) fail silently.
 - **Fix:** Validate at `add()` time and throw `_doing_it_wrong()` for invalid configs.
 - **Priority:** MEDIUM | **Complexity:** Low
 
-### 7.5 WP-CLI commands
+### 7.5 ~~WP-CLI commands~~ [x]
 - **Commands:**
   - `wp cmb list` — list registered meta boxes
   - `wp cmb get <post_id> <field_id>` — retrieve a field value
   - `wp cmb set <post_id> <field_id> <value>` — set a field value
 - **Priority:** LOW | **Complexity:** Medium
 
-### 7.6 Gutenberg sidebar panel support
+### 7.6 ~~Gutenberg sidebar panel support~~ [x]
 - **Problem:** Meta boxes appear below the editor in block editor, not in the sidebar.
 - **Implementation:** React-based `PluginDocumentSettingPanel` components.
 - **Priority:** LOW | **Complexity:** Very High
+
+**Phase 7 Summary:** All 6 items completed. Added 8 WordPress hooks: cmb_before_render_field, cmb_after_render_field, cmb_before_save_field, cmb_after_save_field (actions), cmb_sanitize_{type}, cmb_field_value, cmb_field_html, cmb_meta_box_args (filters) (7.1). Added MetaBoxManager::registerFieldType() for custom field class registration beyond naming convention (7.2). Added REST API integration via register_post_meta() with show_in_rest config and proper type mapping (7.3). Added field config validation at registration with _doing_it_wrong() for missing id/type, recursive for groups (7.4). Added WP-CLI commands: wp cmb list/get/set via WpCliCommands class (7.5). Added Gutenberg sidebar panel via GutenbergPanel class + cmb-gutenberg.js using PluginDocumentSettingPanel with gutenberg_panel config key (7.6).
 
 ---
 

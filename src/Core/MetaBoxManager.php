@@ -6,12 +6,26 @@ class MetaBoxManager {
     private array $metaBoxes = [];
     private static ?MetaBoxManager $instance = null;
     private array $validationErrors = [];
+    private static array $customFieldTypes = [];
 
     public static function instance(): self {
         if (self::$instance === null) {
             self::$instance = new self();
         }
         return self::$instance;
+    }
+
+    /**
+     * Register a custom field type class (7.2).
+     */
+    public static function registerFieldType(string $type, string $className): void {
+        if (!class_exists($className)) {
+            if (function_exists('_doing_it_wrong')) {
+                _doing_it_wrong(__METHOD__, sprintf('Class "%s" does not exist.', $className), '2.1');
+            }
+            return;
+        }
+        self::$customFieldTypes[$type] = $className;
     }
 
     public function register(): void {
@@ -23,6 +37,8 @@ class MetaBoxManager {
         add_action('wp_creating_autosave', [$this, 'copyMetaToRevision']);
         add_action('_wp_put_post_revision', [$this, 'copyMetaToRevision']);
         add_action('wp_restore_post_revision', [$this, 'restoreMetaFromRevision'], 10, 2);
+        // REST API integration (7.3)
+        add_action('init', [$this, 'registerRestFields']);
     }
 
     public function add(
@@ -33,6 +49,8 @@ class MetaBoxManager {
         string $context = 'advanced',
         string $priority = 'default'
     ): void {
+        // Config validation (7.4)
+        $this->validateFieldConfigs($fields, $id);
         $this->metaBoxes[$id] = compact('title', 'postTypes', 'fields', 'context', 'priority');
     }
 
@@ -42,6 +60,9 @@ class MetaBoxManager {
 
     public function addMetaBoxes(): void {
         foreach ($this->metaBoxes as $id => $metaBox) {
+            // Hook: cmb_meta_box_args filter (7.1)
+            $metaBox = apply_filters('cmb_meta_box_args', $metaBox, $id);
+
             foreach ($metaBox['postTypes'] as $postType) {
                 add_meta_box(
                     $id,
@@ -159,12 +180,18 @@ class MetaBoxManager {
             return;
         }
 
+        // Hook: cmb_before_save_field (7.1)
+        do_action('cmb_before_save_field', $fieldId, $raw, $postId, $field);
+
         // Sanitize (support custom callback)
         if (!empty($field['sanitize_callback']) && is_callable($field['sanitize_callback'])) {
             $sanitized = call_user_func($field['sanitize_callback'], $raw);
         } else {
             $sanitized = $this->sanitizeFieldValue($instance, $field, $raw);
         }
+
+        // Hook: cmb_sanitize_{type} filter (7.1)
+        $sanitized = apply_filters('cmb_sanitize_' . $field['type'], $sanitized, $raw, $field, $postId);
 
         // Enforce max_rows
         if (is_array($sanitized) && isset($field['max_rows'])) {
@@ -179,6 +206,9 @@ class MetaBoxManager {
         } else {
             update_post_meta($postId, $fieldId, $sanitized);
         }
+
+        // Hook: cmb_after_save_field (7.1)
+        do_action('cmb_after_save_field', $fieldId, $sanitized, $postId, $field);
     }
 
     private function sanitizeFieldValue(FieldInterface $instance, array $field, mixed $raw): mixed {
@@ -219,6 +249,11 @@ class MetaBoxManager {
     }
 
     private function resolveFieldClass(string $type): ?string {
+        // Check custom registered types first (7.2)
+        if (isset(self::$customFieldTypes[$type])) {
+            return self::$customFieldTypes[$type];
+        }
+
         $fieldClass = 'CMB\\Fields\\' . ucfirst($type) . 'Field';
         if (!class_exists($fieldClass)) {
             if (function_exists('_doing_it_wrong')) {
@@ -231,6 +266,83 @@ class MetaBoxManager {
             return null;
         }
         return $fieldClass;
+    }
+
+    /**
+     * Validate field configurations at registration time (7.4).
+     */
+    private function validateFieldConfigs(array $fields, string $metaBoxId): void {
+        if (!empty($fields['tabs'])) {
+            foreach ($fields['tabs'] as $tabId => $tab) {
+                foreach ($tab['fields'] ?? [] as $field) {
+                    $this->validateSingleFieldConfig($field, $metaBoxId);
+                }
+            }
+            return;
+        }
+
+        foreach ($fields as $field) {
+            $this->validateSingleFieldConfig($field, $metaBoxId);
+        }
+    }
+
+    private function validateSingleFieldConfig(array $field, string $metaBoxId): void {
+        if (empty($field['id'])) {
+            if (function_exists('_doing_it_wrong')) {
+                _doing_it_wrong(
+                    __METHOD__,
+                    sprintf('Meta box "%s" has a field without an "id" key.', $metaBoxId),
+                    '2.1'
+                );
+            }
+        }
+        if (empty($field['type'])) {
+            if (function_exists('_doing_it_wrong')) {
+                _doing_it_wrong(
+                    __METHOD__,
+                    sprintf('Meta box "%s" field "%s" is missing a "type" key.', $metaBoxId, $field['id'] ?? '(unknown)'),
+                    '2.1'
+                );
+            }
+        }
+        // Validate sub-fields in groups
+        if (($field['type'] ?? '') === 'group' && !empty($field['fields'])) {
+            foreach ($field['fields'] as $subField) {
+                $this->validateSingleFieldConfig($subField, $metaBoxId);
+            }
+        }
+    }
+
+    /**
+     * Register fields for REST API (7.3).
+     */
+    public function registerRestFields(): void {
+        foreach ($this->metaBoxes as $metaBox) {
+            $fields = $this->flattenFields($metaBox['fields']);
+            foreach ($fields as $field) {
+                if (empty($field['show_in_rest'])) {
+                    continue;
+                }
+                foreach ($metaBox['postTypes'] as $postType) {
+                    $restArgs = [
+                        'show_in_rest' => true,
+                        'single' => empty($field['repeat']) && ($field['type'] ?? '') !== 'group',
+                        'type' => $this->getRestType($field['type'] ?? 'text'),
+                        'description' => $field['description'] ?? '',
+                    ];
+                    register_post_meta($postType, $field['id'], $restArgs);
+                }
+            }
+        }
+    }
+
+    private function getRestType(string $fieldType): string {
+        return match ($fieldType) {
+            'number' => 'number',
+            'checkbox' => 'boolean',
+            'group' => 'object',
+            default => 'string',
+        };
     }
 
     public function deletePostMetaData(int $postId): void {

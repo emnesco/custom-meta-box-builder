@@ -100,6 +100,9 @@ class FieldRenderer {
             $conditionalAttrs .= ' style="display:none"';
         }
 
+        // Hook: cmb_before_render_field (7.1)
+        do_action('cmb_before_render_field', $field, $this->post);
+
         $output = '<div class="cmb-field ' . $layout . ' cmb-type-' . $field['type'] . ' ' . $repeat . ' ' . $width . ' ' . $required_class . '"' . $conditionalAttrs . '>';
             $output .= '<div class="cmb-label">';
                 $output .= '<label for="' . esc_attr($htmlId) . '">' . esc_html($field['label'] ?? '');
@@ -134,6 +137,12 @@ class FieldRenderer {
             $output .= '</div>';
          $output .= '</div>';
 
+        // Hook: cmb_field_html filter (7.1)
+        $output = apply_filters('cmb_field_html', $output, $field, $this->post);
+
+        // Hook: cmb_after_render_field (7.1)
+        do_action('cmb_after_render_field', $field, $this->post);
+
         return $output;
     }
 
@@ -160,6 +169,9 @@ class FieldRenderer {
 
         $meta = $this->metaCache[$key] ?? [null];
         $val = $meta[0] ?? null;
-        return is_serialized($val) ? maybe_unserialize($val) : $val;
+        $val = is_serialized($val) ? maybe_unserialize($val) : $val;
+
+        // Hook: cmb_field_value filter (7.1)
+        return apply_filters('cmb_field_value', $val, $key, $this->post->ID);
     }
 }
