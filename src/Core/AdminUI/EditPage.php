@@ -223,10 +223,16 @@ class EditPage {
         $taxonomy    = $field['taxonomy'] ?? 'category';
         $role        = $field['role'] ?? '';
         $width       = $field['width'] ?? '100';
+        $layout      = $field['layout'] ?? '';
         $repeatable  = !empty($field['repeatable']);
         $collapsed   = $field['collapsed'] ?? true;
         $minRows     = $field['min_rows'] ?? '';
         $maxRows     = $field['max_rows'] ?? '';
+        $rowTitleField = $field['row_title_field'] ?? '';
+        $searchable  = !empty($field['searchable']);
+        $condField   = $field['conditional_field'] ?? '';
+        $condOp      = $field['conditional_operator'] ?? '==';
+        $condVal     = $field['conditional_value'] ?? '';
         $subFields   = $field['sub_fields'] ?? [];
 
         $typeInfo  = Router::getFieldTypesFlat()[$type] ?? ['label' => ucfirst($type), 'icon' => 'dashicons-admin-generic'];
@@ -417,9 +423,22 @@ class EditPage {
         echo '<input type="number" name="' . $prefix . '[max_rows]" value="' . esc_attr($maxRows) . '" class="widefat" min="0">';
         echo '</div>';
         echo '<div class="cmb-fs-row cmb-fs-third">';
-        echo '<label class="cmb-checkbox-label" style="margin-top:24px">';
+        echo '<label>' . esc_html__('Row Title Field', 'custom-meta-box-builder') . '</label>';
+        echo '<input type="text" name="' . $prefix . '[row_title_field]" value="' . esc_attr($rowTitleField) . '" class="widefat" placeholder="' . esc_attr__('e.g. title', 'custom-meta-box-builder') . '">';
+        echo '</div>';
+        echo '</div>';
+
+        echo '<div class="cmb-field-settings-grid cmb-type-opt" data-show-for="group">';
+        echo '<div class="cmb-fs-row cmb-fs-third">';
+        echo '<label class="cmb-checkbox-label" style="margin-top:4px">';
         echo '<input type="checkbox" name="' . $prefix . '[collapsed]" value="1"' . ($collapsed ? ' checked' : '') . '>';
-        echo ' ' . esc_html__('Collapsed', 'custom-meta-box-builder');
+        echo ' ' . esc_html__('Collapsed by default', 'custom-meta-box-builder');
+        echo '</label>';
+        echo '</div>';
+        echo '<div class="cmb-fs-row cmb-fs-third">';
+        echo '<label class="cmb-checkbox-label" style="margin-top:4px">';
+        echo '<input type="checkbox" name="' . $prefix . '[searchable]" value="1"' . ($searchable ? ' checked' : '') . '>';
+        echo ' ' . esc_html__('Enable search/filter', 'custom-meta-box-builder');
         echo '</label>';
         echo '</div>';
         echo '</div>';
@@ -444,7 +463,38 @@ class EditPage {
 
         echo '</div>'; // .cmb-type-options
 
-        // Bottom row: required, width, repeatable
+        // Conditional Logic
+        echo '<div class="cmb-conditional-row">';
+        echo '<div class="cmb-conditional-header">';
+        echo '<label class="cmb-checkbox-label">';
+        echo '<input type="checkbox" class="cmb-conditional-toggle" ' . ($condField ? 'checked' : '') . '>';
+        echo ' ' . esc_html__('Conditional Logic', 'custom-meta-box-builder');
+        echo '</label>';
+        echo '</div>';
+        echo '<div class="cmb-conditional-settings" ' . ($condField ? '' : 'style="display:none"') . '>';
+        echo '<div class="cmb-field-settings-grid">';
+        echo '<div class="cmb-fs-row cmb-fs-third">';
+        echo '<label>' . esc_html__('Show when field', 'custom-meta-box-builder') . '</label>';
+        echo '<input type="text" name="' . $prefix . '[conditional_field]" value="' . esc_attr($condField) . '" class="widefat" placeholder="' . esc_attr__('field_id', 'custom-meta-box-builder') . '">';
+        echo '</div>';
+        echo '<div class="cmb-fs-row cmb-fs-third">';
+        echo '<label>' . esc_html__('Operator', 'custom-meta-box-builder') . '</label>';
+        echo '<select name="' . $prefix . '[conditional_operator]" class="widefat">';
+        foreach (['==' => __('equals', 'custom-meta-box-builder'), '!=' => __('not equals', 'custom-meta-box-builder'), '!empty' => __('is not empty', 'custom-meta-box-builder'), 'empty' => __('is empty', 'custom-meta-box-builder'), 'contains' => __('contains', 'custom-meta-box-builder')] as $opVal => $opLabel) {
+            $sel = ($condOp === $opVal) ? ' selected' : '';
+            echo '<option value="' . esc_attr($opVal) . '"' . $sel . '>' . esc_html($opLabel) . '</option>';
+        }
+        echo '</select>';
+        echo '</div>';
+        echo '<div class="cmb-fs-row cmb-fs-third">';
+        echo '<label>' . esc_html__('Value', 'custom-meta-box-builder') . '</label>';
+        echo '<input type="text" name="' . $prefix . '[conditional_value]" value="' . esc_attr($condVal) . '" class="widefat" placeholder="' . esc_attr__('value', 'custom-meta-box-builder') . '">';
+        echo '</div>';
+        echo '</div>';
+        echo '</div>';
+        echo '</div>';
+
+        // Bottom row: required, width, layout, repeatable
         echo '<div class="cmb-field-bottom-row">';
 
         echo '<label class="cmb-checkbox-label">';
@@ -463,6 +513,16 @@ class EditPage {
         foreach (['100' => '100%', '75' => '75%', '50' => '50%', '33' => '33%', '25' => '25%'] as $wVal => $wLabel) {
             $sel = ($width == $wVal) ? ' selected' : '';
             echo '<option value="' . $wVal . '"' . $sel . '>' . $wLabel . '</option>';
+        }
+        echo '</select>';
+        echo '</div>';
+
+        echo '<div class="cmb-layout-control">';
+        echo '<label>' . esc_html__('Layout', 'custom-meta-box-builder') . '</label>';
+        echo '<select name="' . $prefix . '[layout]">';
+        foreach (['' => __('Horizontal', 'custom-meta-box-builder'), 'inline' => __('Stacked (label on top)', 'custom-meta-box-builder')] as $lVal => $lLabel) {
+            $sel = ($layout === $lVal) ? ' selected' : '';
+            echo '<option value="' . esc_attr($lVal) . '"' . $sel . '>' . esc_html($lLabel) . '</option>';
         }
         echo '</select>';
         echo '</div>';
@@ -486,6 +546,11 @@ class EditPage {
         $sfPh    = $sf['placeholder'] ?? '';
         $sfDef   = $sf['default_value'] ?? ($sf['default'] ?? '');
         $sfOpts  = $sf['options'] ?? '';
+        $sfWidth = $sf['width'] ?? '';
+        $sfLayout = $sf['layout'] ?? '';
+        $sfCondField = $sf['conditional_field'] ?? '';
+        $sfCondOp    = $sf['conditional_operator'] ?? '==';
+        $sfCondVal   = $sf['conditional_value'] ?? '';
 
         $typeInfo = Router::getFieldTypesFlat()[$sfType] ?? ['label' => ucfirst($sfType), 'icon' => 'dashicons-admin-generic'];
 
@@ -559,11 +624,63 @@ class EditPage {
         echo '<textarea name="' . $prefix . '[options]" class="widefat cmb-options-textarea" rows="3">' . esc_textarea($sfOpts) . '</textarea>';
         echo '</div></div>';
 
-        // Required checkbox
+        // Conditional Logic for sub-fields
+        echo '<div class="cmb-conditional-row cmb-sub-conditional">';
+        echo '<div class="cmb-conditional-header">';
+        echo '<label class="cmb-checkbox-label">';
+        echo '<input type="checkbox" class="cmb-conditional-toggle" ' . ($sfCondField ? 'checked' : '') . '>';
+        echo ' ' . esc_html__('Conditional Logic', 'custom-meta-box-builder');
+        echo '</label>';
+        echo '</div>';
+        echo '<div class="cmb-conditional-settings" ' . ($sfCondField ? '' : 'style="display:none"') . '>';
+        echo '<div class="cmb-field-settings-grid">';
+        echo '<div class="cmb-fs-row cmb-fs-third">';
+        echo '<label>' . esc_html__('Show when field', 'custom-meta-box-builder') . '</label>';
+        echo '<input type="text" name="' . $prefix . '[conditional_field]" value="' . esc_attr($sfCondField) . '" class="widefat" placeholder="' . esc_attr__('field_id', 'custom-meta-box-builder') . '">';
+        echo '</div>';
+        echo '<div class="cmb-fs-row cmb-fs-third">';
+        echo '<label>' . esc_html__('Operator', 'custom-meta-box-builder') . '</label>';
+        echo '<select name="' . $prefix . '[conditional_operator]" class="widefat">';
+        foreach (['==' => __('equals', 'custom-meta-box-builder'), '!=' => __('not equals', 'custom-meta-box-builder'), '!empty' => __('is not empty', 'custom-meta-box-builder'), 'empty' => __('is empty', 'custom-meta-box-builder'), 'contains' => __('contains', 'custom-meta-box-builder')] as $opVal => $opLabel) {
+            $sel = ($sfCondOp === $opVal) ? ' selected' : '';
+            echo '<option value="' . esc_attr($opVal) . '"' . $sel . '>' . esc_html($opLabel) . '</option>';
+        }
+        echo '</select>';
+        echo '</div>';
+        echo '<div class="cmb-fs-row cmb-fs-third">';
+        echo '<label>' . esc_html__('Value', 'custom-meta-box-builder') . '</label>';
+        echo '<input type="text" name="' . $prefix . '[conditional_value]" value="' . esc_attr($sfCondVal) . '" class="widefat" placeholder="' . esc_attr__('value', 'custom-meta-box-builder') . '">';
+        echo '</div>';
+        echo '</div>';
+        echo '</div>';
+        echo '</div>';
+
+        // Bottom row: required, width, layout
         echo '<div class="cmb-sub-field-bottom">';
         echo '<label class="cmb-checkbox-label">';
         echo '<input type="checkbox" name="' . $prefix . '[required]" value="1"' . ($sfReq ? ' checked' : '') . '> ' . esc_html__('Required', 'custom-meta-box-builder');
         echo '</label>';
+
+        echo '<div class="cmb-width-control">';
+        echo '<label>' . esc_html__('Width', 'custom-meta-box-builder') . '</label>';
+        echo '<select name="' . $prefix . '[width]">';
+        foreach (['' => __('Auto', 'custom-meta-box-builder'), '100' => '100%', '75' => '75%', '50' => '50%', '33' => '33%', '25' => '25%'] as $wVal => $wLabel) {
+            $sel = ($sfWidth === (string)$wVal) ? ' selected' : '';
+            echo '<option value="' . esc_attr($wVal) . '"' . $sel . '>' . esc_html($wLabel) . '</option>';
+        }
+        echo '</select>';
+        echo '</div>';
+
+        echo '<div class="cmb-layout-control">';
+        echo '<label>' . esc_html__('Layout', 'custom-meta-box-builder') . '</label>';
+        echo '<select name="' . $prefix . '[layout]">';
+        foreach (['' => __('Horizontal', 'custom-meta-box-builder'), 'inline' => __('Stacked', 'custom-meta-box-builder')] as $lVal => $lLabel) {
+            $sel = ($sfLayout === $lVal) ? ' selected' : '';
+            echo '<option value="' . esc_attr($lVal) . '"' . $sel . '>' . esc_html($lLabel) . '</option>';
+        }
+        echo '</select>';
+        echo '</div>';
+
         echo '</div>';
 
         // Nested sub-fields for group-type sub-fields (infinite nesting)

@@ -138,10 +138,16 @@ class ActionHandler {
                     'taxonomy'    => sanitize_text_field($f['taxonomy'] ?? ''),
                     'role'        => sanitize_text_field($f['role'] ?? ''),
                     'width'       => sanitize_text_field($f['width'] ?? '100'),
+                    'layout'      => sanitize_text_field($f['layout'] ?? ''),
                     'repeatable'  => !empty($f['repeatable']),
                     'collapsed'   => !empty($f['collapsed']),
                     'min_rows'    => intval($f['min_rows'] ?? 0) ?: '',
                     'max_rows'    => intval($f['max_rows'] ?? 0) ?: '',
+                    'row_title_field' => sanitize_text_field($f['row_title_field'] ?? ''),
+                    'searchable'  => !empty($f['searchable']),
+                    'conditional_field'    => sanitize_text_field($f['conditional_field'] ?? ''),
+                    'conditional_operator' => sanitize_text_field($f['conditional_operator'] ?? ''),
+                    'conditional_value'    => sanitize_text_field($f['conditional_value'] ?? ''),
                 ];
 
                 // Parse options textarea into associative array
@@ -305,6 +311,11 @@ class ActionHandler {
                 'required'    => !empty($sf['required']),
                 'placeholder' => sanitize_text_field($sf['placeholder'] ?? ''),
                 'default_value' => sanitize_text_field($sf['default_value'] ?? ''),
+                'width'       => sanitize_text_field($sf['width'] ?? ''),
+                'layout'      => sanitize_text_field($sf['layout'] ?? ''),
+                'conditional_field'    => sanitize_text_field($sf['conditional_field'] ?? ''),
+                'conditional_operator' => sanitize_text_field($sf['conditional_operator'] ?? ''),
+                'conditional_value'    => sanitize_text_field($sf['conditional_value'] ?? ''),
             ];
             // Parse sub-field options
             if (!empty($sf['options']) && in_array($sub['type'], ['select', 'radio'], true)) {
@@ -355,16 +366,28 @@ class ActionHandler {
             if (!empty($field['default_value'])) $f['default']   = $field['default_value'];
             if (!empty($field['options']))      $f['options']     = $field['options'];
             if (!empty($field['rows']))         $f['rows']        = (int) $field['rows'];
-            if ($field['min'] !== '' && isset($field['min'])) $f['min'] = $field['min'];
-            if ($field['max'] !== '' && isset($field['max'])) $f['max'] = $field['max'];
+            if (isset($field['min']) && $field['min'] !== '') $f['min'] = $field['min'];
+            if (isset($field['max']) && $field['max'] !== '') $f['max'] = $field['max'];
             if (!empty($field['step']))         $f['step']        = $field['step'];
             if (!empty($field['post_type']))    $f['post_type']   = $field['post_type'];
             if (!empty($field['taxonomy']))     $f['taxonomy']    = $field['taxonomy'];
             if (!empty($field['role']))         $f['role']        = $field['role'];
             if (!empty($field['repeatable']))   $f['repeat']      = true;
+            if (!empty($field['layout']))       $f['layout']      = $field['layout'];
             if (isset($field['collapsed']))     $f['collapsed']   = (bool) $field['collapsed'];
             if (!empty($field['min_rows']))     $f['min_rows']    = (int) $field['min_rows'];
             if (!empty($field['max_rows']))     $f['max_rows']    = (int) $field['max_rows'];
+            if (!empty($field['row_title_field'])) $f['row_title_field'] = $field['row_title_field'];
+            if (!empty($field['searchable']))   $f['searchable']  = true;
+
+            // Build conditional config from saved fields
+            if (!empty($field['conditional_field'])) {
+                $f['conditional'] = [
+                    'field'    => $field['conditional_field'],
+                    'operator' => $field['conditional_operator'] ?? '==',
+                    'value'    => $field['conditional_value'] ?? '',
+                ];
+            }
 
             // Map sub_fields to 'fields' key expected by GroupField, and set repeat
             if ($field['type'] === 'group' && !empty($field['sub_fields'])) {

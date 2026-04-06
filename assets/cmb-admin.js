@@ -306,6 +306,19 @@
             }
         });
 
+        // Conditional logic toggle
+        $(document).on('change', '.cmb-conditional-toggle', function () {
+            let $settings = $(this).closest('.cmb-conditional-row').find('.cmb-conditional-settings');
+            if ($(this).is(':checked')) {
+                $settings.slideDown(150);
+            } else {
+                $settings.slideUp(150);
+                // Clear conditional fields when unchecked
+                $settings.find('input[type="text"]').val('');
+                $settings.find('select').prop('selectedIndex', 0);
+            }
+        });
+
         /* ── Sub-Field Events ── */
 
         // Add sub-field (supports infinite nesting via data-parent-prefix)
@@ -775,10 +788,36 @@
         html += '<textarea name="' + prefix + '[options]" class="widefat cmb-options-textarea" rows="3" placeholder="option1|Option One&#10;option2|Option Two"></textarea>';
         html += '</div></div>';
 
-        // Required
+        // Conditional Logic
+        html += '<div class="cmb-conditional-row cmb-sub-conditional">';
+        html += '<div class="cmb-conditional-header"><label class="cmb-checkbox-label">';
+        html += '<input type="checkbox" class="cmb-conditional-toggle"> Conditional Logic</label></div>';
+        html += '<div class="cmb-conditional-settings" style="display:none">';
+        html += '<div class="cmb-field-settings-grid">';
+        html += '<div class="cmb-fs-row cmb-fs-third"><label>Show when field</label>';
+        html += '<input type="text" name="' + prefix + '[conditional_field]" class="widefat" placeholder="field_id"></div>';
+        html += '<div class="cmb-fs-row cmb-fs-third"><label>Operator</label>';
+        html += '<select name="' + prefix + '[conditional_operator]" class="widefat">';
+        html += '<option value="==">equals</option><option value="!=">not equals</option>';
+        html += '<option value="!empty">is not empty</option><option value="empty">is empty</option>';
+        html += '<option value="contains">contains</option></select></div>';
+        html += '<div class="cmb-fs-row cmb-fs-third"><label>Value</label>';
+        html += '<input type="text" name="' + prefix + '[conditional_value]" class="widefat" placeholder="value"></div>';
+        html += '</div></div></div>';
+
+        // Bottom row: Required, Width, Layout
         html += '<div class="cmb-sub-field-bottom">';
         html += '<label class="cmb-checkbox-label">';
         html += '<input type="checkbox" name="' + prefix + '[required]" value="1"> Required</label>';
+        html += '<div class="cmb-width-control"><label>Width</label>';
+        html += '<select name="' + prefix + '[width]">';
+        html += '<option value="">Auto</option><option value="100">100%</option><option value="75">75%</option>';
+        html += '<option value="50">50%</option><option value="33">33%</option><option value="25">25%</option>';
+        html += '</select></div>';
+        html += '<div class="cmb-layout-control"><label>Layout</label>';
+        html += '<select name="' + prefix + '[layout]">';
+        html += '<option value="">Horizontal</option><option value="inline">Stacked</option>';
+        html += '</select></div>';
         html += '</div>';
 
         // Nested sub-fields area (for group type — hidden by default)

@@ -623,6 +623,69 @@
     font-size: 12px;
 }
 
+.cmb-layout-control {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+}
+
+.cmb-layout-control label {
+    color: var(--cmb-text-secondary);
+    font-size: 12px;
+}
+
+.cmb-layout-control select {
+    padding: 4px 8px;
+    border: 1px solid var(--cmb-border);
+    border-radius: var(--cmb-radius);
+    font-size: 12px;
+}
+
+/* Conditional Logic Row */
+.cmb-conditional-row {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px dashed var(--cmb-border);
+}
+
+.cmb-conditional-header {
+    margin-bottom: 8px;
+}
+
+.cmb-conditional-header .cmb-checkbox-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--cmb-text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.cmb-conditional-settings {
+    padding: 10px 12px;
+    background: #f8f9fb;
+    border: 1px solid var(--cmb-border);
+    border-radius: var(--cmb-radius);
+    margin-bottom: 4px;
+}
+
+.cmb-sub-conditional {
+    margin-top: 8px;
+    padding-top: 8px;
+}
+
+.cmb-sub-field-bottom {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.cmb-sub-field-bottom .cmb-width-control,
+.cmb-sub-field-bottom .cmb-layout-control {
+    margin-left: 0;
+}
+
 /* ─── Sub-Fields ────────────────────────────────────────── */
 .cmb-sub-fields-wrap {
     margin-top: 16px;
@@ -1354,7 +1417,8 @@
         align-items: flex-start;
     }
 
-    .cmb-width-control {
+    .cmb-width-control,
+    .cmb-layout-control {
         margin-left: 0;
     }
 }
