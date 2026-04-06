@@ -754,6 +754,21 @@
     display: block;
 }
 
+/* Nested sub-fields (infinite nesting) */
+.cmb-nested-sub-fields {
+    margin-top: 12px;
+    padding: 10px;
+    border-left: 3px solid #2271b1;
+    background: rgba(34, 113, 177, 0.03);
+    border-radius: 0 4px 4px 0;
+}
+.cmb-nested-sub-fields .cmb-nested-sub-fields {
+    border-left-color: #d63638;
+}
+.cmb-nested-sub-fields .cmb-nested-sub-fields .cmb-nested-sub-fields {
+    border-left-color: #dba617;
+}
+
 .cmb-sub-type-opt {
     display: none;
     margin-top: 10px;

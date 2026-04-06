@@ -161,46 +161,9 @@ class ActionHandler {
                     $field['options'] = $opts;
                 }
 
-                // Process sub-fields for group type
+                // Process sub-fields for group type (recursive for infinite nesting)
                 if ($field['type'] === 'group' && !empty($f['sub_fields']) && is_array($f['sub_fields'])) {
-                    $subFields = [];
-                    foreach ($f['sub_fields'] as $sf) {
-                        if (empty($sf['id'])) continue;
-                        $sub = [
-                            'id'          => sanitize_text_field($sf['id']),
-                            'type'        => sanitize_text_field($sf['type'] ?? 'text'),
-                            'label'       => sanitize_text_field($sf['label'] ?? ''),
-                            'description' => sanitize_text_field($sf['description'] ?? ''),
-                            'required'    => !empty($sf['required']),
-                            'placeholder' => sanitize_text_field($sf['placeholder'] ?? ''),
-                            'default_value' => sanitize_text_field($sf['default_value'] ?? ''),
-                        ];
-                        // Parse sub-field options
-                        if (!empty($sf['options']) && in_array($sub['type'], ['select', 'radio'], true)) {
-                            $optLines = explode("\n", trim($sf['options']));
-                            $sOpts = [];
-                            foreach ($optLines as $line) {
-                                $line = trim($line);
-                                if ($line === '') continue;
-                                if (strpos($line, '|') !== false) {
-                                    [$val, $lbl] = explode('|', $line, 2);
-                                    $sOpts[sanitize_text_field(trim($val))] = sanitize_text_field(trim($lbl));
-                                } else {
-                                    $sOpts[sanitize_title($line)] = sanitize_text_field($line);
-                                }
-                            }
-                            $sub['options'] = $sOpts;
-                        }
-                        $sub = array_filter($sub, function($v) {
-                            return '' !== $v && null !== $v && false !== $v;
-                        });
-                        $sub['id'] = sanitize_text_field($sf['id']);
-                        $sub['type'] = sanitize_text_field($sf['type'] ?? 'text');
-                        $subFields[] = $sub;
-                    }
-                    if (!empty($subFields)) {
-                        $field['sub_fields'] = $subFields;
-                    }
+                    $field['sub_fields'] = self::processSubFields($f['sub_fields']);
                 }
 
                 // Clean up empty values
@@ -325,6 +288,56 @@ class ActionHandler {
                 $box['priority'] ?? 'default'
             );
         }
+    }
+
+    /**
+     * Recursively process sub-fields from form submission data.
+     */
+    private static function processSubFields(array $rawSubFields): array {
+        $subFields = [];
+        foreach ($rawSubFields as $sf) {
+            if (empty($sf['id'])) continue;
+            $sub = [
+                'id'          => sanitize_text_field($sf['id']),
+                'type'        => sanitize_text_field($sf['type'] ?? 'text'),
+                'label'       => sanitize_text_field($sf['label'] ?? ''),
+                'description' => sanitize_text_field($sf['description'] ?? ''),
+                'required'    => !empty($sf['required']),
+                'placeholder' => sanitize_text_field($sf['placeholder'] ?? ''),
+                'default_value' => sanitize_text_field($sf['default_value'] ?? ''),
+            ];
+            // Parse sub-field options
+            if (!empty($sf['options']) && in_array($sub['type'], ['select', 'radio'], true)) {
+                $optLines = explode("\n", trim($sf['options']));
+                $sOpts = [];
+                foreach ($optLines as $line) {
+                    $line = trim($line);
+                    if ($line === '') continue;
+                    if (strpos($line, '|') !== false) {
+                        [$val, $lbl] = explode('|', $line, 2);
+                        $sOpts[sanitize_text_field(trim($val))] = sanitize_text_field(trim($lbl));
+                    } else {
+                        $sOpts[sanitize_title($line)] = sanitize_text_field($line);
+                    }
+                }
+                $sub['options'] = $sOpts;
+            }
+            // Recursively process nested sub-fields for group type
+            if ($sub['type'] === 'group' && !empty($sf['sub_fields']) && is_array($sf['sub_fields'])) {
+                $sub['sub_fields'] = self::processSubFields($sf['sub_fields']);
+            }
+            $sub = array_filter($sub, function($v) {
+                return '' !== $v && null !== $v && false !== $v;
+            });
+            $sub['id'] = sanitize_text_field($sf['id']);
+            $sub['type'] = sanitize_text_field($sf['type'] ?? 'text');
+            // Preserve sub_fields after array_filter
+            if (!empty($sf['sub_fields']) && $sub['type'] === 'group') {
+                $sub['sub_fields'] = $sub['sub_fields'] ?? self::processSubFields($sf['sub_fields']);
+            }
+            $subFields[] = $sub;
+        }
+        return $subFields;
     }
 
     private static function transformFieldsForRegistration(array $fields): array {

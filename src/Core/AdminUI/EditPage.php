@@ -473,8 +473,11 @@ class EditPage {
         echo '</div>'; // .cmb-field-row
     }
 
-    public static function renderSubFieldRow(int $parentIndex, int $subIndex, array $sf): void {
-        $prefix  = 'cmb_fields[' . $parentIndex . '][sub_fields][' . $subIndex . ']';
+    public static function renderSubFieldRow(int $parentIndex, int $subIndex, array $sf, string $parentPrefix = ''): void {
+        $prefix  = $parentPrefix ?: 'cmb_fields[' . $parentIndex . '][sub_fields][' . $subIndex . ']';
+        if ($parentPrefix) {
+            $prefix = $parentPrefix . '[sub_fields][' . $subIndex . ']';
+        }
         $sfType  = $sf['type'] ?? 'text';
         $sfLabel = $sf['label'] ?? '';
         $sfId    = $sf['id'] ?? '';
@@ -525,10 +528,8 @@ class EditPage {
         echo '<label>' . esc_html__('Type', 'custom-meta-box-builder') . '</label>';
         echo '<select name="' . $prefix . '[type]" class="widefat cmb-sub-field-type-select">';
         foreach (Router::getFieldTypeCategories() as $cat) {
-            // Skip group from sub-field types (no nested groups)
             echo '<optgroup label="' . esc_attr($cat['label']) . '">';
             foreach ($cat['types'] as $tKey => $tInfo) {
-                if ($tKey === 'group') continue;
                 $sel = ($sfType === $tKey) ? ' selected' : '';
                 echo '<option value="' . esc_attr($tKey) . '"' . $sel . '>' . esc_html($tInfo['label']) . '</option>';
             }
@@ -563,6 +564,24 @@ class EditPage {
         echo '<label class="cmb-checkbox-label">';
         echo '<input type="checkbox" name="' . $prefix . '[required]" value="1"' . ($sfReq ? ' checked' : '') . '> ' . esc_html__('Required', 'custom-meta-box-builder');
         echo '</label>';
+        echo '</div>';
+
+        // Nested sub-fields for group-type sub-fields (infinite nesting)
+        $nestedSubFields = $sf['sub_fields'] ?? [];
+        echo '<div class="cmb-type-opt cmb-sub-fields-wrap cmb-nested-sub-fields" data-show-for="group"' . ($sfType !== 'group' ? ' style="display:none"' : '') . '>';
+        echo '<div class="cmb-sub-fields-header">';
+        echo '<label>' . esc_html__('Sub-Fields', 'custom-meta-box-builder') . '</label>';
+        echo '</div>';
+        echo '<div class="cmb-sub-fields-list" data-parent-prefix="' . esc_attr($prefix) . '">';
+        if (!empty($nestedSubFields)) {
+            foreach ($nestedSubFields as $ni => $nsf) {
+                self::renderSubFieldRow($parentIndex, $ni, $nsf, $prefix);
+            }
+        }
+        echo '</div>';
+        echo '<button type="button" class="button cmb-add-sub-field" data-parent-prefix="' . esc_attr($prefix) . '">';
+        echo '<span class="dashicons dashicons-plus-alt2"></span> ' . esc_html__('Add Sub-Field', 'custom-meta-box-builder');
+        echo '</button>';
         echo '</div>';
 
         echo '</div>'; // .cmb-sub-field-body

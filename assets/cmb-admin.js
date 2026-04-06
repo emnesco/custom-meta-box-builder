@@ -308,16 +308,23 @@
 
         /* ── Sub-Field Events ── */
 
-        // Add sub-field
+        // Add sub-field (supports infinite nesting via data-parent-prefix)
         $(document).on('click', '.cmb-add-sub-field', function () {
-            let parentIndex = $(this).data('parent-index');
             let $list = $(this).siblings('.cmb-sub-fields-list');
             let subIndex = $list.children('.cmb-sub-field-row').length;
-            let html = buildSubFieldHtml(parentIndex, subIndex);
+            let parentPrefix = $(this).data('parent-prefix') || '';
+            let parentIndex = $(this).data('parent-index');
+            let prefix;
+            if (parentPrefix) {
+                prefix = parentPrefix + '[sub_fields][' + subIndex + ']';
+            } else {
+                prefix = 'cmb_fields[' + parentIndex + '][sub_fields][' + subIndex + ']';
+            }
+            let html = buildSubFieldHtml(prefix, subIndex);
             let $row = $(html);
             $list.append($row);
             updateSubFieldTypeOptions($row);
-            $row.find('.cmb-sub-field-label-input').focus();
+            $row.find('> .cmb-sub-field-body .cmb-sub-field-label-input').first().focus();
             markDirty();
         });
 
@@ -362,9 +369,16 @@
             let type = $(this).val();
             let typeInfo = cmbAdmin.fieldTypes[type] || {};
             $row.attr('data-type', type);
-            $row.find('.cmb-sub-field-type-badge').text(typeInfo.label || type);
-            $row.find('.cmb-sub-field-icon').attr('class', 'dashicons ' + (typeInfo.icon || 'dashicons-admin-generic') + ' cmb-sub-field-icon');
+            $row.find('> .cmb-sub-field-header .cmb-sub-field-type-badge').text(typeInfo.label || type);
+            $row.find('> .cmb-sub-field-header .cmb-sub-field-icon').attr('class', 'dashicons ' + (typeInfo.icon || 'dashicons-admin-generic') + ' cmb-sub-field-icon');
             updateSubFieldTypeOptions($row);
+            // Show/hide nested sub-fields area for group type
+            let $nested = $row.find('> .cmb-sub-field-body > .cmb-nested-sub-fields');
+            if (type === 'group') {
+                $nested.show();
+            } else {
+                $nested.hide();
+            }
         });
     }
 
@@ -705,9 +719,7 @@
 
     /* ─── Sub-Field Helpers ─────────────────────────────── */
 
-    function buildSubFieldHtml(parentIndex, subIndex) {
-        let prefix = 'cmb_fields[' + parentIndex + '][sub_fields][' + subIndex + ']';
-
+    function buildSubFieldHtml(prefix, subIndex) {
         let html = '<div class="cmb-sub-field-row open" data-sub-index="' + subIndex + '" data-type="text">';
 
         // Header
@@ -737,7 +749,6 @@
         $.each(cmbAdmin.fieldGroups, function (_, cat) {
             html += '<optgroup label="' + escHtml(cat.label) + '">';
             $.each(cat.types, function (key, info) {
-                if (key === 'group') return; // No nested groups
                 let sel = (key === 'text') ? ' selected' : '';
                 html += '<option value="' + key + '"' + sel + '>' + escHtml(info.label) + '</option>';
             });
@@ -770,6 +781,14 @@
         html += '<input type="checkbox" name="' + prefix + '[required]" value="1"> Required</label>';
         html += '</div>';
 
+        // Nested sub-fields area (for group type — hidden by default)
+        html += '<div class="cmb-type-opt cmb-sub-fields-wrap cmb-nested-sub-fields" data-show-for="group" style="display:none">';
+        html += '<div class="cmb-sub-fields-header"><label>Sub-Fields</label></div>';
+        html += '<div class="cmb-sub-fields-list" data-parent-prefix="' + escHtml(prefix) + '"></div>';
+        html += '<button type="button" class="button cmb-add-sub-field" data-parent-prefix="' + escHtml(prefix) + '">';
+        html += '<span class="dashicons dashicons-plus-alt2"></span> Add Sub-Field</button>';
+        html += '</div>';
+
         html += '</div>'; // .cmb-sub-field-body
         html += '</div>'; // .cmb-sub-field-row
 
@@ -777,27 +796,53 @@
     }
 
     function reindexSubFields($list) {
+        let parentPrefix = $list.data('parent-prefix') || '';
         let parentIndex = $list.data('parent-index');
+
         $list.children('.cmb-sub-field-row').each(function (newIndex) {
             $(this).attr('data-sub-index', newIndex);
-            $(this).find('[name]').each(function () {
+            // Build the new prefix for this level
+            let newPrefix;
+            if (parentPrefix) {
+                newPrefix = parentPrefix + '[sub_fields][' + newIndex + ']';
+            } else {
+                newPrefix = 'cmb_fields[' + parentIndex + '][sub_fields][' + newIndex + ']';
+            }
+            // Only update direct inputs of this sub-field row (not nested ones)
+            $(this).find('> .cmb-sub-field-body [name]').not($(this).find('> .cmb-sub-field-body .cmb-sub-field-row [name]')).each(function () {
                 let name = $(this).attr('name');
                 if (name) {
-                    // Replace sub_fields[N] part only
-                    $(this).attr('name', name.replace(
-                        /cmb_fields\[\d+\]\[sub_fields\]\[\d+\]/,
-                        'cmb_fields[' + parentIndex + '][sub_fields][' + newIndex + ']'
-                    ));
+                    // Replace the last sub_fields[N] segment with the new index
+                    let lastBracket = name.lastIndexOf('[sub_fields]');
+                    if (lastBracket === -1) return;
+                    let afterSubFields = name.substring(lastBracket);
+                    let beforeSubFields = name.substring(0, lastBracket);
+                    afterSubFields = afterSubFields.replace(/\[sub_fields\]\[\d+\]/, '[sub_fields][' + newIndex + ']');
+                    $(this).attr('name', beforeSubFields + afterSubFields);
                 }
+            });
+            // Update nested add-sub-field buttons and lists with new prefix
+            $(this).find('> .cmb-sub-field-body > .cmb-nested-sub-fields').each(function () {
+                $(this).find('> .cmb-sub-fields-list').data('parent-prefix', newPrefix);
+                $(this).find('> .cmb-add-sub-field').data('parent-prefix', newPrefix);
             });
         });
     }
 
     function updateSubFieldTypeOptions($row) {
-        let type = $row.attr('data-type') || $row.find('.cmb-sub-field-type-select').val() || 'text';
-        $row.find('.cmb-sub-type-opt').each(function () {
+        let type = $row.attr('data-type') || $row.find('> .cmb-sub-field-body .cmb-sub-field-type-select').first().val() || 'text';
+        // Show/hide type-specific option panels (only direct children, not nested)
+        $row.find('> .cmb-sub-field-body > .cmb-sub-type-opt, > .cmb-sub-field-body > .cmb-field-settings-grid.cmb-sub-type-opt').each(function () {
             let showFor = ($(this).data('show-for') || '').split(',');
             $(this).toggleClass('visible', showFor.indexOf(type) !== -1);
+        });
+        // Show/hide nested sub-fields area for group type
+        $row.find('> .cmb-sub-field-body > .cmb-nested-sub-fields').each(function () {
+            if (type === 'group') {
+                $(this).show();
+            } else {
+                $(this).hide();
+            }
         });
     }
 
