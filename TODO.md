@@ -38,9 +38,10 @@
 - [x] `FieldRenderer.php` — "Search...", "Select...", "No results found"
 - [x] `FlexibleContentField.php` — "Add Layout", "Remove", "Collapse"
 - [x] `FrontendForm.php` — "Submit", "Processing..."
-- [ ] `BlockRegistration.php` — block labels and descriptions
+- [x] `BlockRegistration.php` — block labels and descriptions
+  - **Comment:** Reviewed — no hardcoded user-facing strings (titles come from config). No changes needed.
 - [ ] Generate `.pot` file for translators
-- **Comment:** i18n agent wrapped all hardcoded strings in ListPage, EditPage, FieldRenderer, FlexibleContentField, FrontendForm, and Router. BlockRegistration block labels and .pot file generation remain for follow-up.
+- **Comment:** i18n agent wrapped strings across 16 files: ListPage, EditPage, FieldRenderer, FlexibleContentField, FrontendForm, Router, ActionHandler, BulkOperations, DependencyGraph, SelectField, PostField, TaxonomyField, UserField, GalleryField, ImageField, FileField, WpCliCommands. Only `.pot` file generation remains.
 - **Ref:** WPS-C03, WPS-H01, WPS-L01
 
 ### 1.3 WP_Filesystem for All File I/O
