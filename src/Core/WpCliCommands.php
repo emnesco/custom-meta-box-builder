@@ -141,6 +141,17 @@ class WpCliCommands {
         }
 
         update_post_meta($postId, $fieldId, $value);
+
+        // SEC-L06: Audit trail logging for WP-CLI set operations.
+        $currentUser = wp_get_current_user();
+        $userName = $currentUser->ID ? $currentUser->user_login : 'cli';
+        error_log(sprintf(
+            '[CMB Audit] SET field "%s" on post %d by user "%s"',
+            $fieldId,
+            $postId,
+            $userName
+        ));
+
         /* translators: 1: field ID, 2: post ID */
         \WP_CLI::success(sprintf(__('Updated "%1$s" on post %2$d.', 'custom-meta-box-builder'), $fieldId, $postId));
     }
@@ -161,6 +172,17 @@ class WpCliCommands {
         $fieldId = $args[1];
 
         delete_post_meta($postId, $fieldId);
+
+        // SEC-L06: Audit trail logging for WP-CLI delete operations.
+        $currentUser = wp_get_current_user();
+        $userName = $currentUser->ID ? $currentUser->user_login : 'cli';
+        error_log(sprintf(
+            '[CMB Audit] DELETE field "%s" from post %d by user "%s"',
+            $fieldId,
+            $postId,
+            $userName
+        ));
+
         \WP_CLI::success(sprintf('Deleted "%s" from post %d.', $fieldId, $postId));
     }
 

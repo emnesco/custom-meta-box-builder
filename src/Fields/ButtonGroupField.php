@@ -14,7 +14,7 @@ defined( 'ABSPATH' ) || exit;
 
 use CMB\Core\Contracts\Abstracts\AbstractField;
 
-class ButtonGroupField extends AbstractField {
+final class ButtonGroupField extends AbstractField {
     public function render(): string {
         $value = $this->getValue();
         $name = esc_attr( $this->getName() );

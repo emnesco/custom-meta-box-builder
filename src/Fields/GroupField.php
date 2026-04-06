@@ -13,10 +13,13 @@ namespace CMB\Fields;
 defined( 'ABSPATH' ) || exit;
 
 use CMB\Core\Contracts\Abstracts\AbstractField;
+use CMB\Core\Contracts\FieldRendererInterface;
 use CMB\Core\FieldFactory;
 use CMB\Core\FieldRenderer;
+use CMB\Core\Traits\SubFieldRenderTrait;
 
-class GroupField extends AbstractField {
+final class GroupField extends AbstractField {
+    use SubFieldRenderTrait;
 
     public function render(): string {
         $value = $this->getValue();
@@ -83,6 +86,7 @@ class GroupField extends AbstractField {
         $output .= '<div class="cmb-group-fields">';
 
         if (!empty($field['fields'])) {
+            /** @var FieldRendererInterface $fieldRenderer */
             $fieldRenderer = $this->config['_renderer'] ?? new FieldRenderer(get_post(get_the_ID()));
             foreach ($field['fields'] as $sub_field) {
                 $sub_field_value = $this->sub_field_value($value, $index, $field, $sub_field);

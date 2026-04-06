@@ -14,7 +14,7 @@ defined( 'ABSPATH' ) || exit;
 
 use CMB\Core\Contracts\Abstracts\AbstractField;
 
-class ColorField extends AbstractField {
+final class ColorField extends AbstractField {
     public function render(): string {
         $value = $this->getValue() ?? '#000000';
         $htmlId = $this->config['html_id'] ?? '';

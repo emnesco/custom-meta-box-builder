@@ -60,9 +60,18 @@ class FieldFactory {
             return self::$customTypes[ $type ];
         }
 
+        /**
+         * Filters the type aliases array, allowing third-party code to add custom aliases.
+         *
+         * @since 2.0
+         *
+         * @param array $typeAliases The built-in type aliases mapping.
+         */
+        $aliases = apply_filters( 'cmbbuilder_field_type_aliases', self::$typeAliases );
+
         // Built-in aliases for non-standard naming
-        if ( isset( self::$typeAliases[ $type ] ) ) {
-            return self::$typeAliases[ $type ];
+        if ( isset( $aliases[ $type ] ) ) {
+            return $aliases[ $type ];
         }
 
         $fieldClass = 'CMB\\Fields\\' . ucfirst( $type ) . 'Field';

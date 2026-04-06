@@ -14,7 +14,7 @@ defined( 'ABSPATH' ) || exit;
 
 use CMB\Core\Contracts\Abstracts\AbstractField;
 
-class FileField extends AbstractField {
+final class FileField extends AbstractField {
     public function render(): string {
         $value = $this->getValue();
         $htmlId = $this->config['html_id'] ?? 'cmb-file';

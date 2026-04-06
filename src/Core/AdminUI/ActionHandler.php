@@ -20,7 +20,21 @@ class ActionHandler {
 
     public static function getConfigs(): array {
         if (null === self::$configCache) {
-            self::$configCache = get_option(self::OPTION_KEY, []);
+            // PERF-L01: Check object cache before hitting the database.
+            $cached = wp_cache_get(self::OPTION_KEY, 'cmb_config');
+            if (false !== $cached) {
+                self::$configCache = $cached;
+            } else {
+                // WPS-M01: Check transient cache for expensive config loading.
+                $transient = get_transient('cmb_admin_configs');
+                if (false !== $transient) {
+                    self::$configCache = $transient;
+                } else {
+                    self::$configCache = get_option(self::OPTION_KEY, []);
+                    set_transient('cmb_admin_configs', self::$configCache, 60);
+                }
+                wp_cache_set(self::OPTION_KEY, self::$configCache, 'cmb_config');
+            }
         }
         return self::$configCache;
     }
@@ -33,8 +47,16 @@ class ActionHandler {
             update_option(self::OPTION_KEY, $configs, false);
         }
         self::$configCache = $configs;
+        // PERF-L01: Update the object cache and clear transient on save.
+        wp_cache_set(self::OPTION_KEY, $configs, 'cmb_config');
+        delete_transient('cmb_admin_configs');
     }
 
+    /**
+     * Handle save of a field group configuration.
+     *
+     * Orchestrates validation, assembly, and persistence of the config.
+     */
     public static function handleSave(): void {
         if (empty($_POST['cmb_builder_submit'])) {
             return;
@@ -46,14 +68,24 @@ class ActionHandler {
             return;
         }
 
+        $validated = self::validateConfig();
+        if (null === $validated) {
+            return;
+        }
+
+        $config = self::assembleConfig($validated);
+        self::persistConfig($config);
+    }
+
+    /**
+     * Validate and extract raw config values from the request.
+     *
+     * @return array|null Validated values or null if validation failed.
+     */
+    private static function validateConfig(): ?array {
         $editing   = sanitize_text_field( wp_unslash( $_POST['cmb_editing'] ?? '' ) );
         $id        = $editing ?: sanitize_text_field( wp_unslash( $_POST['cmb_box_id'] ?? '' ) );
         $title     = sanitize_text_field( wp_unslash( $_POST['cmb_box_title'] ?? '' ) );
-        $postTypes = array_map('sanitize_text_field', wp_unslash( $_POST['cmb_box_post_types'] ?? ['post'] ) );
-        $context   = sanitize_text_field( wp_unslash( $_POST['cmb_box_context'] ?? 'advanced' ) );
-        $priority  = sanitize_text_field( wp_unslash( $_POST['cmb_box_priority'] ?? 'default' ) );
-        $active    = !empty($_POST['cmb_active']);
-        $showRest  = !empty($_POST['cmb_show_in_rest']);
 
         // Auto-generate ID from title if empty
         if (empty($id) && !empty($title)) {
@@ -62,9 +94,27 @@ class ActionHandler {
         }
 
         if (empty($id) || empty($title)) {
-            return;
+            return null;
         }
 
+        return [
+            'id'        => $id,
+            'title'     => $title,
+            'postTypes' => array_map('sanitize_text_field', wp_unslash( $_POST['cmb_box_post_types'] ?? ['post'] ) ),
+            'context'   => sanitize_text_field( wp_unslash( $_POST['cmb_box_context'] ?? 'advanced' ) ),
+            'priority'  => sanitize_text_field( wp_unslash( $_POST['cmb_box_priority'] ?? 'default' ) ),
+            'active'    => !empty($_POST['cmb_active']),
+            'showRest'  => !empty($_POST['cmb_show_in_rest']),
+        ];
+    }
+
+    /**
+     * Assemble the full configuration array including processed fields.
+     *
+     * @param array $validated The validated config values from validateConfig().
+     * @return array The assembled configuration.
+     */
+    private static function assembleConfig(array $validated): array {
         $fields = [];
         $rawFields = wp_unslash( $_POST['cmb_fields'] ?? [] );
         if (!empty($rawFields) && is_array($rawFields)) {
@@ -169,18 +219,27 @@ class ActionHandler {
             }
         }
 
-        $configs = self::getConfigs();
-        $config = [
-            'id'           => $id,
-            'title'        => $title,
-            'postTypes'    => $postTypes,
+        return [
+            'id'           => $validated['id'],
+            'title'        => $validated['title'],
+            'postTypes'    => $validated['postTypes'],
             'fields'       => $fields,
-            'context'      => $context,
-            'priority'     => $priority,
-            'active'       => $active,
-            'show_in_rest' => $showRest,
+            'context'      => $validated['context'],
+            'priority'     => $validated['priority'],
+            'active'       => $validated['active'],
+            'show_in_rest' => $validated['showRest'],
             '_modified'    => time(),
         ];
+    }
+
+    /**
+     * Persist the assembled config to the database and redirect.
+     *
+     * @param array $config The assembled configuration.
+     */
+    private static function persistConfig(array $config): void {
+        $id = $config['id'];
+        $configs = self::getConfigs();
         $configs[$id] = $config;
         self::saveConfigs($configs);
 
@@ -191,343 +250,44 @@ class ActionHandler {
         exit;
     }
 
+    /**
+     * Delegate to BulkActionHandler::handleDelete().
+     */
     public static function handleDelete(): void {
-        if (empty($_GET['cmb_delete']) || empty($_GET['page']) || $_GET['page'] !== 'cmb-builder') {
-            return;
-        }
-
-        $id = sanitize_text_field($_GET['cmb_delete']);
-        if (!wp_verify_nonce($_GET['_wpnonce'] ?? '', 'cmb_delete_' . $id)) {
-            return;
-        }
-        if (!current_user_can('manage_options')) {
-            return;
-        }
-
-        $configs = self::getConfigs();
-        unset($configs[$id]);
-        self::saveConfigs($configs);
-
-        /** @since 2.1 Fires after a field group config is deleted. */
-        do_action('cmbbuilder_config_deleted', $id);
-
-        wp_safe_redirect(admin_url('admin.php?page=cmb-builder&deleted=1'));
-        exit;
+        BulkActionHandler::handleDelete();
     }
 
     public static function handleDuplicate(): void {
-        if (empty($_GET['cmb_duplicate']) || empty($_GET['page']) || $_GET['page'] !== 'cmb-builder') {
-            return;
-        }
-
-        $id = sanitize_text_field($_GET['cmb_duplicate']);
-        if (!wp_verify_nonce($_GET['_wpnonce'] ?? '', 'cmb_duplicate_' . $id)) {
-            return;
-        }
-        if (!current_user_can('manage_options')) {
-            return;
-        }
-
-        $configs = self::getConfigs();
-        if (!isset($configs[$id])) {
-            return;
-        }
-
-        $newId = $id . '_copy';
-        $counter = 1;
-        while (isset($configs[$newId])) {
-            $newId = $id . '_copy_' . $counter;
-            $counter++;
-        }
-
-        $configs[$newId] = $configs[$id];
-        /* translators: suffix appended to duplicated field group title */
-        $configs[$newId]['title'] .= ' ' . __('(Copy)', 'custom-meta-box-builder');
-        self::saveConfigs($configs);
-
-        wp_safe_redirect(admin_url('admin.php?page=cmb-builder&duplicated=1'));
-        exit;
+        BulkActionHandler::handleDuplicate();
     }
 
     public static function handleToggle(): void {
-        if (empty($_GET['cmb_toggle']) || empty($_GET['page']) || $_GET['page'] !== 'cmb-builder') {
-            return;
-        }
-
-        $id = sanitize_text_field($_GET['cmb_toggle']);
-        if (!wp_verify_nonce($_GET['_wpnonce'] ?? '', 'cmb_toggle_' . $id)) {
-            return;
-        }
-        if (!current_user_can('manage_options')) {
-            return;
-        }
-
-        $configs = self::getConfigs();
-        if (!isset($configs[$id])) {
-            return;
-        }
-
-        $configs[$id]['active'] = !($configs[$id]['active'] ?? true);
-        self::saveConfigs($configs);
-
-        wp_safe_redirect(admin_url('admin.php?page=cmb-builder&toggled=1'));
-        exit;
+        BulkActionHandler::handleToggle();
     }
 
     public static function handleExport(): void {
-        if (empty($_GET['cmb_export']) || empty($_GET['page']) || $_GET['page'] !== 'cmb-builder') {
-            return;
-        }
-        if (!current_user_can('manage_options')) {
-            return;
-        }
-
-        $exportId = sanitize_text_field($_GET['cmb_export']);
-        $configs  = get_option(self::OPTION_KEY, []);
-
-        if ($exportId === 'all') {
-            if (!wp_verify_nonce($_GET['_wpnonce'] ?? '', 'cmb_export_all')) {
-                return;
-            }
-            $data = $configs;
-            $filename = 'cmb-all-field-groups-' . gmdate('Y-m-d') . '.json';
-        } else {
-            if (!wp_verify_nonce($_GET['_wpnonce'] ?? '', 'cmb_export_' . $exportId)) {
-                return;
-            }
-            if (!isset($configs[$exportId])) {
-                return;
-            }
-            $data = [$exportId => $configs[$exportId]];
-            $filename = 'cmb-' . $exportId . '-' . gmdate('Y-m-d') . '.json';
-        }
-
-        // SEC-N01: Strip CRLF from filename to prevent header injection.
-        $filename = str_replace(["\r", "\n"], '', $filename);
-
-        $export = [
-            'version'      => '2.0',
-            'plugin'       => 'custom-meta-box-builder',
-            'exported_at'  => gmdate('Y-m-d\TH:i:s\Z'),
-            'field_groups' => $data,
-        ];
-
-        $json = wp_json_encode($export, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
-        header('Content-Type: application/json');
-        header('Content-Disposition: attachment; filename="' . $filename . '"');
-        header('Content-Length: ' . strlen($json));
-        header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
-        header('Pragma: no-cache');
-        echo $json;
-        exit;
+        ImportExportHandler::handleExport();
     }
 
     public static function handleExportPhp(): void {
-        if (empty($_GET['cmb_export_php']) || empty($_GET['page']) || $_GET['page'] !== 'cmb-builder') {
-            return;
-        }
-        if (!current_user_can('manage_options')) {
-            return;
-        }
-
-        $exportId = sanitize_text_field($_GET['cmb_export_php']);
-        if (!wp_verify_nonce($_GET['_wpnonce'] ?? '', 'cmb_export_php_' . $exportId)) {
-            return;
-        }
-
-        $configs = self::getConfigs();
-        if (!isset($configs[$exportId])) {
-            return;
-        }
-
-        $box = $configs[$exportId];
-        $fields = var_export($box['fields'] ?? [], true);
-        $postTypes = var_export($box['postTypes'] ?? ['post'], true);
-
-        $php = "<?php\n";
-        $php .= "// Generated by Custom Meta Box Builder on " . gmdate('Y-m-d') . "\n\n";
-        $php .= "add_custom_meta_box(\n";
-        $php .= "    " . var_export($exportId, true) . ",\n";
-        $php .= "    " . var_export($box['title'] ?? '', true) . ",\n";
-        $php .= "    " . $postTypes . ",\n";
-        $php .= "    " . $fields . ",\n";
-        $php .= "    " . var_export($box['context'] ?? 'advanced', true) . ",\n";
-        $php .= "    " . var_export($box['priority'] ?? 'default', true) . "\n";
-        $php .= ");\n";
-
-        $filename = 'cmb-' . $exportId . '.php';
-        // SEC-N01: Strip CRLF from filename to prevent header injection.
-        $filename = str_replace(["\r", "\n"], '', $filename);
-        header('Content-Type: application/x-php');
-        header('Content-Disposition: attachment; filename="' . $filename . '"');
-        header('Content-Length: ' . strlen($php));
-        header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
-        header('Pragma: no-cache');
-        echo $php;
-        exit;
+        ImportExportHandler::handleExportPhp();
     }
 
     public static function handleImport(): void {
-        if (empty($_POST['cmb_action']) || $_POST['cmb_action'] !== 'import') {
-            return;
-        }
-        if (!isset($_POST['cmb_import_nonce']) || !wp_verify_nonce($_POST['cmb_import_nonce'], 'cmb_import')) {
-            return;
-        }
-        if (!current_user_can('manage_options')) {
-            return;
-        }
-
-        $json = '';
-        if (!empty($_FILES['cmb_import_file']['tmp_name'])) {
-            $fileSize = $_FILES['cmb_import_file']['size'] ?? 0;
-            if ($fileSize > 1024 * 1024) {
-                wp_safe_redirect(admin_url('admin.php?page=cmb-builder&error=import_failed'));
-                exit;
-            }
-            $json = file_get_contents($_FILES['cmb_import_file']['tmp_name']);
-        } elseif (!empty($_POST['cmb_import_json'])) {
-            $json = wp_unslash($_POST['cmb_import_json']);
-            if (strlen($json) > 1024 * 1024) {
-                wp_safe_redirect(admin_url('admin.php?page=cmb-builder&error=import_failed'));
-                exit;
-            }
-        }
-
-        if (empty($json)) {
-            wp_safe_redirect(admin_url('admin.php?page=cmb-builder&error=no_data'));
-            exit;
-        }
-
-        $data = json_decode($json, true);
-        if (json_last_error() !== JSON_ERROR_NONE) {
-            wp_safe_redirect(admin_url('admin.php?page=cmb-builder&error=invalid_json'));
-            exit;
-        }
-
-        // SEC-N04: Validate required keys exist in import schema.
-        if (!isset($data['meta_boxes']) && !isset($data['field_groups'])) {
-            wp_safe_redirect(admin_url('admin.php?page=cmb-builder&error=import_failed'));
-            exit;
-        }
-        if (isset($data['meta_boxes']) && !is_array($data['meta_boxes'])) {
-            wp_safe_redirect(admin_url('admin.php?page=cmb-builder&error=import_failed'));
-            exit;
-        }
-        if (isset($data['field_groups']) && !is_array($data['field_groups'])) {
-            wp_safe_redirect(admin_url('admin.php?page=cmb-builder&error=import_failed'));
-            exit;
-        }
-
-        // Support both v1 (meta_boxes) and v2 (field_groups) format
-        $groups = $data['field_groups'] ?? $data['meta_boxes'] ?? null;
-        if (empty($groups) || !is_array($groups)) {
-            wp_safe_redirect(admin_url('admin.php?page=cmb-builder&error=import_failed'));
-            exit;
-        }
-
-        $configs = self::getConfigs();
-        $count   = 0;
-
-        foreach ($groups as $id => $box) {
-            if (empty($box['title'])) {
-                continue;
-            }
-            $configs[$id] = [
-                'title'        => sanitize_text_field($box['title']),
-                'postTypes'    => array_map('sanitize_text_field', $box['postTypes'] ?? ['post']),
-                'fields'       => self::sanitizeImportedFields($box['fields'] ?? []),
-                'context'      => sanitize_text_field($box['context'] ?? 'advanced'),
-                'priority'     => sanitize_text_field($box['priority'] ?? 'default'),
-                'active'       => $box['active'] ?? true,
-                'show_in_rest' => $box['show_in_rest'] ?? false,
-            ];
-            $count++;
-        }
-
-        self::saveConfigs($configs);
-
-        wp_safe_redirect(admin_url('admin.php?page=cmb-builder&imported=' . $count));
-        exit;
+        ImportExportHandler::handleImport();
     }
 
     /**
-     * SEC-R01: Deep recursive sanitization for arbitrary imported field data.
+     * SEC-L05: Recursively strip _modified keys from data before export.
      */
-    private static function sanitizeFieldsDeep(array $fields): array {
-        return array_map(function($field) {
-            if (is_array($field)) {
-                return self::sanitizeFieldsDeep($field);
+    private static function stripModifiedKeys(array $data): array {
+        unset($data['_modified']);
+        foreach ($data as $key => $value) {
+            if (is_array($value)) {
+                $data[$key] = self::stripModifiedKeys($value);
             }
-            return is_string($field) ? sanitize_text_field($field) : $field;
-        }, $fields);
-    }
-
-    private static function sanitizeImportedFields(array $fields): array {
-        // SEC-R01: Apply deep sanitization before structured processing.
-        $fields = self::sanitizeFieldsDeep($fields);
-
-        $sanitized = [];
-        foreach ($fields as $field) {
-            if (!is_array($field) || empty($field['id'])) {
-                continue;
-            }
-            $clean = [
-                'id'            => sanitize_text_field($field['id']),
-                'type'          => sanitize_text_field($field['type'] ?? 'text'),
-                'label'         => sanitize_text_field($field['label'] ?? ''),
-                'description'   => sanitize_text_field($field['description'] ?? ''),
-                'required'      => !empty($field['required']),
-                'placeholder'   => sanitize_text_field($field['placeholder'] ?? ''),
-                'default_value' => sanitize_text_field($field['default_value'] ?? ''),
-                'width'         => sanitize_text_field($field['width'] ?? ''),
-            ];
-
-            // Numeric fields
-            if (isset($field['rows']))     $clean['rows']     = intval($field['rows']);
-            if (isset($field['min']))      $clean['min']      = sanitize_text_field((string)($field['min'] ?? ''));
-            if (isset($field['max']))      $clean['max']      = sanitize_text_field((string)($field['max'] ?? ''));
-            if (isset($field['step']))     $clean['step']     = sanitize_text_field((string)($field['step'] ?? ''));
-            if (isset($field['min_rows'])) $clean['min_rows'] = intval($field['min_rows']);
-            if (isset($field['max_rows'])) $clean['max_rows'] = intval($field['max_rows']);
-
-            // Relational fields
-            if (!empty($field['post_type'])) $clean['post_type'] = sanitize_text_field($field['post_type']);
-            if (!empty($field['taxonomy']))  $clean['taxonomy']  = sanitize_text_field($field['taxonomy']);
-            if (!empty($field['role']))      $clean['role']      = sanitize_text_field($field['role']);
-
-            // Boolean flags
-            if (!empty($field['repeatable'])) $clean['repeatable'] = true;
-            if (isset($field['collapsed']))   $clean['collapsed']  = (bool)$field['collapsed'];
-
-            // Options (select/radio)
-            if (!empty($field['options']) && is_array($field['options'])) {
-                $opts = [];
-                foreach ($field['options'] as $k => $v) {
-                    $opts[sanitize_text_field((string)$k)] = sanitize_text_field((string)$v);
-                }
-                $clean['options'] = $opts;
-            }
-
-            // Recursively sanitize sub-fields for groups
-            if (!empty($field['sub_fields']) && is_array($field['sub_fields'])) {
-                $clean['sub_fields'] = self::sanitizeImportedFields($field['sub_fields']);
-            }
-            if (!empty($field['fields']) && is_array($field['fields'])) {
-                $clean['fields'] = self::sanitizeImportedFields($field['fields']);
-            }
-
-            // Remove empty values to keep storage clean
-            $clean = array_filter($clean, function ($v) {
-                return '' !== $v && null !== $v && 0 !== $v;
-            });
-            // Always keep id and type
-            $clean['id']   = sanitize_text_field($field['id']);
-            $clean['type'] = sanitize_text_field($field['type'] ?? 'text');
-
-            $sanitized[] = $clean;
         }
-        return $sanitized;
+        return $data;
     }
 
     public static function registerSavedBoxes(): void {
@@ -544,7 +304,10 @@ class ActionHandler {
             return;
         }
 
-        $manager = MetaBoxManager::instance();
+        $manager = MetaBoxManager::getInstance();
+        if (null === $manager) {
+            return;
+        }
         foreach ($configs as $id => $box) {
             // Skip inactive groups
             if (isset($box['active']) && !$box['active']) {

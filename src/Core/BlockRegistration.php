@@ -12,7 +12,7 @@ namespace CMB\Core;
 
 defined( 'ABSPATH' ) || exit;
 
-class BlockRegistration {
+class BlockRegistration implements Contracts\BlockRegistrationInterface {
     /** @var array<string, array> Registered blocks. */
     private static array $blocks = [];
 

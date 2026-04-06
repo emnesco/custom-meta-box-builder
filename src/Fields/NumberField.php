@@ -14,7 +14,7 @@ defined( 'ABSPATH' ) || exit;
 
 use CMB\Core\Contracts\Abstracts\AbstractField;
 
-class NumberField extends AbstractField {
+final class NumberField extends AbstractField {
     public function render(): string {
         $value = $this->getValue();
         $htmlId = $this->config['html_id'] ?? '';

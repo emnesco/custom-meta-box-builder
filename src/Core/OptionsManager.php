@@ -12,10 +12,16 @@ namespace CMB\Core;
 
 defined( 'ABSPATH' ) || exit;
 
+use CMB\Core\Contracts\Abstracts\AbstractMetaManager;
 use CMB\Core\RenderContext\OptionContext;
+use CMB\Core\Storage\OptionStorage;
 
-class OptionsManager {
+class OptionsManager extends AbstractMetaManager {
     private array $pages = [];
+
+    public function __construct() {
+        $this->storage = new OptionStorage();
+    }
 
     public function add(string $pageSlug, string $pageTitle, string $menuTitle, array $fields, string $capability = 'manage_options', string $parentSlug = ''): void {
         $this->pages[$pageSlug] = compact('pageTitle', 'menuTitle', 'fields', 'capability', 'parentSlug');

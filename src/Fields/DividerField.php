@@ -14,7 +14,7 @@ defined( 'ABSPATH' ) || exit;
 
 use CMB\Core\Contracts\Abstracts\AbstractField;
 
-class DividerField extends AbstractField {
+final class DividerField extends AbstractField {
     public function render(): string {
         return '<hr class="cmb-divider">';
     }

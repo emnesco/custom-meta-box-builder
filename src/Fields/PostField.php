@@ -14,7 +14,7 @@ defined( 'ABSPATH' ) || exit;
 
 use CMB\Core\Contracts\Abstracts\AbstractField;
 
-class PostField extends AbstractField {
+final class PostField extends AbstractField {
     private static array $postCache = [];
 
     public function render(): string {

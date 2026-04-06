@@ -14,7 +14,7 @@ defined( 'ABSPATH' ) || exit;
 
 use CMB\Core\Contracts\Abstracts\AbstractField;
 
-class HiddenField extends AbstractField {
+final class HiddenField extends AbstractField {
     public function render(): string {
         $value = $this->getValue();
         return '<input type="hidden" name="' . esc_attr($this->getName()) . '" value="' . esc_attr($value ?? '') . '"' . $this->renderAttributes() . '>';

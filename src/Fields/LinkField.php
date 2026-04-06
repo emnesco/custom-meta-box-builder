@@ -14,7 +14,7 @@ defined( 'ABSPATH' ) || exit;
 
 use CMB\Core\Contracts\Abstracts\AbstractField;
 
-class LinkField extends AbstractField {
+final class LinkField extends AbstractField {
     public function render(): string {
         $value = $this->getValue();
         $name = esc_attr( $this->getName() );

@@ -14,7 +14,7 @@ defined( 'ABSPATH' ) || exit;
 
 use CMB\Core\Contracts\Abstracts\AbstractField;
 
-class TaxonomyField extends AbstractField {
+final class TaxonomyField extends AbstractField {
     private static array $termCache = [];
 
     public function render(): string {

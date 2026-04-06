@@ -14,7 +14,7 @@ defined( 'ABSPATH' ) || exit;
 
 use CMB\Core\Contracts\Abstracts\AbstractField;
 
-class TextareaField extends AbstractField {
+final class TextareaField extends AbstractField {
     public function render(): string {
         $value = esc_textarea($this->getValue() ?? '');
         $htmlId = $this->config['html_id'] ?? '';

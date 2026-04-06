@@ -14,7 +14,7 @@ defined( 'ABSPATH' ) || exit;
 
 use CMB\Core\Contracts\Abstracts\AbstractField;
 
-class WysiwygField extends AbstractField {
+final class WysiwygField extends AbstractField {
     public function render(): string {
         $value = $this->getValue() ?? '';
         $name = $this->getName();

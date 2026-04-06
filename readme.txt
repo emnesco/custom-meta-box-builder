@@ -53,6 +53,10 @@ Custom Meta Box Builder (CMBB) provides both a visual admin interface and a PHP 
 
 Yes. Fields with `'show_in_rest' => true` appear in the Gutenberg document sidebar.
 
+= What PHP versions are supported? =
+
+Tested up to PHP 8.4. Requires PHP 8.1+.
+
 == Changelog ==
 
 = 2.1.0 =

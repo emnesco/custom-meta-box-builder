@@ -14,7 +14,7 @@ defined( 'ABSPATH' ) || exit;
 
 use CMB\Core\Contracts\Abstracts\AbstractField;
 
-class DateField extends AbstractField {
+final class DateField extends AbstractField {
     public function render(): string {
         $value = $this->getValue();
         $type = $this->config['datetime'] ?? false ? 'datetime-local' : 'date';

@@ -17,7 +17,7 @@ use CMB\Core\RenderContext\RenderContextInterface;
 use CMB\Core\RenderContext\PostContext;
 use CMB\Core\Traits\MultiLanguageTrait;
 
-class FieldRenderer {
+class FieldRenderer implements Contracts\FieldRendererInterface {
     use MultiLanguageTrait;
 
     protected RenderContextInterface $context;

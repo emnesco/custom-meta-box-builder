@@ -12,7 +12,7 @@ namespace CMB\Core;
 
 defined( 'ABSPATH' ) || exit;
 
-class LocalJson {
+class LocalJson implements Contracts\LocalJsonInterface {
     /**
      * Directory name within the active theme for JSON files.
      */

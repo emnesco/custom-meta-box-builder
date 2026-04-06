@@ -15,7 +15,7 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Import/Export meta box configurations as JSON (8.1).
  */
-class ImportExport {
+class ImportExport implements Contracts\ImportExportInterface {
     private MetaBoxManager $manager;
 
     public function __construct( MetaBoxManager $manager ) {
@@ -36,12 +36,28 @@ class ImportExport {
     public function exportToJson(): string {
         $boxes = $this->manager->getMetaBoxes();
 
+        // SEC-L05: Strip internal _modified timestamps from export data.
+        $boxes = self::stripModifiedKeys($boxes);
+
         return wp_json_encode([
             'version' => '1.0',
             'plugin' => 'custom-meta-box-builder',
             'exported_at' => gmdate('Y-m-d\TH:i:s\Z'),
             'meta_boxes' => $boxes,
         ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+    }
+
+    /**
+     * SEC-L05: Recursively strip _modified keys from data before export.
+     */
+    private static function stripModifiedKeys(array $data): array {
+        unset($data['_modified']);
+        foreach ($data as $key => $value) {
+            if (is_array($value)) {
+                $data[$key] = self::stripModifiedKeys($value);
+            }
+        }
+        return $data;
     }
 
     /**

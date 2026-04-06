@@ -14,7 +14,7 @@ defined( 'ABSPATH' ) || exit;
 
 use CMB\Core\Contracts\Abstracts\AbstractField;
 
-class ImageField extends AbstractField {
+final class ImageField extends AbstractField {
     public function render(): string {
         $value = $this->getValue();
         $htmlId = $this->config['html_id'] ?? 'cmb-image';

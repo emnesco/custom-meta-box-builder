@@ -3,7 +3,7 @@
  * Plugin Name:       Custom Meta Box Builder
  * Plugin URI:        https://emnes.co/plugins/custom-meta-box-builder
  * Description:       Create custom meta boxes with modern PHP architecture.
- * Version:           2.0.0
+ * Version:           2.1.0
  * Requires at least: 6.0
  * Requires PHP:      8.1
  * Author:            EMNES Lab

@@ -14,7 +14,7 @@ defined( 'ABSPATH' ) || exit;
 
 use CMB\Core\Contracts\Abstracts\AbstractField;
 
-class MessageField extends AbstractField {
+final class MessageField extends AbstractField {
     public function render(): string {
         return '<div class="cmb-message">' . wp_kses_post($this->config['content'] ?? '') . '</div>';
     }

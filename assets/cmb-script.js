@@ -350,10 +350,11 @@
             value: $field.data('conditional-value')
           }, $container);
 
+          // FE-L03: Use CSS class for animated show/hide instead of jQuery slideDown/slideUp
           if (show) {
-            $field.slideDown(200);
+            $field.removeClass('cmb-field-hidden');
           } else {
-            $field.slideUp(200);
+            $field.addClass('cmb-field-hidden');
           }
         });
 
@@ -384,10 +385,11 @@
             });
           }
 
+          // FE-L03: Use CSS class for animated show/hide
           if (show) {
-            $field.slideDown(200);
+            $field.removeClass('cmb-field-hidden');
           } else {
-            $field.slideUp(200);
+            $field.addClass('cmb-field-hidden');
           }
         });
       }
@@ -613,8 +615,18 @@
       });
 
       // === Flexible Content Field ===
+
       $(document).on('click', '.cmb-flexible-add-btn', function() {
-        $(this).siblings('.cmb-flexible-layout-picker').toggle();
+        var $picker = $(this).siblings('.cmb-flexible-layout-picker');
+        var isOpening = !$picker.is(':visible');
+        $picker.toggle();
+
+        // FE-M03: Focus trap on open
+        if (isOpening) {
+          $(this).data('cmb-trigger', true);
+          var $first = $picker.find('.cmb-flexible-layout-option').first();
+          if ($first.length) $first.focus();
+        }
       });
 
       $(document).on('click', '.cmb-flexible-layout-option', function() {
@@ -622,13 +634,19 @@
         const layout = $btn.data('layout');
         const $container = $btn.closest('.cmb-flexible-content');
         const $items = $container.find('.cmb-flexible-items').first();
-        const $template = $container.find('.cmb-flexible-template[data-layout="' + layout + '"]');
+        // FE-H02: Use native <template> element
+        const tpl = $container.find('template.cmb-flexible-template[data-layout="' + layout + '"]')[0];
 
-        if (!$template.length) return;
+        if (!tpl) return;
 
+        // FE-H02: Clone from <template> element instead of innerHTML
         const newIndex = $items.children('.cmb-flexible-item').length;
-        let html = $template.html().replace(/\{\{INDEX\}\}/g, newIndex);
-        const $row = $(html);
+        const clone = tpl.content.cloneNode(true);
+        // Update {{INDEX}} placeholders in the cloned DOM
+        const wrapper = document.createElement('div');
+        wrapper.appendChild(clone);
+        wrapper.innerHTML = wrapper.innerHTML.replace(/\{\{INDEX\}\}/g, newIndex);
+        const $row = $(wrapper).children();
         $row.hide().appendTo($items).slideDown(200);
 
         // Re-init color pickers
@@ -636,8 +654,11 @@
           $row.find('.cmb-color-picker').wpColorPicker();
         }
 
-        // Hide picker
-        $btn.closest('.cmb-flexible-layout-picker').hide();
+        // Hide picker and restore focus to trigger
+        var $picker = $btn.closest('.cmb-flexible-layout-picker');
+        $picker.hide();
+        var $trigger = $picker.siblings('.cmb-flexible-add-btn');
+        $trigger.focus();
         updateRowCounts();
       });
 
@@ -699,9 +720,36 @@
       });
 
       // === FE-H06: Escape key to close layout picker modal ===
+      // FE-M03: Restore focus to trigger on close
       $(document).on('keydown', function(e) {
         if (e.key === 'Escape') {
-          $('.cmb-flexible-layout-picker:visible').hide();
+          var $visiblePicker = $('.cmb-flexible-layout-picker:visible');
+          if ($visiblePicker.length) {
+            $visiblePicker.hide();
+            var $trigger = $visiblePicker.siblings('.cmb-flexible-add-btn');
+            if ($trigger.length) $trigger.focus();
+          }
+        }
+      });
+
+      // FE-M03: Focus trap inside layout picker
+      $(document).on('keydown', '.cmb-flexible-layout-picker', function(e) {
+        if (e.key !== 'Tab') return;
+        var $picker = $(this);
+        var $focusable = $picker.find('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+        if (!$focusable.length) return;
+        var $first = $focusable.first();
+        var $last = $focusable.last();
+        if (e.shiftKey) {
+          if ($(document.activeElement).is($first)) {
+            e.preventDefault();
+            $last.focus();
+          }
+        } else {
+          if ($(document.activeElement).is($last)) {
+            e.preventDefault();
+            $first.focus();
+          }
         }
       });
 
@@ -753,6 +801,37 @@
         if (el && !confirm(el.dataset.confirm)) {
           e.preventDefault();
         }
+      });
+
+      // === FE-M04: Gallery image move-up / move-down ===
+      function updateGalleryIds($gallery) {
+        var ids = [];
+        $gallery.find('.cmb-gallery-thumb').each(function() {
+          ids.push($(this).data('id'));
+        });
+        $gallery.closest('.cmb-gallery-field').find('.cmb-gallery-ids').val(ids.join(','));
+      }
+
+      $(document).on('click', '.cmb-gallery-move-up', function(e) {
+        e.preventDefault();
+        var $thumb = $(this).closest('.cmb-gallery-thumb');
+        var $prev = $thumb.prev('.cmb-gallery-thumb');
+        if ($prev.length) {
+          $thumb.insertBefore($prev);
+          updateGalleryIds($thumb.closest('.cmb-gallery-preview'));
+        }
+        $(this).focus();
+      });
+
+      $(document).on('click', '.cmb-gallery-move-down', function(e) {
+        e.preventDefault();
+        var $thumb = $(this).closest('.cmb-gallery-thumb');
+        var $next = $thumb.next('.cmb-gallery-thumb');
+        if ($next.length) {
+          $thumb.insertAfter($next);
+          updateGalleryIds($thumb.closest('.cmb-gallery-preview'));
+        }
+        $(this).focus();
       });
 
     });

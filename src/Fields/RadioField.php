@@ -14,7 +14,7 @@ defined( 'ABSPATH' ) || exit;
 
 use CMB\Core\Contracts\Abstracts\AbstractField;
 
-class RadioField extends AbstractField {
+final class RadioField extends AbstractField {
     public function render(): string {
         $value = $this->getValue();
         $name = esc_attr($this->getName());

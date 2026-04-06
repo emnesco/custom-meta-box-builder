@@ -14,7 +14,7 @@ defined( 'ABSPATH' ) || exit;
 
 use CMB\Core\Contracts\Abstracts\AbstractField;
 
-class GalleryField extends AbstractField {
+final class GalleryField extends AbstractField {
     public function render(): string {
         $value = $this->getValue();
         $htmlId = $this->config['html_id'] ?? 'cmb-gallery';
@@ -33,7 +33,11 @@ class GalleryField extends AbstractField {
                     $output .= '<div class="cmb-gallery-thumb" data-id="' . $attId . '">';
                     $alt = get_post_meta($attId, '_wp_attachment_image_alt', true);
                     $output .= '<img src="' . esc_url($url) . '" alt="' . esc_attr($alt ?: '') . '" loading="lazy">';
+                    $output .= '<div class="cmb-gallery-thumb-actions">';
+                    $output .= '<button type="button" class="cmb-gallery-move-up" aria-label="' . esc_attr__('Move up', 'custom-meta-box-builder') . '">&#8593;</button>';
+                    $output .= '<button type="button" class="cmb-gallery-move-down" aria-label="' . esc_attr__('Move down', 'custom-meta-box-builder') . '">&#8595;</button>';
                     $output .= '<button type="button" class="cmb-gallery-remove" aria-label="' . esc_attr__('Remove', 'custom-meta-box-builder') . '">&times;</button>';
+                    $output .= '</div>';
                     $output .= '</div>';
                 }
             }

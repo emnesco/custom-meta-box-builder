@@ -59,7 +59,7 @@ final class Plugin {
     public function boot(): void {
         self::$instance = $this;
         $this->manager = new MetaBoxManager();
-        MetaBoxManager::setInstance( $this->manager );
+        MetaBoxManager::setGlobalInstance( $this->manager );
 
         $this->loadTextDomain();
         $this->registerAssets();
@@ -148,12 +148,50 @@ final class Plugin {
                 'nonce'   => wp_create_nonce('cmb_ajax_nonce'),
             ]) . ';', 'before');
 
-            // Enqueue WP media only on post/page editors where file fields may exist
+            // PERF-L04: Only enqueue heavy assets when their field types are registered.
+            $registeredTypes = self::getRegisteredFieldTypes();
+
+            // Enqueue WP media only on post/page editors where file/image/gallery fields exist.
+            $mediaTypes = ['file', 'image', 'gallery'];
             if ( in_array( $hookSuffix, [ 'post.php', 'post-new.php' ], true )
+                && array_intersect($mediaTypes, $registeredTypes)
                 && function_exists('wp_enqueue_media') ) {
                 wp_enqueue_media();
             }
+
+            // Only enqueue color picker when color fields are registered.
+            if ( in_array('color', $registeredTypes, true) ) {
+                wp_enqueue_style('wp-color-picker');
+                wp_enqueue_script('wp-color-picker');
+            }
+
+            // Only enqueue date picker when date fields are registered.
+            if ( in_array('date', $registeredTypes, true) ) {
+                wp_enqueue_script('jquery-ui-datepicker');
+            }
         });
+    }
+
+    /**
+     * Collect all field types across registered meta boxes.
+     *
+     * @return string[]
+     */
+    private static function getRegisteredFieldTypes(): array {
+        $instance = self::getInstance();
+        if (!$instance) {
+            return [];
+        }
+        $types = [];
+        foreach ($instance->getManager()->getMetaBoxes() as $box) {
+            $fields = FieldUtils::flattenFields($box['fields']);
+            foreach ($fields as $field) {
+                if (!empty($field['type'])) {
+                    $types[] = $field['type'];
+                }
+            }
+        }
+        return array_unique($types);
     }
 
     private static function shouldEnqueueAssets( string $hookSuffix ): bool {

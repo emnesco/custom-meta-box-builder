@@ -15,8 +15,10 @@ defined( 'ABSPATH' ) || exit;
 use CMB\Core\Contracts\Abstracts\AbstractField;
 use CMB\Core\FieldFactory;
 use CMB\Core\FieldRenderer;
+use CMB\Core\Traits\SubFieldRenderTrait;
 
-class FlexibleContentField extends AbstractField {
+final class FlexibleContentField extends AbstractField {
+    use SubFieldRenderTrait;
 
     public function render(): string {
         $layouts = $this->config['layouts'] ?? [];
@@ -59,11 +61,11 @@ class FlexibleContentField extends AbstractField {
         $output .= '</div>';
         $output .= '</div>';
 
-        // Template store (hidden, used by JS to clone new rows)
+        // Template store (hidden, used by JS to clone new rows via template.content.cloneNode)
         foreach ($layouts as $lKey => $layout) {
-            $output .= '<script type="text/html" class="cmb-flexible-template" data-layout="' . esc_attr($lKey) . '">';
+            $output .= '<template class="cmb-flexible-template" data-layout="' . esc_attr($lKey) . '">';
             $output .= $this->renderRow($name, '{{INDEX}}', $layout, []);
-            $output .= '</script>';
+            $output .= '</template>';
         }
 
         $output .= '</div>';
@@ -90,28 +92,8 @@ class FlexibleContentField extends AbstractField {
         $output .= '<div class="cmb-group-item-body">';
         $output .= '<input type="hidden" name="' . esc_attr($prefix . '[_layout]') . '" value="' . esc_attr($layoutKey) . '">';
 
-        // Render sub-fields for this layout
-        $subFields = $layout['fields'] ?? [];
-        foreach ($subFields as $subField) {
-            $subName = $prefix . '[' . $subField['id'] . ']';
-            $subValue = $rowData[$subField['id']] ?? ($subField['default'] ?? '');
-
-            $instance = FieldFactory::create($subField['type'], array_merge($subField, [
-                'id'      => $subName,
-                'name'    => $subName,
-                'html_id' => 'cmb-flex-' . $index . '-' . $subField['id'],
-                'value'   => $subValue,
-            ]));
-
-            if (null === $instance) {
-                continue;
-            }
-
-            $output .= '<div class="cmb-field cmb-horizontal cmb-type-' . esc_attr($subField['type']) . '">';
-            $output .= '<div class="cmb-label"><label>' . esc_html($subField['label'] ?? '') . '</label></div>';
-            $output .= '<div class="cmb-input">' . $instance->render() . '</div>';
-            $output .= '</div>';
-        }
+        // Render sub-fields for this layout using shared trait
+        $output .= $this->renderSubFields($layout['fields'] ?? [], $prefix, $rowData, $index);
 
         $output .= '</div>';
         $output .= '</div>';

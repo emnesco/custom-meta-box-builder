@@ -12,13 +12,13 @@ namespace CMB\Core;
 
 defined( 'ABSPATH' ) || exit;
 
+use CMB\Core\Contracts\Abstracts\AbstractMetaManager;
 use CMB\Core\RenderContext\TermContext;
 use CMB\Core\Storage\StorageInterface;
 use CMB\Core\Storage\TermMetaStorage;
 
-class TaxonomyMetaManager {
+class TaxonomyMetaManager extends AbstractMetaManager {
     private array $taxonomyBoxes = [];
-    private StorageInterface $storage;
 
     public function __construct( ?StorageInterface $storage = null ) {
         $this->storage = $storage ?? new TermMetaStorage();
@@ -117,19 +117,7 @@ class TaxonomyMetaManager {
             if (!isset($_POST['cmb_taxonomy_nonce']) || !wp_verify_nonce($_POST['cmb_taxonomy_nonce'], 'cmb_taxonomy_save_' . $taxonomy)) {
                 continue;
             }
-            foreach ($fields as $field) {
-                $instance = FieldFactory::create($field['type'], $field);
-                if ( null === $instance ) {
-                    continue;
-                }
-                $raw = wp_unslash( $_POST[$field['id']] ?? '' );
-                /** @since 2.0 Fires before a taxonomy term field is saved. */
-                FieldUtils::doAction('before_save_taxonomy_field', $field['id'], $raw, $termId, $field);
-                $sanitized = $instance->sanitize($raw);
-                $this->storage->set($termId, $field['id'], $sanitized);
-                /** @since 2.0 Fires after a taxonomy term field has been saved. */
-                FieldUtils::doAction('after_save_taxonomy_field', $field['id'], $sanitized, $termId, $field);
-            }
+            $this->saveFieldSet($fields, $termId, 'taxonomy');
         }
     }
 }

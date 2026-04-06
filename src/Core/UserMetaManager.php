@@ -12,13 +12,13 @@ namespace CMB\Core;
 
 defined( 'ABSPATH' ) || exit;
 
+use CMB\Core\Contracts\Abstracts\AbstractMetaManager;
 use CMB\Core\RenderContext\UserContext;
 use CMB\Core\Storage\StorageInterface;
 use CMB\Core\Storage\UserMetaStorage;
 
-class UserMetaManager {
+class UserMetaManager extends AbstractMetaManager {
     private array $fields = [];
-    private StorageInterface $storage;
 
     public function __construct( ?StorageInterface $storage = null ) {
         $this->storage = $storage ?? new UserMetaStorage();
@@ -65,18 +65,6 @@ class UserMetaManager {
             return;
         }
 
-        foreach ($this->fields as $field) {
-            $instance = FieldFactory::create($field['type'], $field);
-            if ( null === $instance ) {
-                continue;
-            }
-            $raw = wp_unslash( $_POST[$field['id']] ?? '' );
-            /** @since 2.0 Fires before a user meta field is saved. */
-            FieldUtils::doAction('before_save_user_field', $field['id'], $raw, $userId, $field);
-            $sanitized = $instance->sanitize($raw);
-            $this->storage->set($userId, $field['id'], $sanitized);
-            /** @since 2.0 Fires after a user meta field has been saved. */
-            FieldUtils::doAction('after_save_user_field', $field['id'], $sanitized, $userId, $field);
-        }
+        $this->saveFieldSet($this->fields, $userId, 'user');
     }
 }

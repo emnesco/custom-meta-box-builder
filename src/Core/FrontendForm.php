@@ -14,7 +14,7 @@ defined( 'ABSPATH' ) || exit;
 
 use CMB\Core\RenderContext\PostContext;
 
-class FrontendForm {
+class FrontendForm implements Contracts\FrontendFormInterface {
     /**
      * Render a meta box form on the frontend.
      *
@@ -41,15 +41,16 @@ class FrontendForm {
             return '';
         }
 
-        // Enqueue frontend assets.
-        self::enqueueAssets();
+        $fieldRenderer = new FieldRenderer(new PostContext($post));
+        $fields = FieldUtils::flattenFields($metaBox['fields']);
+
+        // Enqueue frontend assets, only loading type-specific scripts when needed.
+        $fieldTypes = array_column($fields, 'type');
+        self::enqueueAssets($fieldTypes);
 
         $submitText = $args['submit_text'] ?? __('Update', 'custom-meta-box-builder');
         $formId = $args['form_id'] ?? 'cmb-frontend-form-' . $metaBoxId;
         $method = $args['method'] ?? 'post';
-
-        $fieldRenderer = new FieldRenderer(new PostContext($post));
-        $fields = FieldUtils::flattenFields($metaBox['fields']);
 
         $output = '<form id="' . esc_attr($formId) . '" class="cmb-frontend-form cmb-container" method="' . esc_attr($method) . '">';
         $output .= wp_nonce_field('cmb_frontend_save_' . $metaBoxId . '_' . $postId, 'cmb_frontend_nonce', true, false);
@@ -73,8 +74,10 @@ class FrontendForm {
 
     /**
      * Enqueue frontend form assets.
+     *
+     * @param string[] $fieldTypes Field types present in the form, used to conditionally load heavy assets.
      */
-    private static function enqueueAssets(): void {
+    private static function enqueueAssets(array $fieldTypes = []): void {
         $pluginUrl = plugin_dir_url(dirname(__DIR__) . '/../custom-meta-box-builder.php');
         $pluginPath = plugin_dir_path(dirname(__DIR__) . '/../custom-meta-box-builder.php');
 
@@ -92,9 +95,22 @@ class FrontendForm {
         }
         wp_enqueue_script('cmb-script', $pluginUrl . $jsFile, ['jquery'], filemtime($pluginPath . $jsFile), true);
 
-        // Enqueue media library if needed.
-        if (function_exists('wp_enqueue_media')) {
+        // PERF-M06: Only enqueue media library when file/image/gallery fields are present.
+        $mediaTypes = ['file', 'image', 'gallery'];
+        if (array_intersect($mediaTypes, $fieldTypes) && function_exists('wp_enqueue_media')) {
             wp_enqueue_media();
+        }
+
+        // PERF-M06: Only enqueue color picker when color fields are present.
+        if (in_array('color', $fieldTypes, true)) {
+            wp_enqueue_style('wp-color-picker');
+            wp_enqueue_script('wp-color-picker');
+        }
+
+        // PERF-M06: Only enqueue date picker when date fields are present.
+        if (in_array('date', $fieldTypes, true)) {
+            wp_enqueue_script('jquery-ui-datepicker');
+            wp_enqueue_style('jquery-ui-datepicker');
         }
     }
 
@@ -103,35 +119,66 @@ class FrontendForm {
      * Hook into 'init' to handle POST data.
      */
     public static function processSubmission(): void {
-        if (empty($_POST['cmb_frontend_box_id']) || empty($_POST['cmb_frontend_nonce'])) {
+        $auth = self::authenticateSubmission();
+        if (null === $auth) {
             return;
+        }
+
+        self::saveFields($auth['metaBoxId'], $auth['postId'], $auth['fields']);
+
+        /** @since 2.1 Fires after a frontend form has been processed. */
+        do_action('cmbbuilder_frontend_form_saved', $auth['metaBoxId'], $auth['postId']);
+    }
+
+    /**
+     * Authenticate and validate the frontend form submission.
+     *
+     * @return array|null Array with metaBoxId, postId, and fields on success; null on failure.
+     */
+    private static function authenticateSubmission(): ?array {
+        if (empty($_POST['cmb_frontend_box_id']) || empty($_POST['cmb_frontend_nonce'])) {
+            return null;
         }
 
         $metaBoxId = sanitize_text_field(wp_unslash($_POST['cmb_frontend_box_id']));
         $postId = intval($_POST['cmb_frontend_post_id'] ?? 0);
 
         if (!wp_verify_nonce($_POST['cmb_frontend_nonce'], 'cmb_frontend_save_' . $metaBoxId . '_' . $postId)) {
-            return;
+            return null;
         }
 
-        // Check that the user can edit this post.
         if (!current_user_can('edit_post', $postId)) {
-            return;
+            return null;
         }
 
         $manager = MetaBoxManager::getInstance();
         if (null === $manager) {
-            return;
+            return null;
         }
 
         $metaBoxes = $manager->getMetaBoxes();
         if (!isset($metaBoxes[$metaBoxId])) {
-            return;
+            return null;
         }
 
         $metaBox = $metaBoxes[$metaBoxId];
         $fields = FieldUtils::flattenFields($metaBox['fields']);
 
+        return [
+            'metaBoxId' => $metaBoxId,
+            'postId'    => $postId,
+            'fields'    => $fields,
+        ];
+    }
+
+    /**
+     * Save the submitted field values to post meta.
+     *
+     * @param string $metaBoxId The meta box ID.
+     * @param int    $postId    The post ID.
+     * @param array  $fields    The flattened fields array.
+     */
+    private static function saveFields(string $metaBoxId, int $postId, array $fields): void {
         foreach ($fields as $field) {
             if (empty($field['id']) || empty($field['type'])) {
                 continue;
@@ -166,9 +213,6 @@ class FrontendForm {
             $sanitized = $instance->sanitize($raw);
             update_post_meta($postId, $field['id'], $sanitized);
         }
-
-        /** @since 2.1 Fires after a frontend form has been processed. */
-        do_action('cmbbuilder_frontend_form_saved', $metaBoxId, $postId);
     }
 
     /**

@@ -1,0 +1,28 @@
+# Copyright (C) 2024 EMNES Lab
+# This file is distributed under the GPL-2.0-or-later.
+#
+# This is a skeleton POT file for the Custom Meta Box Builder plugin.
+# To regenerate with all translatable strings, run:
+#   wp i18n make-pot . languages/custom-meta-box-builder.pot
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Custom Meta Box Builder 2.1.0\n"
+"Report-Msgid-Bugs-To: https://emnes.co\n"
+"Last-Translator: EMNES Lab <info@emnes.co>\n"
+"Language-Team: EMNES Lab <info@emnes.co>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"POT-Creation-Date: 2026-04-06T00:00:00+00:00\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"X-Generator: none\n"
+"X-Domain: custom-meta-box-builder\n"
+
+#. Plugin Name of the plugin
+msgid "Custom Meta Box Builder"
+msgstr ""
+
+#. Description of the plugin
+msgid "Create custom meta boxes with modern PHP architecture."
+msgstr ""

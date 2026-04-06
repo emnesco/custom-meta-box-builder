@@ -32,20 +32,43 @@ class MetaBoxManager {
 
     /**
      * Set the shared instance (called by Plugin::boot()).
+     *
+     * @deprecated 2.0 Use constructor injection instead. Will be removed in v3.0.
      */
     public static function setInstance( self $instance ): void {
+        _deprecated_function( __METHOD__, '2.0', 'Constructor injection' );
         self::$instance = $instance;
     }
 
     /**
      * Get the shared instance.
-     * Prefer constructor injection for new code.
+     *
+     * @deprecated 2.0 Use constructor injection instead. Will be removed in v3.0.
      */
     public static function instance(): self {
+        _deprecated_function( __METHOD__, '2.0', 'Constructor injection' );
         if (null === self::$instance) {
             self::$instance = new self();
         }
         return self::$instance;
+    }
+
+    /**
+     * Get the shared instance (non-deprecated internal accessor).
+     *
+     * @internal Used by Plugin and ActionHandler. Prefer constructor injection for new code.
+     */
+    public static function getInstance(): ?self {
+        return self::$instance;
+    }
+
+    /**
+     * Set the shared instance (non-deprecated internal setter).
+     *
+     * @internal Used by Plugin::boot(). Prefer constructor injection for new code.
+     */
+    public static function setGlobalInstance( self $instance ): void {
+        self::$instance = $instance;
     }
 
     /**
@@ -406,10 +429,7 @@ class MetaBoxManager {
                         'auth_callback' => function() {
                             return current_user_can('edit_posts');
                         },
-                        'sanitize_callback' => function ($value) use ($fieldCopy) {
-                            $instance = FieldFactory::create($fieldCopy['type'], $fieldCopy);
-                            return $instance ? $instance->sanitize($value) : $value;
-                        },
+                        'sanitize_callback' => $this->getRestSanitizeCallback($fieldCopy),
                     ];
                     $restArgs['object_subtype'] = $postType;
                     register_post_meta($postType, $field['id'], $restArgs);
@@ -425,6 +445,75 @@ class MetaBoxManager {
             'group', 'flexible_content', 'link' => 'object',
             'gallery', 'checkbox_list' => 'array',
             default => 'string',
+        };
+    }
+
+    /**
+     * WPS-H06: Return a type-specific REST sanitize_callback for complex fields.
+     */
+    private function getRestSanitizeCallback(array $field): callable {
+        $type = $field['type'] ?? 'text';
+
+        return match ($type) {
+            'group' => function ($value) use ($field) {
+                // Recursive sanitization for group/repeater fields.
+                if (!is_array($value)) {
+                    return [];
+                }
+                return $this->sanitizeGroupValue($field, $value);
+            },
+            'flexible_content' => function ($value) {
+                // Accept JSON string or array; sanitize each layout's fields.
+                if (is_string($value)) {
+                    $decoded = json_decode($value, true);
+                    if (json_last_error() !== JSON_ERROR_NONE) {
+                        return [];
+                    }
+                    $value = $decoded;
+                }
+                if (!is_array($value)) {
+                    return [];
+                }
+                return array_map(function ($layout) {
+                    if (!is_array($layout)) {
+                        return [];
+                    }
+                    return array_map(function ($v) {
+                        return is_string($v) ? sanitize_text_field($v) : $v;
+                    }, $layout);
+                }, $value);
+            },
+            'gallery' => function ($value) {
+                // Accept comma-separated IDs or array of IDs.
+                if (is_string($value)) {
+                    $ids = explode(',', $value);
+                } elseif (is_array($value)) {
+                    $ids = $value;
+                } else {
+                    return [];
+                }
+                return array_values(array_filter(array_map('absint', $ids)));
+            },
+            'checkbox_list' => function ($value) {
+                if (!is_array($value)) {
+                    return [];
+                }
+                return array_map('sanitize_text_field', $value);
+            },
+            'link' => function ($value) {
+                if (!is_array($value)) {
+                    return [];
+                }
+                return [
+                    'url'    => esc_url_raw($value['url'] ?? ''),
+                    'title'  => sanitize_text_field($value['title'] ?? ''),
+                    'target' => in_array($value['target'] ?? '', ['_blank', '_self'], true) ? $value['target'] : '_self',
+                ];
+            },
+            default => function ($value) use ($field) {
+                $instance = FieldFactory::create($field['type'], $field);
+                return $instance ? $instance->sanitize($value) : $value;
+            },
         };
     }
 

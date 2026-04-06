@@ -150,7 +150,7 @@ class BulkOperations {
         }
 
         $count = 0;
-        $batches = array_chunk($postIds, 100);
+        $batches = array_chunk($postIds, 50);
         foreach ($batches as $batch) {
             foreach ($batch as $postId) {
                 switch ($operation) {
@@ -191,9 +191,13 @@ class BulkOperations {
      */
     public function bulkSet(array $postIds, string $fieldId, mixed $value): int {
         $count = 0;
-        foreach ($postIds as $postId) {
-            update_post_meta((int)$postId, $fieldId, $value);
-            $count++;
+        $batches = array_chunk($postIds, 50);
+        foreach ($batches as $batch) {
+            foreach ($batch as $postId) {
+                update_post_meta((int)$postId, $fieldId, $value);
+                $count++;
+            }
+            wp_cache_flush();
         }
         return $count;
     }
@@ -203,9 +207,13 @@ class BulkOperations {
      */
     public function bulkDelete(array $postIds, string $fieldId): int {
         $count = 0;
-        foreach ($postIds as $postId) {
-            delete_post_meta((int)$postId, $fieldId);
-            $count++;
+        $batches = array_chunk($postIds, 50);
+        foreach ($batches as $batch) {
+            foreach ($batch as $postId) {
+                delete_post_meta((int)$postId, $fieldId);
+                $count++;
+            }
+            wp_cache_flush();
         }
         return $count;
     }
