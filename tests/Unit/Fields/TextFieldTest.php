@@ -81,8 +81,10 @@ final class TextFieldTest extends TestCase
         $this->assertStringContainsString('required', $html);
     }
 
-    public function testRenderRepeatableFieldOutputsMultipleInputs(): void
+    public function testRenderRepeatableFieldOutputsSingleInput(): void
     {
+        // Repeat looping is handled by FieldRenderer, not individual fields.
+        // TextField renders a single input, taking the first array value.
         $field = new TextField([
             'id'     => 'tags',
             'name'   => 'tags',
@@ -92,9 +94,8 @@ final class TextFieldTest extends TestCase
 
         $html = $field->render();
 
-        $this->assertSame(2, substr_count($html, '<input'));
+        $this->assertSame(1, substr_count($html, '<input'));
         $this->assertStringContainsString('value="alpha"', $html);
-        $this->assertStringContainsString('value="beta"', $html);
     }
 
     public function testRenderRepeatableFieldOutputsOneInputWhenValueEmpty(): void

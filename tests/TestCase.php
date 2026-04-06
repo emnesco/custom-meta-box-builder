@@ -25,7 +25,10 @@ abstract class TestCase extends PHPUnitTestCase
         // has not been given explicit expectations for them.
         Monkey\Functions\stubs([
             'esc_attr'             => static fn(string $t): string => htmlspecialchars($t, ENT_QUOTES, 'UTF-8'),
+            'esc_attr__'           => static fn(string $t, string $d = 'default'): string => htmlspecialchars($t, ENT_QUOTES, 'UTF-8'),
             'esc_html'             => static fn(string $t): string => htmlspecialchars($t, ENT_QUOTES, 'UTF-8'),
+            'esc_html__'           => static fn(string $t, string $d = 'default'): string => htmlspecialchars($t, ENT_QUOTES, 'UTF-8'),
+            '__'                   => static fn(string $t, string $d = 'default'): string => $t,
             'esc_textarea'         => static fn(string $t): string => htmlspecialchars($t, ENT_QUOTES, 'UTF-8'),
             'esc_url'              => static fn(string $u): string => filter_var($u, FILTER_SANITIZE_URL) ?: '',
             'esc_url_raw'          => static fn(string $u): string => filter_var($u, FILTER_SANITIZE_URL) ?: '',
