@@ -1,11 +1,16 @@
 <?php
+declare(strict_types=1);
+
 /**
  * JSON import/export of meta box configurations.
  *
  * @package CustomMetaBoxBuilder
  * @since   2.0
  */
+
 namespace CMB\Core;
+
+defined( 'ABSPATH' ) || exit;
 
 /**
  * Import/Export meta box configurations as JSON (8.1).
@@ -31,7 +36,7 @@ class ImportExport {
     public function exportToJson(): string {
         $boxes = $this->manager->getMetaBoxes();
 
-        return json_encode([
+        return wp_json_encode([
             'version' => '1.0',
             'plugin' => 'custom-meta-box-builder',
             'exported_at' => gmdate('Y-m-d\TH:i:s\Z'),

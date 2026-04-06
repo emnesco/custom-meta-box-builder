@@ -1,11 +1,16 @@
 <?php
+declare(strict_types=1);
+
 /**
  * Post relationship field type — renders a select of posts with static caching.
  *
  * @package CustomMetaBoxBuilder
  * @since   2.0
  */
+
 namespace CMB\Fields;
+
+defined( 'ABSPATH' ) || exit;
 
 use CMB\Core\Contracts\Abstracts\AbstractField;
 
@@ -21,18 +26,19 @@ class PostField extends AbstractField {
         $limit = $this->config['limit'] ?? 100;
 
         $output = '<select name="' . $name . '"' . $id_attr . $this->renderAttributes() . $this->requiredAttr() . '>';
-        $output .= '<option value="">&mdash; Select &mdash;</option>';
+        $output .= '<option value="">&mdash; ' . esc_html__('Select', 'custom-meta-box-builder') . ' &mdash;</option>';
 
         if (function_exists('get_posts')) {
-            $cacheKey = $postType . '_' . $limit;
-            if (!isset(self::$postCache[$cacheKey])) {
-                self::$postCache[$cacheKey] = get_posts([
+            $queryArgs = [
                     'post_type'      => $postType,
                     'posts_per_page' => $limit,
                     'orderby'        => 'title',
                     'order'          => 'ASC',
                     'post_status'    => 'publish',
-                ]);
+                ];
+            $cacheKey = md5(wp_json_encode($queryArgs));
+            if (!isset(self::$postCache[$cacheKey])) {
+                self::$postCache[$cacheKey] = get_posts($queryArgs);
             }
             foreach (self::$postCache[$cacheKey] as $post) {
                 $sel = selected($value, $post->ID, false);

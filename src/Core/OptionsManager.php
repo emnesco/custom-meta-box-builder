@@ -1,11 +1,16 @@
 <?php
+declare(strict_types=1);
+
 /**
  * Settings page registration and option field management.
  *
  * @package CustomMetaBoxBuilder
  * @since   2.0
  */
+
 namespace CMB\Core;
+
+defined( 'ABSPATH' ) || exit;
 
 use CMB\Core\RenderContext\OptionContext;
 

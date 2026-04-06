@@ -1,11 +1,16 @@
 <?php
+declare(strict_types=1);
+
 /**
  * Color picker field type with alpha/rgba support via wp-color-picker.
  *
  * @package CustomMetaBoxBuilder
  * @since   2.0
  */
+
 namespace CMB\Fields;
+
+defined( 'ABSPATH' ) || exit;
 
 use CMB\Core\Contracts\Abstracts\AbstractField;
 

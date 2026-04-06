@@ -1,11 +1,16 @@
 <?php
+declare(strict_types=1);
+
 /**
  * Post render context implementation.
  *
  * @package CustomMetaBoxBuilder
  * @since   2.0
  */
+
 namespace CMB\Core\RenderContext;
+
+defined( 'ABSPATH' ) || exit;
 
 use CMB\Core\Storage\PostMetaStorage;
 use CMB\Core\Storage\StorageInterface;

@@ -1,11 +1,16 @@
 <?php
+declare(strict_types=1);
+
 /**
  * Date field type — renders an HTML5 date input.
  *
  * @package CustomMetaBoxBuilder
  * @since   2.0
  */
+
 namespace CMB\Fields;
+
+defined( 'ABSPATH' ) || exit;
 
 use CMB\Core\Contracts\Abstracts\AbstractField;
 

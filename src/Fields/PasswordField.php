@@ -1,11 +1,16 @@
 <?php
+declare(strict_types=1);
+
 /**
  * Password field type — masked input that never renders stored values.
  *
  * @package CustomMetaBoxBuilder
  * @since   2.0
  */
+
 namespace CMB\Fields;
+
+defined( 'ABSPATH' ) || exit;
 
 use CMB\Core\Contracts\Abstracts\AbstractField;
 
@@ -18,7 +23,7 @@ class PasswordField extends AbstractField {
         if (!empty($value)) {
             $placeholder = ' placeholder="' . esc_attr('••••••••') . '"';
         }
-        return '<input type="password" name="' . esc_attr($this->getName()) . '"' . $id_attr . ' value=""' . $placeholder . $this->renderAttributes() . $this->requiredAttr() . '>';
+        return '<input type="password" name="' . esc_attr($this->getName()) . '"' . $id_attr . ' value=""' . $placeholder . ' autocomplete="off"' . $this->renderAttributes() . $this->requiredAttr() . '>';
     }
 
     public function sanitize(mixed $value): mixed {

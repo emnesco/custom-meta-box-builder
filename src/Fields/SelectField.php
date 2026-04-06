@@ -1,11 +1,16 @@
 <?php
+declare(strict_types=1);
+
 /**
  * Select field type — supports single and multi-select with placeholder.
  *
  * @package CustomMetaBoxBuilder
  * @since   2.0
  */
+
 namespace CMB\Fields;
+
+defined( 'ABSPATH' ) || exit;
 
 use CMB\Core\Contracts\Abstracts\AbstractField;
 
@@ -27,7 +32,7 @@ class SelectField extends AbstractField {
         $output = '<select name="' . $name . '"' . $id_attr . $attrs . '>';
 
         if (!$isMultiple) {
-            $output .= '<option value="">&mdash; Select &mdash;</option>';
+            $output .= '<option value="">&mdash; ' . esc_html__('Select', 'custom-meta-box-builder') . ' &mdash;</option>';
         }
 
         foreach ($this->config['options'] ?? [] as $key => $label) {

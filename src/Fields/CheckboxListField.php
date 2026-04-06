@@ -1,15 +1,20 @@
 <?php
+declare(strict_types=1);
+
 /**
  * Checkbox list field type — renders multiple checkboxes from options config.
  *
  * @package CustomMetaBoxBuilder
  * @since   2.0
  */
+
 namespace CMB\Fields;
+
+defined( 'ABSPATH' ) || exit;
 
 use CMB\Core\Contracts\Abstracts\AbstractField;
 
-class Checkbox_listField extends AbstractField {
+class CheckboxListField extends AbstractField {
     public function render(): string {
         $value = $this->getValue();
         $currentValues = is_array($value) ? $value : [$value];

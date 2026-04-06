@@ -1,11 +1,16 @@
 <?php
+declare(strict_types=1);
+
 /**
  * Bulk meta operations — set, delete, and export across multiple posts.
  *
  * @package CustomMetaBoxBuilder
  * @since   2.0
  */
+
 namespace CMB\Core;
+
+defined( 'ABSPATH' ) || exit;
 
 /**
  * Bulk meta operations for multiple posts (8.7).
@@ -27,8 +32,8 @@ class BulkOperations {
     public function addAdminPage(): void {
         add_submenu_page(
             'tools.php',
-            'CMB Bulk Operations',
-            'CMB Bulk Ops',
+            __('CMB Bulk Operations', 'custom-meta-box-builder'),
+            __('CMB Bulk Ops', 'custom-meta-box-builder'),
             'manage_options',
             'cmb-bulk-ops',
             [$this, 'renderPage']
@@ -39,11 +44,11 @@ class BulkOperations {
         $boxes = $this->manager->getMetaBoxes();
 
         echo '<div class="wrap">';
-        echo '<h1>CMB Bulk Meta Operations</h1>';
-        echo '<p>Apply meta values to multiple posts at once.</p>';
+        echo '<h1>' . esc_html__('CMB Bulk Meta Operations', 'custom-meta-box-builder') . '</h1>';
+        echo '<p>' . esc_html__('Apply meta values to multiple posts at once.', 'custom-meta-box-builder') . '</p>';
 
         if (empty($boxes)) {
-            echo '<p>No meta boxes registered.</p></div>';
+            echo '<p>' . esc_html__('No meta boxes registered.', 'custom-meta-box-builder') . '</p></div>';
             return;
         }
 
@@ -58,14 +63,14 @@ class BulkOperations {
         $allPostTypes = array_unique($allPostTypes);
 
         echo '<table class="form-table">';
-        echo '<tr><th>Post Type</th><td><select name="cmb_bulk_post_type">';
+        echo '<tr><th>' . esc_html__('Post Type', 'custom-meta-box-builder') . '</th><td><select name="cmb_bulk_post_type">';
         foreach ($allPostTypes as $pt) {
             echo '<option value="' . esc_attr($pt) . '">' . esc_html($pt) . '</option>';
         }
         echo '</select></td></tr>';
 
         // Field selector
-        echo '<tr><th>Field</th><td><select name="cmb_bulk_field_id">';
+        echo '<tr><th>' . esc_html__('Field', 'custom-meta-box-builder') . '</th><td><select name="cmb_bulk_field_id">';
         foreach ($boxes as $box) {
             $fields = FieldUtils::flattenFields($box['fields']);
             foreach ($fields as $f) {
@@ -76,27 +81,27 @@ class BulkOperations {
         echo '</select></td></tr>';
 
         // Operation
-        echo '<tr><th>Operation</th><td><select name="cmb_bulk_operation">';
-        echo '<option value="set">Set value</option>';
-        echo '<option value="delete">Delete meta</option>';
-        echo '<option value="replace">Find &amp; Replace</option>';
+        echo '<tr><th>' . esc_html__('Operation', 'custom-meta-box-builder') . '</th><td><select name="cmb_bulk_operation">';
+        echo '<option value="set">' . esc_html__('Set value', 'custom-meta-box-builder') . '</option>';
+        echo '<option value="delete">' . esc_html__('Delete meta', 'custom-meta-box-builder') . '</option>';
+        echo '<option value="replace">' . esc_html__('Find & Replace', 'custom-meta-box-builder') . '</option>';
         echo '</select></td></tr>';
 
         // Value
-        echo '<tr><th>Value</th><td><input type="text" name="cmb_bulk_value" class="regular-text">';
-        echo '<p class="description">For "Set": the value to apply. For "Replace": the new value.</p></td></tr>';
+        echo '<tr><th>' . esc_html__('Value', 'custom-meta-box-builder') . '</th><td><input type="text" name="cmb_bulk_value" class="regular-text">';
+        echo '<p class="description">' . esc_html__('For "Set": the value to apply. For "Replace": the new value.', 'custom-meta-box-builder') . '</p></td></tr>';
 
         // Find value (for replace)
-        echo '<tr><th>Find (for Replace)</th><td><input type="text" name="cmb_bulk_find" class="regular-text">';
-        echo '<p class="description">Only used with "Find &amp; Replace" operation.</p></td></tr>';
+        echo '<tr><th>' . esc_html__('Find (for Replace)', 'custom-meta-box-builder') . '</th><td><input type="text" name="cmb_bulk_find" class="regular-text">';
+        echo '<p class="description">' . esc_html__('Only used with "Find & Replace" operation.', 'custom-meta-box-builder') . '</p></td></tr>';
 
         // Post filter
-        echo '<tr><th>Post IDs (optional)</th><td><input type="text" name="cmb_bulk_post_ids" class="regular-text">';
-        echo '<p class="description">Comma-separated. Leave empty to apply to all posts of the selected type.</p></td></tr>';
+        echo '<tr><th>' . esc_html__('Post IDs (optional)', 'custom-meta-box-builder') . '</th><td><input type="text" name="cmb_bulk_post_ids" class="regular-text">';
+        echo '<p class="description">' . esc_html__('Comma-separated. Leave empty to apply to all posts of the selected type.', 'custom-meta-box-builder') . '</p></td></tr>';
 
         echo '</table>';
 
-        echo '<p><input type="submit" name="cmb_bulk_submit" class="button button-primary" value="Execute Bulk Operation" onclick="return confirm(\'This will modify multiple posts. Continue?\')"></p>';
+        echo '<p><input type="submit" name="cmb_bulk_submit" class="button button-primary" value="' . esc_attr__('Execute Bulk Operation', 'custom-meta-box-builder') . '" onclick="return confirm(\'' . esc_js(__('This will modify multiple posts. Continue?', 'custom-meta-box-builder')) . '\')"></p>';
         echo '</form>';
         echo '</div>';
     }
@@ -176,7 +181,8 @@ class BulkOperations {
         }
 
         add_action('admin_notices', function () use ($count, $operation) {
-            echo '<div class="notice notice-success is-dismissible"><p>Bulk ' . esc_html($operation) . ' completed: ' . $count . ' post(s) updated.</p></div>';
+            /* translators: 1: operation name, 2: number of posts */
+            echo '<div class="notice notice-success is-dismissible"><p>' . sprintf(esc_html__('Bulk %1$s completed: %2$d post(s) updated.', 'custom-meta-box-builder'), esc_html($operation), $count) . '</p></div>';
         });
     }
 

@@ -1,11 +1,16 @@
 <?php
+declare(strict_types=1);
+
 /**
  * Gutenberg document sidebar panel for CMB fields.
  *
  * @package CustomMetaBoxBuilder
  * @since   2.0
  */
+
 namespace CMB\Core;
+
+defined( 'ABSPATH' ) || exit;
 
 /**
  * Gutenberg sidebar panel support (7.6).

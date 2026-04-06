@@ -1,11 +1,16 @@
 <?php
+declare(strict_types=1);
+
 /**
  * Frontend form rendering — allows meta box forms to be rendered on the frontend.
  *
  * @package CustomMetaBoxBuilder
  * @since   2.1
  */
+
 namespace CMB\Core;
+
+defined( 'ABSPATH' ) || exit;
 
 use CMB\Core\RenderContext\PostContext;
 
@@ -20,7 +25,7 @@ class FrontendForm {
      */
     public static function render(string $metaBoxId, ?int $postId = null, array $args = []): string {
         $manager = MetaBoxManager::getInstance();
-        if ($manager === null) {
+        if (null === $manager) {
             return '';
         }
 
@@ -47,7 +52,7 @@ class FrontendForm {
         $fields = FieldUtils::flattenFields($metaBox['fields']);
 
         $output = '<form id="' . esc_attr($formId) . '" class="cmb-frontend-form cmb-container" method="' . esc_attr($method) . '">';
-        $output .= wp_nonce_field('cmb_frontend_save_' . $metaBoxId, 'cmb_frontend_nonce', true, false);
+        $output .= wp_nonce_field('cmb_frontend_save_' . $metaBoxId . '_' . $postId, 'cmb_frontend_nonce', true, false);
         $output .= '<input type="hidden" name="cmb_frontend_box_id" value="' . esc_attr($metaBoxId) . '">';
         $output .= '<input type="hidden" name="cmb_frontend_post_id" value="' . esc_attr($postId) . '">';
 
@@ -105,7 +110,7 @@ class FrontendForm {
         $metaBoxId = sanitize_text_field(wp_unslash($_POST['cmb_frontend_box_id']));
         $postId = intval($_POST['cmb_frontend_post_id'] ?? 0);
 
-        if (!wp_verify_nonce($_POST['cmb_frontend_nonce'], 'cmb_frontend_save_' . $metaBoxId)) {
+        if (!wp_verify_nonce($_POST['cmb_frontend_nonce'], 'cmb_frontend_save_' . $metaBoxId . '_' . $postId)) {
             return;
         }
 
@@ -115,7 +120,7 @@ class FrontendForm {
         }
 
         $manager = MetaBoxManager::getInstance();
-        if ($manager === null) {
+        if (null === $manager) {
             return;
         }
 
@@ -133,12 +138,25 @@ class FrontendForm {
             }
 
             $fieldClass = FieldFactory::resolveClass($field['type']);
-            if ($fieldClass === null) {
+            if (null === $fieldClass) {
                 continue;
             }
 
             $instance = new $fieldClass($field);
             $raw = wp_unslash($_POST[$field['id']] ?? '');
+
+            // SEC-N05: Validate attachment IDs for file/image/gallery fields.
+            if (in_array($field['type'], ['file', 'image', 'gallery'], true)) {
+                $attachmentIds = is_array($raw) ? $raw : [$raw];
+                $validIds = [];
+                foreach ($attachmentIds as $id) {
+                    $id = intval($id);
+                    if ($id && get_post($id)) {
+                        $validIds[] = $id;
+                    }
+                }
+                $raw = is_array($raw) ? $validIds : ($validIds[0] ?? '');
+            }
 
             $errors = $instance->validate($raw);
             if (!empty($errors)) {

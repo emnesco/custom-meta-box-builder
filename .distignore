@@ -12,3 +12,9 @@
 /TODO_*.md
 /AUDIT_*.md
 *.map
+AUDIT_*.md
+TODO*.md
+EXECUTION_PLAN.md
+PROGRESS_LOG.md
+DECISIONS.md
+CONTRIBUTING.md

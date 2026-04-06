@@ -1,11 +1,16 @@
 <?php
+declare(strict_types=1);
+
 /**
  * Radio button field type — renders radio options within a fieldset.
  *
  * @package CustomMetaBoxBuilder
  * @since   2.0
  */
+
 namespace CMB\Fields;
+
+defined( 'ABSPATH' ) || exit;
 
 use CMB\Core\Contracts\Abstracts\AbstractField;
 

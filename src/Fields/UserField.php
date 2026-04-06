@@ -1,11 +1,16 @@
 <?php
+declare(strict_types=1);
+
 /**
  * User relationship field type — renders a select of users with static caching.
  *
  * @package CustomMetaBoxBuilder
  * @since   2.0
  */
+
 namespace CMB\Fields;
+
+defined( 'ABSPATH' ) || exit;
 
 use CMB\Core\Contracts\Abstracts\AbstractField;
 
@@ -21,12 +26,10 @@ class UserField extends AbstractField {
         $limit = $this->config['limit'] ?? 100;
 
         $output = '<select name="' . $name . '"' . $id_attr . $this->renderAttributes() . $this->requiredAttr() . '>';
-        $output .= '<option value="">&mdash; Select User &mdash;</option>';
+        $output .= '<option value="">&mdash; ' . esc_html__('Select User', 'custom-meta-box-builder') . ' &mdash;</option>';
 
         if (function_exists('get_users')) {
-            $cacheKey = $role . '_' . $limit;
-            if (!isset(self::$userCache[$cacheKey])) {
-                $args = [
+            $args = [
                     'orderby' => 'display_name',
                     'order'   => 'ASC',
                     'number'  => $limit,
@@ -34,6 +37,8 @@ class UserField extends AbstractField {
                 if ($role) {
                     $args['role'] = $role;
                 }
+            $cacheKey = md5(wp_json_encode($args));
+            if (!isset(self::$userCache[$cacheKey])) {
                 self::$userCache[$cacheKey] = get_users($args);
             }
             $users = self::$userCache[$cacheKey];

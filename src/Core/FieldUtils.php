@@ -1,11 +1,16 @@
 <?php
+declare(strict_types=1);
+
 /**
  * Utility functions for field configuration analysis.
  *
  * @package CustomMetaBoxBuilder
  * @since   2.0
  */
+
 namespace CMB\Core;
+
+defined( 'ABSPATH' ) || exit;
 
 /**
  * Shared utility methods for field operations.
@@ -41,7 +46,10 @@ class FieldUtils {
      */
     public static function doAction( string $hookSuffix, mixed ...$args ): void {
         do_action( 'cmbbuilder_' . $hookSuffix, ...$args );
-        do_action( 'cmb_' . $hookSuffix, ...$args );
+        if (!defined('CMBB_LEGACY_HOOKS') || CMBB_LEGACY_HOOKS) {
+            _deprecated_hook('cmb_' . $hookSuffix, '2.1', 'cmbbuilder_' . $hookSuffix);
+            do_action('cmb_' . $hookSuffix, ...$args);
+        }
     }
 
     /**
@@ -58,6 +66,10 @@ class FieldUtils {
      */
     public static function applyFilters( string $hookSuffix, mixed $value, mixed ...$args ): mixed {
         $value = apply_filters( 'cmbbuilder_' . $hookSuffix, $value, ...$args );
-        return apply_filters( 'cmb_' . $hookSuffix, $value, ...$args );
+        if (!defined('CMBB_LEGACY_HOOKS') || CMBB_LEGACY_HOOKS) {
+            _deprecated_hook('cmb_' . $hookSuffix, '2.1', 'cmbbuilder_' . $hookSuffix);
+            $value = apply_filters('cmb_' . $hookSuffix, $value, ...$args);
+        }
+        return $value;
     }
 }

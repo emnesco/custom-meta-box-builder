@@ -1,11 +1,16 @@
 <?php
+declare(strict_types=1);
+
 /**
  * Dependency resolution and topological sorting for field configurations.
  *
  * @package CustomMetaBoxBuilder
  * @since   2.0
  */
+
 namespace CMB\Core;
+
+defined( 'ABSPATH' ) || exit;
 
 /**
  * Field dependency graph visualization for developer tools (8.6).
@@ -27,8 +32,8 @@ class DependencyGraph {
     public function addAdminPage(): void {
         add_submenu_page(
             'tools.php',
-            'CMB Dependency Graph',
-            'CMB Field Graph',
+            __('CMB Dependency Graph', 'custom-meta-box-builder'),
+            __('CMB Field Graph', 'custom-meta-box-builder'),
             'manage_options',
             'cmb-dependency-graph',
             [$this, 'renderPage']
@@ -39,11 +44,11 @@ class DependencyGraph {
         $boxes = $this->manager->getMetaBoxes();
 
         echo '<div class="wrap">';
-        echo '<h1>CMB Field Dependency Graph</h1>';
-        echo '<p>Visual representation of field dependencies (conditional logic) across all meta boxes.</p>';
+        echo '<h1>' . esc_html__('CMB Field Dependency Graph', 'custom-meta-box-builder') . '</h1>';
+        echo '<p>' . esc_html__('Visual representation of field dependencies (conditional logic) across all meta boxes.', 'custom-meta-box-builder') . '</p>';
 
         if (empty($boxes)) {
-            echo '<p>No meta boxes registered.</p></div>';
+            echo '<p>' . esc_html__('No meta boxes registered.', 'custom-meta-box-builder') . '</p></div>';
             return;
         }
 
@@ -54,7 +59,7 @@ class DependencyGraph {
             $dependencies = $this->extractDependencies($fields);
 
             if (empty($dependencies)) {
-                echo '<p style="color:#999">No conditional dependencies in this meta box.</p>';
+                echo '<p style="color:#999">' . esc_html__('No conditional dependencies in this meta box.', 'custom-meta-box-builder') . '</p>';
                 echo $this->renderFieldList($fields);
                 continue;
             }
@@ -92,7 +97,8 @@ class DependencyGraph {
             $output .= '<strong>' . esc_html($dep['source']) . '</strong>';
             $output .= ' <span style="color:#888">' . esc_html($dep['operator']) . '</span> ';
             $output .= '<code>' . esc_html($dep['value']) . '</code>';
-            $output .= ' &rarr; shows <strong>' . esc_html($dep['target']) . '</strong>';
+            /* translators: %s: target field name */
+            $output .= ' &rarr; ' . sprintf(esc_html__('shows %s', 'custom-meta-box-builder'), '<strong>' . esc_html($dep['target']) . '</strong>');
             $output .= '</div>';
         }
 
@@ -101,9 +107,10 @@ class DependencyGraph {
     }
 
     private function renderFieldList(array $fields): string {
-        $output = '<details style="margin-bottom:15px"><summary style="cursor:pointer;color:#2271b1">All fields (' . count($fields) . ')</summary>';
+        /* translators: %d: number of fields */
+        $output = '<details style="margin-bottom:15px"><summary style="cursor:pointer;color:#2271b1">' . sprintf(esc_html__('All fields (%d)', 'custom-meta-box-builder'), count($fields)) . '</summary>';
         $output .= '<table class="wp-list-table widefat fixed striped" style="margin-top:8px">';
-        $output .= '<thead><tr><th>ID</th><th>Type</th><th>Label</th><th>Conditional</th></tr></thead><tbody>';
+        $output .= '<thead><tr><th>' . esc_html__('ID', 'custom-meta-box-builder') . '</th><th>' . esc_html__('Type', 'custom-meta-box-builder') . '</th><th>' . esc_html__('Label', 'custom-meta-box-builder') . '</th><th>' . esc_html__('Conditional', 'custom-meta-box-builder') . '</th></tr></thead><tbody>';
         foreach ($fields as $field) {
             $cond = '';
             if (!empty($field['conditional'])) {

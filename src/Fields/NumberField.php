@@ -1,11 +1,16 @@
 <?php
+declare(strict_types=1);
+
 /**
  * Number field type — renders a numeric input with min/max/step.
  *
  * @package CustomMetaBoxBuilder
  * @since   2.0
  */
+
 namespace CMB\Fields;
+
+defined( 'ABSPATH' ) || exit;
 
 use CMB\Core\Contracts\Abstracts\AbstractField;
 
@@ -21,11 +26,11 @@ class NumberField extends AbstractField {
         if (is_array($value)) {
             return array_map([$this, 'sanitize'], $value);
         }
-        if ($value === '' || $value === null) {
+        if ('' === $value || null === $value) {
             return '';
         }
         $step = $this->config['attributes']['step'] ?? null;
-        if ($step !== null && (float)$step != (int)$step) {
+        if (null !== $step && (float)$step != (int)$step) {
             return (float)$value;
         }
         return (int)$value;

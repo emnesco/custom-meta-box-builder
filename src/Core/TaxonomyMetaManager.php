@@ -1,11 +1,16 @@
 <?php
+declare(strict_types=1);
+
 /**
  * Taxonomy term meta field registration, rendering, and save logic.
  *
  * @package CustomMetaBoxBuilder
  * @since   2.0
  */
+
 namespace CMB\Core;
+
+defined( 'ABSPATH' ) || exit;
 
 use CMB\Core\RenderContext\TermContext;
 use CMB\Core\Storage\StorageInterface;
@@ -114,7 +119,7 @@ class TaxonomyMetaManager {
             }
             foreach ($fields as $field) {
                 $instance = FieldFactory::create($field['type'], $field);
-                if ( $instance === null ) {
+                if ( null === $instance ) {
                     continue;
                 }
                 $raw = wp_unslash( $_POST[$field['id']] ?? '' );

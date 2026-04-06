@@ -1,11 +1,16 @@
 <?php
+declare(strict_types=1);
+
 /**
  * Flexible content field type — allows content editors to build pages from pre-defined layout blocks.
  *
  * @package CustomMetaBoxBuilder
  * @since   2.1
  */
+
 namespace CMB\Fields;
+
+defined( 'ABSPATH' ) || exit;
 
 use CMB\Core\Contracts\Abstracts\AbstractField;
 use CMB\Core\FieldFactory;
@@ -39,7 +44,7 @@ class FlexibleContentField extends AbstractField {
 
         // Add layout picker
         $output .= '<div class="cmb-flexible-add">';
-        $output .= '<button type="button" class="button cmb-flexible-add-btn">Add Layout</button>';
+        $output .= '<button type="button" class="button cmb-flexible-add-btn">' . esc_html__('Add Layout', 'custom-meta-box-builder') . '</button>';
         $output .= '<div class="cmb-flexible-layout-picker" style="display:none">';
         foreach ($layouts as $lKey => $layout) {
             $output .= '<button type="button" class="cmb-flexible-layout-option" '
@@ -78,7 +83,7 @@ class FlexibleContentField extends AbstractField {
         $output .= '<span class="cmb-group-index">' . $index . '</span> ';
         $output .= '<span class="cmb-flexible-layout-label">' . esc_html($layout['label'] ?? $layoutKey) . '</span>';
         $output .= '<span class="cmb-group-item-actions">';
-        $output .= '<button type="button" class="cmb-remove-row" title="Remove">&times;</button>';
+        $output .= '<button type="button" class="cmb-remove-row" title="' . esc_attr__('Remove', 'custom-meta-box-builder') . '">&times;</button>';
         $output .= '</span>';
         $output .= '</div>';
 
@@ -98,7 +103,7 @@ class FlexibleContentField extends AbstractField {
                 'value'   => $subValue,
             ]));
 
-            if ($instance === null) {
+            if (null === $instance) {
                 continue;
             }
 
@@ -132,6 +137,8 @@ class FlexibleContentField extends AbstractField {
         }
 
         $layouts = $this->config['layouts'] ?? [];
+        // SEC-N10: Pre-compute valid layout names for validation.
+        $validLayouts = array_keys($layouts);
         $sanitized = [];
 
         foreach ($value as $row) {
@@ -140,6 +147,12 @@ class FlexibleContentField extends AbstractField {
             }
 
             $layoutKey = sanitize_text_field($row['_layout']);
+
+            // SEC-N10: Validate submitted layout name against registered layouts.
+            if (!in_array($layoutKey, $validLayouts, true)) {
+                continue;
+            }
+
             $layout = $this->findLayout($layouts, $layoutKey);
             if (!$layout) {
                 continue;
@@ -149,7 +162,7 @@ class FlexibleContentField extends AbstractField {
             foreach ($layout['fields'] ?? [] as $subField) {
                 $subValue = $row[$subField['id']] ?? '';
                 $instance = FieldFactory::create($subField['type'], $subField);
-                if ($instance !== null) {
+                if (null !== $instance) {
                     $sanitizedRow[$subField['id']] = $instance->sanitize($subValue);
                 }
             }

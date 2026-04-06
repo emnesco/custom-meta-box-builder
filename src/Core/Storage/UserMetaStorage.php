@@ -1,11 +1,16 @@
 <?php
+declare(strict_types=1);
+
 /**
  * User meta storage implementation.
  *
  * @package CustomMetaBoxBuilder
  * @since   2.0
  */
+
 namespace CMB\Core\Storage;
+
+defined( 'ABSPATH' ) || exit;
 
 class UserMetaStorage implements StorageInterface {
     public function get( int|string $objectId, string $key, bool $single = true ): mixed {

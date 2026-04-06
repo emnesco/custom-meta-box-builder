@@ -1,11 +1,16 @@
 <?php
+declare(strict_types=1);
+
 /**
  * Message field type — display-only content with no data storage.
  *
  * @package CustomMetaBoxBuilder
  * @since   2.0
  */
+
 namespace CMB\Fields;
+
+defined( 'ABSPATH' ) || exit;
 
 use CMB\Core\Contracts\Abstracts\AbstractField;
 

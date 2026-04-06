@@ -1,11 +1,16 @@
 <?php
+declare(strict_types=1);
+
 /**
  * WordPress options storage implementation.
  *
  * @package CustomMetaBoxBuilder
  * @since   2.0
  */
+
 namespace CMB\Core\Storage;
+
+defined( 'ABSPATH' ) || exit;
 
 class OptionStorage implements StorageInterface {
     public function get( int|string $objectId, string $key, bool $single = true ): mixed {

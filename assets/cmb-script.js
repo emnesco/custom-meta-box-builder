@@ -316,9 +316,32 @@
         }
       }
 
+      // Cache DOM selectors for conditional fields to avoid re-querying
+      var $conditionalFields = null;
+      var $conditionalGroupFields = null;
+
+      function getCachedConditionalFields() {
+        if (!$conditionalFields) {
+          $conditionalFields = $('[data-conditional-field]');
+        }
+        return $conditionalFields;
+      }
+
+      function getCachedConditionalGroupFields() {
+        if (!$conditionalGroupFields) {
+          $conditionalGroupFields = $('[data-conditional-groups]');
+        }
+        return $conditionalGroupFields;
+      }
+
+      function invalidateConditionalCache() {
+        $conditionalFields = null;
+        $conditionalGroupFields = null;
+      }
+
       function evaluateConditionals() {
         // Simple single-condition format
-        $('[data-conditional-field]').each(function() {
+        getCachedConditionalFields().each(function() {
           var $field = $(this);
           var $container = $field.closest('.cmb-container, .cmb-tab-panel, .form-table');
           var show = evaluateCondition({
@@ -335,7 +358,7 @@
         });
 
         // AND/OR group format
-        $('[data-conditional-groups]').each(function() {
+        getCachedConditionalGroupFields().each(function() {
           var $field = $(this);
           var groups = $field.data('conditional-groups');
           var relation = ($field.data('conditional-relation') || 'OR').toUpperCase();
@@ -374,7 +397,7 @@
       var conditionalTimer;
       $(document).on('input change', '.cmb-container :input, .cmb-tab-panel :input', function() {
         clearTimeout(conditionalTimer);
-        conditionalTimer = setTimeout(evaluateConditionals, 150);
+        conditionalTimer = setTimeout(evaluateConditionals, 250);
       });
 
       // === Tab Switching (6.4) ===
@@ -560,9 +583,13 @@
         }
 
         $field.find('.cmb-field-error').remove();
+        $input.removeAttr('aria-invalid aria-describedby');
         if (errors.length) {
           $field.addClass('cmb-has-error');
-          $field.find('.cmb-input').append('<p class="cmb-field-error">' + errors[0] + '</p>');
+          var errorId = 'cmb-error-' + ($input.attr('name') || '').replace(/[\[\]]/g, '-') + '-' + Date.now();
+          var $error = $('<p>').addClass('cmb-field-error').attr('id', errorId).text(errors[0]);
+          $field.find('.cmb-input').append($error);
+          $input.attr('aria-invalid', 'true').attr('aria-describedby', errorId);
           return false;
         }
         $field.removeClass('cmb-has-error');
@@ -640,6 +667,93 @@
           $(this).wpColorPicker(opts);
         });
       }
+
+      // === FE-C02: Range field output (replaces inline oninput) ===
+      document.addEventListener('input', function(e) {
+        if (e.target.matches('input[data-cmb-range-output]')) {
+          var output = e.target.nextElementSibling;
+          if (output) output.textContent = e.target.value;
+        }
+      });
+
+      // === FE-H04: Keyboard navigation for group row reorder ===
+      $(document).on('click keydown', '.cmb-group-move-up, .cmb-group-move-down', function(e) {
+        if (e.type === 'keydown' && e.key !== 'Enter' && e.key !== ' ') return;
+        e.preventDefault();
+        var $btn = $(this);
+        var $item = $btn.closest('.cmb-group-item');
+        var $container = $item.parent('.cmb-group-items');
+
+        if ($btn.hasClass('cmb-group-move-up') && $item.prev('.cmb-group-item').length) {
+          $item.insertBefore($item.prev('.cmb-group-item'));
+        } else if ($btn.hasClass('cmb-group-move-down') && $item.next('.cmb-group-item').length) {
+          $item.insertAfter($item.next('.cmb-group-item'));
+        }
+
+        // Re-index after move
+        $container.children('.cmb-group-item').each(function(idx) {
+          $(this).find('.cmb-group-index').first().text(idx);
+        });
+        updateRowCounts();
+        $btn.focus();
+      });
+
+      // === FE-H06: Escape key to close layout picker modal ===
+      $(document).on('keydown', function(e) {
+        if (e.key === 'Escape') {
+          $('.cmb-flexible-layout-picker:visible').hide();
+        }
+      });
+
+      // === FE-H07: ARIA on FlexibleContent layout picker ===
+      $('.cmb-flexible-layout-picker').attr('role', 'listbox');
+      $('.cmb-flexible-layout-option').attr('role', 'option');
+
+      // Arrow key navigation for layout picker
+      $(document).on('keydown', '.cmb-flexible-layout-option', function(e) {
+        var $options = $(this).closest('.cmb-flexible-layout-picker').find('.cmb-flexible-layout-option');
+        var idx = $options.index(this);
+        if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
+          e.preventDefault();
+          $options.eq((idx + 1) % $options.length).focus();
+        } else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
+          e.preventDefault();
+          $options.eq((idx - 1 + $options.length) % $options.length).focus();
+        }
+      });
+
+      // Invalidate conditional cache when rows are added/removed
+      $(document).on('click', '.cmb-add-row, .cmb-remove-row', function() {
+        invalidateConditionalCache();
+      });
+
+      // === Button Group Field ===
+      $(document).on('click', '.cmb-button-group-btn', function() {
+        const $btn = $(this);
+        const $container = $btn.closest('.cmb-button-group-field');
+        const $hidden = $container.find('.cmb-button-group-value');
+        const val = $btn.data('value');
+
+        $container.find('.cmb-button-group-btn').removeClass('active').attr('aria-pressed', 'false');
+        $btn.addClass('active').attr('aria-pressed', 'true');
+        $hidden.val(val).trigger('change');
+      });
+
+      // === FE-C02: Range Field Output (replaces inline oninput) ===
+      document.addEventListener('input', function(e) {
+        if (e.target.matches && e.target.matches('input[data-cmb-range-output]')) {
+          var output = e.target.nextElementSibling;
+          if (output) output.textContent = e.target.value;
+        }
+      });
+
+      // === FE-C04: Delegated confirm handler for [data-confirm] links ===
+      document.addEventListener('click', function(e) {
+        var el = e.target.closest('[data-confirm]');
+        if (el && !confirm(el.dataset.confirm)) {
+          e.preventDefault();
+        }
+      });
 
     });
 

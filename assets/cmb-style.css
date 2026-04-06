@@ -812,3 +812,28 @@
 .cmb-flexible-layout-picker { position: absolute; bottom: 100%; left: 0; background: var(--cmb-bg); border: 1px solid var(--cmb-border); box-shadow: 0 2px 8px rgba(0,0,0,.12); padding: 8px; display: flex; flex-wrap: wrap; gap: 6px; z-index: 10; margin-bottom: 4px; }
 .cmb-flexible-layout-option { padding: 8px 14px; border: 1px solid var(--cmb-border); background: var(--cmb-bg); cursor: pointer; border-radius: 3px; font-size: 13px; }
 .cmb-flexible-layout-option:hover { border-color: var(--cmb-primary); color: var(--cmb-primary); }
+
+/* === Button Group Field === */
+.cmb-button-group-field { display: flex; flex-wrap: wrap; gap: 0; }
+.cmb-button-group-field .cmb-button-group-value { display: none; }
+.cmb-button-group-btn { border-radius: 0; margin-left: -1px; }
+.cmb-button-group-btn:first-of-type { border-radius: 3px 0 0 3px; margin-left: 0; }
+.cmb-button-group-btn:last-of-type { border-radius: 0 3px 3px 0; }
+.cmb-button-group-btn.active { background: var(--cmb-primary); color: #fff; border-color: var(--cmb-primary); z-index: 1; }
+
+/* === Link Field === */
+.cmb-link-field p { margin: 4px 0; }
+.cmb-link-field label { font-weight: 500; font-size: 12px; color: var(--cmb-text-muted); }
+
+/* === oEmbed Field === */
+.cmb-oembed-preview { margin-top: 10px; max-width: 500px; }
+.cmb-oembed-preview iframe { max-width: 100%; }
+
+/* === Reduced Motion === */
+@media (prefers-reduced-motion: reduce) {
+    .cmb-field, .cmb-group-row, .cmb-tab-panel, .cmb-group-item,
+    .cmb-flexible-item, .cmb-gallery-thumb {
+        transition: none !important;
+        animation: none !important;
+    }
+}

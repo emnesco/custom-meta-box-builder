@@ -1,11 +1,16 @@
 <?php
+declare(strict_types=1);
+
 /**
  * AND/OR location rule matching for conditional meta box display.
  *
  * @package CustomMetaBoxBuilder
  * @since   2.0
  */
+
 namespace CMB\Core;
+
+defined( 'ABSPATH' ) || exit;
 
 class LocationMatcher {
     /**
@@ -66,7 +71,7 @@ class LocationMatcher {
             default          => null,
         };
 
-        if ($actual === null) {
+        if (null === $actual) {
             return true; // Unknown param — don't restrict.
         }
 

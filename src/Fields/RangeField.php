@@ -1,11 +1,16 @@
 <?php
+declare(strict_types=1);
+
 /**
  * Range/slider field type — renders an HTML5 range input with value display.
  *
  * @package CustomMetaBoxBuilder
  * @since   2.0
  */
+
 namespace CMB\Fields;
+
+defined( 'ABSPATH' ) || exit;
 
 use CMB\Core\Contracts\Abstracts\AbstractField;
 
@@ -20,7 +25,7 @@ class RangeField extends AbstractField {
         $name = esc_attr($this->getName());
 
         $output = '<div class="cmb-range-wrapper">';
-        $output .= '<input type="range" name="' . $name . '"' . $id_attr . ' value="' . esc_attr($value ?? $min) . '" min="' . esc_attr($min) . '" max="' . esc_attr($max) . '" step="' . esc_attr($step) . '"' . $this->renderAttributes() . ' oninput="this.nextElementSibling.textContent=this.value">';
+        $output .= '<input type="range" name="' . $name . '"' . $id_attr . ' value="' . esc_attr($value ?? $min) . '" min="' . esc_attr($min) . '" max="' . esc_attr($max) . '" step="' . esc_attr($step) . '"' . $this->renderAttributes() . ' data-cmb-range-output="true">';
         $output .= '<span class="cmb-range-value">' . esc_html($value ?? $min) . '</span>';
         $output .= '</div>';
         return $output;

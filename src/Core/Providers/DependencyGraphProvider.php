@@ -1,11 +1,16 @@
 <?php
+declare(strict_types=1);
+
 /**
  * Service provider for dependency graph feature.
  *
  * @package CustomMetaBoxBuilder
  * @since   2.0
  */
+
 namespace CMB\Core\Providers;
+
+defined( 'ABSPATH' ) || exit;
 
 use CMB\Core\Contracts\ServiceProvider;
 use CMB\Core\DependencyGraph;

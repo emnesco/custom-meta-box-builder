@@ -1,4 +1,6 @@
 <?php
+declare(strict_types=1);
+
 /**
  * Base abstract class for all field types — provides config, render, sanitize, and validate scaffolding.
  *
@@ -7,6 +9,8 @@
  */
 
 namespace CMB\Core\Contracts\Abstracts;
+
+defined( 'ABSPATH' ) || exit;
 
 use CMB\Core\Contracts\FieldInterface;
 
@@ -40,6 +44,18 @@ abstract class AbstractField implements FieldInterface {
 
     public function enqueueAssets(): void {
         // Override in field subclasses that need custom assets.
+    }
+
+    /**
+     * Format a raw stored value for frontend display.
+     *
+     * Override in field subclasses to provide formatted output
+     * (e.g., attachment IDs → URLs, serialized data → arrays).
+     *
+     * @since 2.2
+     */
+    public function format(mixed $value): mixed {
+        return $value;
     }
 
     public function getValue(): mixed {
@@ -79,7 +95,7 @@ abstract class AbstractField implements FieldInterface {
 
             switch ($ruleName) {
                 case 'required':
-                    if ($value === '' || $value === null || $value === []) {
+                    if ('' === $value || null === $value || [] === $value) {
                         $errors[] = sprintf('%s is required.', $label);
                     }
                     break;
@@ -94,12 +110,12 @@ abstract class AbstractField implements FieldInterface {
                     }
                     break;
                 case 'min':
-                    if ($ruleParam !== null && strlen((string)$value) < (int)$ruleParam) {
+                    if (null !== $ruleParam && strlen((string)$value) < (int)$ruleParam) {
                         $errors[] = sprintf('%s must be at least %s characters.', $label, $ruleParam);
                     }
                     break;
                 case 'max':
-                    if ($ruleParam !== null && strlen((string)$value) > (int)$ruleParam) {
+                    if (null !== $ruleParam && strlen((string)$value) > (int)$ruleParam) {
                         $errors[] = sprintf('%s must be no more than %s characters.', $label, $ruleParam);
                     }
                     break;
@@ -109,12 +125,13 @@ abstract class AbstractField implements FieldInterface {
                     }
                     break;
                 case 'pattern':
-                    if ($ruleParam !== null && $value !== '' && strlen($ruleParam) <= 500) {
-                        $result = @preg_match('/' . $ruleParam . '/u', (string)$value);
-                        if ($result === false) {
-                            break; // Invalid regex — skip silently.
+                    if (null !== $ruleParam && $value !== '' && strlen($ruleParam) <= 500) {
+                        $result = preg_match('/' . $ruleParam . '/u', (string)$value);
+                        if (false === $result) {
+                            // Pattern error — skip validation
+                            break;
                         }
-                        if ($result === 0) {
+                        if (!$result) {
                             $errors[] = sprintf('%s format is invalid.', $label);
                         }
                     }

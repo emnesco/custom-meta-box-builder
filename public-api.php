@@ -149,6 +149,55 @@ if (!function_exists('cmb_render_form')) {
     }
 }
 
+if (!function_exists('cmb_get_field_formatted')) {
+    /**
+     * Get a post meta field value with type-aware formatting.
+     *
+     * Unlike cmb_get_field() which returns raw stored data, this function
+     * detects the field type and applies formatting (e.g., image IDs → URLs,
+     * gallery IDs → attachment arrays, groups → nested arrays).
+     *
+     * @since 2.2
+     */
+    function cmb_get_field_formatted(string $fieldId, ?int $postId = null): mixed {
+        $postId = $postId ?: get_the_ID();
+        $value = get_post_meta($postId, $fieldId, true);
+
+        $plugin = Plugin::getInstance();
+        if (!$plugin) {
+            return $value;
+        }
+
+        // Find the field config from registered meta boxes
+        foreach ($plugin->getManager()->getMetaBoxes() as $box) {
+            $fields = \CMB\Core\FieldUtils::flattenFields($box['fields']);
+            foreach ($fields as $field) {
+                if (($field['id'] ?? '') === $fieldId) {
+                    $instance = \CMB\Core\FieldFactory::create($field['type'], $field);
+                    if ($instance) {
+                        $value = $instance->format($value);
+                    }
+                    return apply_filters('cmbbuilder_get_field_formatted', $value, $fieldId, $postId);
+                }
+            }
+        }
+
+        return apply_filters('cmbbuilder_get_field_formatted', $value, $fieldId, $postId);
+    }
+}
+
+if (!function_exists('cmb_delete_field')) {
+    /**
+     * Delete a post meta field value.
+     *
+     * @since 2.2
+     */
+    function cmb_delete_field(string $fieldId, ?int $postId = null): bool {
+        $postId = $postId ?: get_the_ID();
+        return delete_post_meta($postId, $fieldId);
+    }
+}
+
 if (!function_exists('cmb_the_form')) {
     /**
      * Echo a meta box form on the frontend.

@@ -1,11 +1,16 @@
 <?php
+declare(strict_types=1);
+
 /**
  * Meta box registration, rendering, and save logic for post types.
  *
  * @package CustomMetaBoxBuilder
  * @since   2.0
  */
+
 namespace CMB\Core;
+
+defined( 'ABSPATH' ) || exit;
 use CMB\Core\Contracts\FieldInterface;
 use CMB\Core\RenderContext\PostContext;
 use CMB\Core\Storage\PostMetaStorage;
@@ -37,7 +42,7 @@ class MetaBoxManager {
      * Prefer constructor injection for new code.
      */
     public static function instance(): self {
-        if (self::$instance === null) {
+        if (null === self::$instance) {
             self::$instance = new self();
         }
         return self::$instance;
@@ -183,9 +188,32 @@ class MetaBoxManager {
             }
 
             $fields = FieldUtils::flattenFields($metaBox['fields']);
+
+            /**
+             * Fires before all fields in a meta box are saved.
+             *
+             * @since 2.2
+             *
+             * @param int    $postId  The post ID.
+             * @param string $id      The meta box ID.
+             * @param array  $fields  All field configurations.
+             */
+            FieldUtils::doAction('pre_save_all', $postId, $id, $fields);
+
             foreach ($fields as $field) {
                 $this->saveField($postId, $field);
             }
+
+            /**
+             * Fires after all fields in a meta box are saved.
+             *
+             * @since 2.2
+             *
+             * @param int    $postId  The post ID.
+             * @param string $id      The meta box ID.
+             * @param array  $fields  All field configurations.
+             */
+            FieldUtils::doAction('post_save_all', $postId, $id, $fields);
         }
     }
 
@@ -375,11 +403,15 @@ class MetaBoxManager {
                         'single' => empty($field['repeat']) && ($field['type'] ?? '') !== 'group',
                         'type' => $this->getRestType($field['type'] ?? 'text'),
                         'description' => $field['description'] ?? '',
+                        'auth_callback' => function() {
+                            return current_user_can('edit_posts');
+                        },
                         'sanitize_callback' => function ($value) use ($fieldCopy) {
                             $instance = FieldFactory::create($fieldCopy['type'], $fieldCopy);
                             return $instance ? $instance->sanitize($value) : $value;
                         },
                     ];
+                    $restArgs['object_subtype'] = $postType;
                     register_post_meta($postType, $field['id'], $restArgs);
                 }
             }
@@ -388,9 +420,10 @@ class MetaBoxManager {
 
     private function getRestType(string $fieldType): string {
         return match ($fieldType) {
-            'number' => 'number',
-            'checkbox' => 'boolean',
-            'group' => 'object',
+            'number', 'range' => 'number',
+            'checkbox', 'toggle' => 'boolean',
+            'group', 'flexible_content', 'link' => 'object',
+            'gallery', 'checkbox_list' => 'array',
             default => 'string',
         };
     }

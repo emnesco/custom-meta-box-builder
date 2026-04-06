@@ -1,11 +1,16 @@
 <?php
+declare(strict_types=1);
+
 /**
  * Gutenberg block registration — allows defining custom blocks using CMB fields.
  *
  * @package CustomMetaBoxBuilder
  * @since   2.1
  */
+
 namespace CMB\Core;
+
+defined( 'ABSPATH' ) || exit;
 
 class BlockRegistration {
     /** @var array<string, array> Registered blocks. */
@@ -102,14 +107,20 @@ class BlockRegistration {
             return ob_get_clean();
         }
 
-        if (!empty($config['render_template']) && file_exists($config['render_template'])) {
+        if (isset($config['render_template'])) {
+            $templatePath = realpath($config['render_template']);
+            $themePath = realpath(get_stylesheet_directory());
+            $pluginPath = realpath(dirname(__DIR__, 2));
+            if (!$templatePath || (!str_starts_with($templatePath, $themePath) && !str_starts_with($templatePath, $pluginPath))) {
+                return ''; // Invalid template path
+            }
             ob_start();
             // Make $block available to the template.
             $block = [
                 'id'   => $blockId,
                 'data' => $attributes,
             ];
-            include $config['render_template'];
+            include $templatePath;
             return ob_get_clean();
         }
 

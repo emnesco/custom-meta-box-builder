@@ -1,11 +1,16 @@
 <?php
+declare(strict_types=1);
+
 /**
  * Trait providing multilingual field rendering with language tabs.
  *
  * @package CustomMetaBoxBuilder
  * @since   2.0
  */
+
 namespace CMB\Core\Traits;
+
+defined( 'ABSPATH' ) || exit;
 
 /**
  * Multi-language field support (8.3).
@@ -62,11 +67,14 @@ trait MultiLanguageTrait {
      */
     protected function renderLanguageTabs(string $fieldId, array $locales, string $currentLocale): string {
         $output = '<div class="cmb-lang-tabs" data-field="' . esc_attr($fieldId) . '">';
-        $output .= '<ul class="cmb-lang-tab-nav">';
+        $output .= '<ul class="cmb-lang-tab-nav" role="tablist">';
         foreach ($locales as $locale) {
-            $active = ($locale === $currentLocale) ? ' cmb-lang-tab-active' : '';
-            $output .= '<li class="cmb-lang-tab-item' . $active . '" data-lang="' . esc_attr($locale) . '">';
-            $output .= '<a href="#">' . strtoupper(esc_html($locale)) . '</a>';
+            $isActive = ($locale === $currentLocale);
+            $active = $isActive ? ' cmb-lang-tab-active' : '';
+            $tabId = 'cmb-lang-tab-' . esc_attr($fieldId) . '-' . esc_attr($locale);
+            $panelId = 'cmb-lang-panel-' . esc_attr($fieldId) . '-' . esc_attr($locale);
+            $output .= '<li class="cmb-lang-tab-item' . $active . '" data-lang="' . esc_attr($locale) . '" role="presentation">';
+            $output .= '<a href="#" id="' . $tabId . '" role="tab" aria-selected="' . ($isActive ? 'true' : 'false') . '" aria-controls="' . $panelId . '" tabindex="' . ($isActive ? '0' : '-1') . '">' . strtoupper(esc_html($locale)) . '</a>';
             $output .= '</li>';
         }
         $output .= '</ul>';

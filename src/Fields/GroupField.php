@@ -1,11 +1,16 @@
 <?php
+declare(strict_types=1);
+
 /**
  * Group field type — renders repeatable/non-repeatable sub-field groups.
  *
  * @package CustomMetaBoxBuilder
  * @since   2.0
  */
+
 namespace CMB\Fields;
+
+defined( 'ABSPATH' ) || exit;
 
 use CMB\Core\Contracts\Abstracts\AbstractField;
 use CMB\Core\FieldFactory;
@@ -17,6 +22,15 @@ class GroupField extends AbstractField {
         $value = $this->getValue();
         $name = $this->getName();
         $field = $this->config;
+
+        // Bulk-fetch all post meta to avoid N+1 queries in sub-fields.
+        $postId = get_the_ID();
+        if ($postId) {
+            $allMeta = get_post_meta($postId);
+            if (empty($value) && !empty($allMeta[$name])) {
+                $value = maybe_unserialize($allMeta[$name][0] ?? '');
+            }
+        }
 
         $collapsed = (!isset($field['collapsed']) || $field['collapsed'] !== false) ? '' : 'open';
         $rowTitleField = $field['row_title_field'] ?? '';
@@ -58,6 +72,10 @@ class GroupField extends AbstractField {
         $output .= '<div class="cmb-group-item ' . esc_attr($collapsed) . '" data-field-name="' . esc_attr($name) . '">';
         $output .= '<div class="cmb-group-item-header" role="button" tabindex="0" aria-expanded="' . ($collapsed === 'open' ? 'true' : 'false') . '">';
         $output .= '<span class="cmb-group-item-title">' . esc_html($rowTitle) . '</span>';
+        $output .= '<span class="cmb-group-reorder-buttons">';
+        $output .= '<button type="button" class="cmb-group-move-up" tabindex="0" aria-label="' . esc_attr__('Move item up', 'custom-meta-box-builder') . '" title="' . esc_attr__('Move up', 'custom-meta-box-builder') . '"><span class="dashicons dashicons-arrow-up-alt2" aria-hidden="true"></span></button>';
+        $output .= '<button type="button" class="cmb-group-move-down" tabindex="0" aria-label="' . esc_attr__('Move item down', 'custom-meta-box-builder') . '" title="' . esc_attr__('Move down', 'custom-meta-box-builder') . '"><span class="dashicons dashicons-arrow-down-alt2" aria-hidden="true"></span></button>';
+        $output .= '</span>';
         $output .= ' <span class="toggle-indicator" aria-hidden="true"></span>';
         $output .= '</div>';
         $output .= '<div class="cmb-group-item-body">';
@@ -115,7 +133,7 @@ class GroupField extends AbstractField {
                 }
 
                 $subInstance = FieldFactory::create($subField['type'], $subField);
-                if ( $subInstance === null ) {
+                if ( null === $subInstance ) {
                     $sanitizedGroup[$subId] = sanitize_text_field( is_string($subRaw) ? $subRaw : '' );
                     continue;
                 }

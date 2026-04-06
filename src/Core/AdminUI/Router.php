@@ -1,11 +1,16 @@
 <?php
+declare(strict_types=1);
+
 /**
  * Admin page router — registers menu pages, enqueues assets, dispatches actions.
  *
  * @package CustomMetaBoxBuilder
  * @since   2.0
  */
+
 namespace CMB\Core\AdminUI;
+
+defined( 'ABSPATH' ) || exit;
 
 class Router {
     private const OPTION_KEY = 'cmb_admin_configurations';
@@ -23,8 +28,8 @@ class Router {
 
     public static function addAdminPage(): void {
         $hook = add_menu_page(
-            'CMB Builder',
-            'CMB Builder',
+            __('CMB Builder', 'custom-meta-box-builder'),
+            __('CMB Builder', 'custom-meta-box-builder'),
             'manage_options',
             'cmb-builder',
             [self::class, 'renderPage'],
@@ -71,7 +76,7 @@ class Router {
 
     public static function renderPage(): void {
         if (!current_user_can('manage_options')) {
-            wp_die('Unauthorized');
+            wp_die(__('Unauthorized', 'custom-meta-box-builder'));
         }
 
         $action = sanitize_text_field($_GET['action'] ?? '');
@@ -87,56 +92,56 @@ class Router {
     public static function getFieldTypeCategories(): array {
         return [
             [
-                'label' => 'Basic',
+                'label' => __('Basic', 'custom-meta-box-builder'),
                 'types' => [
-                    'text'     => ['label' => 'Text',     'icon' => 'dashicons-editor-textcolor'],
-                    'textarea' => ['label' => 'Textarea', 'icon' => 'dashicons-editor-paragraph'],
-                    'number'   => ['label' => 'Number',   'icon' => 'dashicons-calculator'],
-                    'email'    => ['label' => 'Email',    'icon' => 'dashicons-email'],
-                    'url'      => ['label' => 'URL',      'icon' => 'dashicons-admin-links'],
-                    'password' => ['label' => 'Password', 'icon' => 'dashicons-lock'],
-                    'hidden'   => ['label' => 'Hidden',   'icon' => 'dashicons-hidden'],
+                    'text'     => ['label' => __('Text', 'custom-meta-box-builder'),     'icon' => 'dashicons-editor-textcolor'],
+                    'textarea' => ['label' => __('Textarea', 'custom-meta-box-builder'), 'icon' => 'dashicons-editor-paragraph'],
+                    'number'   => ['label' => __('Number', 'custom-meta-box-builder'),   'icon' => 'dashicons-calculator'],
+                    'email'    => ['label' => __('Email', 'custom-meta-box-builder'),    'icon' => 'dashicons-email'],
+                    'url'      => ['label' => __('URL', 'custom-meta-box-builder'),      'icon' => 'dashicons-admin-links'],
+                    'password' => ['label' => __('Password', 'custom-meta-box-builder'), 'icon' => 'dashicons-lock'],
+                    'hidden'   => ['label' => __('Hidden', 'custom-meta-box-builder'),   'icon' => 'dashicons-hidden'],
                 ],
             ],
             [
-                'label' => 'Content',
+                'label' => __('Content', 'custom-meta-box-builder'),
                 'types' => [
-                    'wysiwyg' => ['label' => 'WYSIWYG Editor', 'icon' => 'dashicons-edit-large'],
+                    'wysiwyg' => ['label' => __('WYSIWYG Editor', 'custom-meta-box-builder'), 'icon' => 'dashicons-edit-large'],
                 ],
             ],
             [
-                'label' => 'Choice',
+                'label' => __('Choice', 'custom-meta-box-builder'),
                 'types' => [
-                    'select'   => ['label' => 'Select',   'icon' => 'dashicons-arrow-down-alt2'],
-                    'radio'    => ['label' => 'Radio',    'icon' => 'dashicons-marker'],
-                    'checkbox' => ['label' => 'Checkbox', 'icon' => 'dashicons-yes-alt'],
+                    'select'   => ['label' => __('Select', 'custom-meta-box-builder'),   'icon' => 'dashicons-arrow-down-alt2'],
+                    'radio'    => ['label' => __('Radio', 'custom-meta-box-builder'),    'icon' => 'dashicons-marker'],
+                    'checkbox' => ['label' => __('Checkbox', 'custom-meta-box-builder'), 'icon' => 'dashicons-yes-alt'],
                 ],
             ],
             [
-                'label' => 'Date & Color',
+                'label' => __('Date & Color', 'custom-meta-box-builder'),
                 'types' => [
-                    'date'  => ['label' => 'Date Picker',  'icon' => 'dashicons-calendar-alt'],
-                    'color' => ['label' => 'Color Picker', 'icon' => 'dashicons-art'],
+                    'date'  => ['label' => __('Date Picker', 'custom-meta-box-builder'),  'icon' => 'dashicons-calendar-alt'],
+                    'color' => ['label' => __('Color Picker', 'custom-meta-box-builder'), 'icon' => 'dashicons-art'],
                 ],
             ],
             [
-                'label' => 'Media',
+                'label' => __('Media', 'custom-meta-box-builder'),
                 'types' => [
-                    'file' => ['label' => 'File Upload', 'icon' => 'dashicons-media-default'],
+                    'file' => ['label' => __('File Upload', 'custom-meta-box-builder'), 'icon' => 'dashicons-media-default'],
                 ],
             ],
             [
-                'label' => 'Relational',
+                'label' => __('Relational', 'custom-meta-box-builder'),
                 'types' => [
-                    'post'     => ['label' => 'Post Select',     'icon' => 'dashicons-admin-post'],
-                    'taxonomy' => ['label' => 'Taxonomy Select', 'icon' => 'dashicons-category'],
-                    'user'     => ['label' => 'User Select',     'icon' => 'dashicons-admin-users'],
+                    'post'     => ['label' => __('Post Select', 'custom-meta-box-builder'),     'icon' => 'dashicons-admin-post'],
+                    'taxonomy' => ['label' => __('Taxonomy Select', 'custom-meta-box-builder'), 'icon' => 'dashicons-category'],
+                    'user'     => ['label' => __('User Select', 'custom-meta-box-builder'),     'icon' => 'dashicons-admin-users'],
                 ],
             ],
             [
-                'label' => 'Layout',
+                'label' => __('Layout', 'custom-meta-box-builder'),
                 'types' => [
-                    'group' => ['label' => 'Repeater Group', 'icon' => 'dashicons-grid-view'],
+                    'group' => ['label' => __('Repeater Group', 'custom-meta-box-builder'), 'icon' => 'dashicons-grid-view'],
                 ],
             ],
         ];
@@ -170,7 +175,7 @@ class Router {
     }
 
     public static function getRoleList(): array {
-        $list = ['all' => 'All Roles'];
+        $list = ['all' => __('All Roles', 'custom-meta-box-builder')];
         foreach (wp_roles()->roles as $slug => $data) {
             $list[$slug] = $data['name'];
         }

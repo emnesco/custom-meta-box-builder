@@ -1,11 +1,16 @@
 <?php
+declare(strict_types=1);
+
 /**
  * Factory for creating field instances from type strings with extensible type registry.
  *
  * @package CustomMetaBoxBuilder
  * @since   2.0
  */
+
 namespace CMB\Core;
+
+defined( 'ABSPATH' ) || exit;
 
 use CMB\Core\Contracts\FieldInterface;
 
@@ -20,7 +25,9 @@ class FieldFactory {
     /** Built-in type aliases for non-standard naming conventions. */
     private static array $typeAliases = [
         'flexible_content' => \CMB\Fields\FlexibleContentField::class,
-        'checkbox_list'    => \CMB\Fields\Checkbox_listField::class,
+        'checkbox_list'    => \CMB\Fields\CheckboxListField::class,
+        'button_group'     => \CMB\Fields\ButtonGroupField::class,
+        'oembed'           => \CMB\Fields\OembedField::class,
     ];
 
     /**
@@ -72,7 +79,7 @@ class FieldFactory {
      */
     public static function create( string $type, array $config ): ?FieldInterface {
         $className = self::resolveClass( $type );
-        if ( $className === null ) {
+        if ( null === $className ) {
             return null;
         }
 

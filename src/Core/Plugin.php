@@ -1,11 +1,16 @@
 <?php
+declare(strict_types=1);
+
 /**
  * Main plugin bootstrap — registers hooks, enqueues assets, and loads providers.
  *
  * @package CustomMetaBoxBuilder
  * @since   2.0
  */
+
 namespace CMB\Core;
+
+defined( 'ABSPATH' ) || exit;
 
 use CMB\Core\Contracts\ServiceProvider;
 
@@ -28,7 +33,7 @@ final class Plugin {
     }
 
     public function getTaxonomyManager(): TaxonomyMetaManager {
-        if ( $this->taxonomyManager === null ) {
+        if ( null === $this->taxonomyManager ) {
             $this->taxonomyManager = new TaxonomyMetaManager();
             $this->taxonomyManager->register();
         }
@@ -36,7 +41,7 @@ final class Plugin {
     }
 
     public function getUserMetaManager(): UserMetaManager {
-        if ( $this->userMetaManager === null ) {
+        if ( null === $this->userMetaManager ) {
             $this->userMetaManager = new UserMetaManager();
             $this->userMetaManager->register();
         }
@@ -44,7 +49,7 @@ final class Plugin {
     }
 
     public function getOptionsManager(): OptionsManager {
-        if ( $this->optionsManager === null ) {
+        if ( null === $this->optionsManager ) {
             $this->optionsManager = new OptionsManager();
             $this->optionsManager->register();
         }
@@ -134,14 +139,14 @@ final class Plugin {
             if ( $suffix && ! file_exists( $basePath . $jsFile ) ) {
                 $jsFile = 'assets/cmb-script.js';
             }
-            $ver = @filemtime( $basePath . $cssFile ) ?: null;
+            $ver = file_exists($basePath . $cssFile) ? filemtime($basePath . $cssFile) : null;
             wp_enqueue_style('cmb-style', $baseUrl . $cssFile, [], $ver);
-            $ver = @filemtime( $basePath . $jsFile ) ?: null;
+            $ver = file_exists($basePath . $jsFile) ? filemtime($basePath . $jsFile) : null;
             wp_enqueue_script('cmb-script', $baseUrl . $jsFile, ['jquery', 'jquery-ui-sortable'], $ver, true);
-            wp_localize_script('cmb-script', 'cmbData', [
+            wp_add_inline_script('cmb-script', 'var cmbData = ' . wp_json_encode([
                 'ajaxUrl' => admin_url('admin-ajax.php'),
                 'nonce'   => wp_create_nonce('cmb_ajax_nonce'),
-            ]);
+            ]) . ';', 'before');
 
             // Enqueue WP media only on post/page editors where file fields may exist
             if ( in_array( $hookSuffix, [ 'post.php', 'post-new.php' ], true )

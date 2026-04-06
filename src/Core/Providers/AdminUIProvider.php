@@ -1,11 +1,16 @@
 <?php
+declare(strict_types=1);
+
 /**
  * Service provider for the admin UI builder feature.
  *
  * @package CustomMetaBoxBuilder
  * @since   2.0
  */
+
 namespace CMB\Core\Providers;
+
+defined( 'ABSPATH' ) || exit;
 
 use CMB\Core\AdminUI;
 use CMB\Core\Contracts\ServiceProvider;

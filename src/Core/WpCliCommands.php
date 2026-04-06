@@ -1,11 +1,16 @@
 <?php
+declare(strict_types=1);
+
 /**
  * WP-CLI commands for field CRUD operations.
  *
  * @package CustomMetaBoxBuilder
  * @since   2.0
  */
+
 namespace CMB\Core;
+
+defined( 'ABSPATH' ) || exit;
 
 /**
  * WP-CLI commands for Custom Meta Box Builder (7.5).
@@ -33,6 +38,11 @@ class WpCliCommands {
         \WP_CLI::add_command('cmb list', [$this, 'listBoxes']);
         \WP_CLI::add_command('cmb get', [$this, 'getField']);
         \WP_CLI::add_command('cmb set', [$this, 'setField']);
+        \WP_CLI::add_command('cmb delete', [$this, 'deleteField']);
+        \WP_CLI::add_command('cmb get-term', [$this, 'getTermField']);
+        \WP_CLI::add_command('cmb get-user', [$this, 'getUserField']);
+        \WP_CLI::add_command('cmb get-option', [$this, 'getOptionField']);
+        \WP_CLI::add_command('cmb export', [$this, 'exportConfig']);
     }
 
     /**
@@ -48,7 +58,7 @@ class WpCliCommands {
         $boxes = $this->manager->getMetaBoxes();
 
         if (empty($boxes)) {
-            \WP_CLI::warning('No meta boxes registered.');
+            \WP_CLI::warning(__('No meta boxes registered.', 'custom-meta-box-builder'));
             return;
         }
 
@@ -57,7 +67,7 @@ class WpCliCommands {
             $flatFields = FieldUtils::flattenFields($box['fields']);
             $fields = [];
             foreach ($flatFields as $f) {
-                $fields[] = $f['id'] ?? '(no id)';
+                $fields[] = $f['id'] ?? __('(no id)', 'custom-meta-box-builder');
             }
             $items[] = [
                 'ID' => $id,
@@ -84,7 +94,7 @@ class WpCliCommands {
      */
     public function getField(array $args, array $assocArgs): void {
         if (count($args) < 2) {
-            \WP_CLI::error('Usage: wp cmb get <post_id> <field_id>');
+            \WP_CLI::error(__('Usage: wp cmb get <post_id> <field_id>', 'custom-meta-box-builder'));
             return;
         }
 
@@ -93,11 +103,7 @@ class WpCliCommands {
 
         $value = get_post_meta($postId, $fieldId, true);
 
-        if (is_array($value) || is_object($value)) {
-            \WP_CLI::line(json_encode($value, JSON_PRETTY_PRINT));
-        } else {
-            \WP_CLI::line((string) $value);
-        }
+        $this->outputValue($value, $assocArgs);
     }
 
     /**
@@ -111,7 +117,7 @@ class WpCliCommands {
      */
     public function setField(array $args, array $assocArgs): void {
         if (count($args) < 3) {
-            \WP_CLI::error('Usage: wp cmb set <post_id> <field_id> <value>');
+            \WP_CLI::error(__('Usage: wp cmb set <post_id> <field_id> <value>', 'custom-meta-box-builder'));
             return;
         }
 
@@ -121,21 +127,127 @@ class WpCliCommands {
 
         // Try JSON decode for complex values
         $decoded = json_decode($value, true);
-        if (json_last_error() === JSON_ERROR_NONE && $decoded !== null) {
+        if (JSON_ERROR_NONE === json_last_error() && null !== $decoded) {
             $value = $decoded;
         }
 
         // Sanitize through the field pipeline if a matching field config exists.
         $fieldConfig = $this->findFieldConfig($fieldId);
-        if ($fieldConfig !== null) {
+        if (null !== $fieldConfig) {
             $instance = FieldFactory::create($fieldConfig['type'], $fieldConfig);
-            if ($instance !== null) {
+            if (null !== $instance) {
                 $value = $instance->sanitize($value);
             }
         }
 
         update_post_meta($postId, $fieldId, $value);
-        \WP_CLI::success(sprintf('Updated "%s" on post %d.', $fieldId, $postId));
+        /* translators: 1: field ID, 2: post ID */
+        \WP_CLI::success(sprintf(__('Updated "%1$s" on post %2$d.', 'custom-meta-box-builder'), $fieldId, $postId));
+    }
+
+    /**
+     * Delete a meta box field value.
+     *
+     * ## EXAMPLES
+     *     wp cmb delete 123 my_field
+     */
+    public function deleteField(array $args, array $assocArgs): void {
+        if (count($args) < 2) {
+            \WP_CLI::error('Usage: wp cmb delete <post_id> <field_id>');
+            return;
+        }
+
+        $postId = (int) $args[0];
+        $fieldId = $args[1];
+
+        delete_post_meta($postId, $fieldId);
+        \WP_CLI::success(sprintf('Deleted "%s" from post %d.', $fieldId, $postId));
+    }
+
+    /**
+     * Get a term meta field value.
+     *
+     * ## EXAMPLES
+     *     wp cmb get-term 42 my_field
+     */
+    public function getTermField(array $args, array $assocArgs): void {
+        if (count($args) < 2) {
+            \WP_CLI::error('Usage: wp cmb get-term <term_id> <field_id>');
+            return;
+        }
+        $value = get_term_meta((int) $args[0], $args[1], true);
+        $this->outputValue($value, $assocArgs);
+    }
+
+    /**
+     * Get a user meta field value.
+     *
+     * ## EXAMPLES
+     *     wp cmb get-user 1 my_field
+     */
+    public function getUserField(array $args, array $assocArgs): void {
+        if (count($args) < 2) {
+            \WP_CLI::error('Usage: wp cmb get-user <user_id> <field_id>');
+            return;
+        }
+        $value = get_user_meta((int) $args[0], $args[1], true);
+        $this->outputValue($value, $assocArgs);
+    }
+
+    /**
+     * Get an option field value.
+     *
+     * ## EXAMPLES
+     *     wp cmb get-option my_option
+     */
+    public function getOptionField(array $args, array $assocArgs): void {
+        if (count($args) < 1) {
+            \WP_CLI::error('Usage: wp cmb get-option <field_id>');
+            return;
+        }
+        $value = get_option($args[0]);
+        $this->outputValue($value, $assocArgs);
+    }
+
+    /**
+     * Export all meta box configurations as JSON.
+     *
+     * ## OPTIONS
+     *
+     * [--file=<path>]
+     * : Save to a file instead of stdout.
+     *
+     * ## EXAMPLES
+     *     wp cmb export
+     *     wp cmb export --file=meta-boxes.json
+     */
+    public function exportConfig(array $args, array $assocArgs): void {
+        $boxes = $this->manager->getMetaBoxes();
+        $data = [
+            'version'     => '2.2',
+            'plugin'      => 'custom-meta-box-builder',
+            'exported_at' => gmdate('Y-m-d H:i:s'),
+            'meta_boxes'  => $boxes,
+        ];
+        $json = wp_json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+
+        if (!empty($assocArgs['file'])) {
+            file_put_contents($assocArgs['file'], $json);
+            \WP_CLI::success(sprintf('Exported %d meta boxes to %s.', count($boxes), $assocArgs['file']));
+        } else {
+            \WP_CLI::line($json);
+        }
+    }
+
+    /**
+     * Output a value, formatting arrays/objects as JSON.
+     */
+    private function outputValue(mixed $value, array $assocArgs): void {
+        if (is_array($value) || is_object($value)) {
+            \WP_CLI::line(wp_json_encode($value, JSON_PRETTY_PRINT));
+        } else {
+            \WP_CLI::line((string) $value);
+        }
     }
 
     /**

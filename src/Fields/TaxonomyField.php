@@ -1,11 +1,16 @@
 <?php
+declare(strict_types=1);
+
 /**
  * Taxonomy relationship field type — renders terms as select or checkboxes.
  *
  * @package CustomMetaBoxBuilder
  * @since   2.0
  */
+
 namespace CMB\Fields;
+
+defined( 'ABSPATH' ) || exit;
 
 use CMB\Core\Contracts\Abstracts\AbstractField;
 
@@ -21,24 +26,26 @@ class TaxonomyField extends AbstractField {
         $fieldStyle = $this->config['field_style'] ?? 'checkbox';
 
         if (!function_exists('get_terms')) {
-            return '<p>Taxonomy terms not available.</p>';
+            return '<p>' . esc_html__('Taxonomy terms not available.', 'custom-meta-box-builder') . '</p>';
         }
 
-        if (!isset(self::$termCache[$taxonomy])) {
-            self::$termCache[$taxonomy] = get_terms([
-                'taxonomy'   => $taxonomy,
-                'hide_empty' => false,
-            ]);
+        $queryArgs = [
+            'taxonomy'   => $taxonomy,
+            'hide_empty' => false,
+        ];
+        $cacheKey = md5(wp_json_encode($queryArgs));
+        if (!isset(self::$termCache[$cacheKey])) {
+            self::$termCache[$cacheKey] = get_terms($queryArgs);
         }
-        $terms = self::$termCache[$taxonomy];
+        $terms = self::$termCache[$cacheKey];
 
         if (is_wp_error($terms) || empty($terms)) {
-            return '<p>No terms found.</p>';
+            return '<p>' . esc_html__('No terms found.', 'custom-meta-box-builder') . '</p>';
         }
 
         if ($fieldStyle === 'select') {
             $output = '<select name="' . $name . '"' . ' id="' . esc_attr($htmlId) . '"' . $this->renderAttributes() . $this->requiredAttr() . '>';
-            $output .= '<option value="">&mdash; Select &mdash;</option>';
+            $output .= '<option value="">&mdash; ' . esc_html__('Select', 'custom-meta-box-builder') . ' &mdash;</option>';
             foreach ($terms as $term) {
                 $sel = selected(in_array($term->term_id, $currentValues), true, false);
                 $output .= '<option value="' . esc_attr($term->term_id) . '"' . $sel . '>' . esc_html($term->name) . '</option>';

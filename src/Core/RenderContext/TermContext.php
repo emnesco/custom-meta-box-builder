@@ -1,11 +1,16 @@
 <?php
+declare(strict_types=1);
+
 /**
  * Term render context implementation.
  *
  * @package CustomMetaBoxBuilder
  * @since   2.0
  */
+
 namespace CMB\Core\RenderContext;
+
+defined( 'ABSPATH' ) || exit;
 
 use CMB\Core\Storage\StorageInterface;
 use CMB\Core\Storage\TermMetaStorage;

@@ -1,11 +1,16 @@
 <?php
+declare(strict_types=1);
+
 /**
  * Abstract service provider for modular feature registration.
  *
  * @package CustomMetaBoxBuilder
  * @since   2.0
  */
+
 namespace CMB\Core\Contracts;
+
+defined( 'ABSPATH' ) || exit;
 
 use CMB\Core\Plugin;
 

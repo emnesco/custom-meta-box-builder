@@ -1,11 +1,16 @@
 <?php
+declare(strict_types=1);
+
 /**
  * AJAX search endpoints for posts, users, and terms with nonce verification.
  *
  * @package CustomMetaBoxBuilder
  * @since   2.0
  */
+
 namespace CMB\Core;
+
+defined( 'ABSPATH' ) || exit;
 
 class AjaxHandler {
     public function register(): void {

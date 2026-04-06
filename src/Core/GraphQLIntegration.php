@@ -1,11 +1,16 @@
 <?php
+declare(strict_types=1);
+
 /**
  * WPGraphQL integration — exposes CMB fields in the GraphQL schema.
  *
  * @package CustomMetaBoxBuilder
  * @since   2.1
  */
+
 namespace CMB\Core;
+
+defined( 'ABSPATH' ) || exit;
 
 class GraphQLIntegration {
     /**
@@ -25,11 +30,16 @@ class GraphQLIntegration {
      */
     public static function registerFields(): void {
         $manager = MetaBoxManager::getInstance();
-        if ($manager === null) {
+        if (null === $manager) {
             return;
         }
 
         foreach ($manager->getMetaBoxes() as $boxId => $metaBox) {
+            // SEC-N08: Respect show_in_graphql config per meta box.
+            if (isset($metaBox['show_in_graphql']) && !$metaBox['show_in_graphql']) {
+                continue;
+            }
+
             $fields = FieldUtils::flattenFields($metaBox['fields']);
 
             foreach ($fields as $field) {
@@ -39,6 +49,11 @@ class GraphQLIntegration {
 
                 // Skip non-storable fields.
                 if (in_array($field['type'], ['message', 'divider'], true)) {
+                    continue;
+                }
+
+                // SEC-N08: Respect show_in_graphql config per field.
+                if (isset($field['show_in_graphql']) && !$field['show_in_graphql']) {
                     continue;
                 }
 
@@ -55,6 +70,11 @@ class GraphQLIntegration {
                         'type'        => $graphqlType,
                         'description' => $field['label'] ?? $fieldId,
                         'resolve'     => function ($post) use ($fieldId) {
+                            // SEC-N08: Only expose meta from published posts.
+                            $postObj = get_post($post->databaseId);
+                            if (!$postObj || $postObj->post_status !== 'publish') {
+                                return null;
+                            }
                             return get_post_meta($post->databaseId, $fieldId, true);
                         },
                     ]);

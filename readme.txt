@@ -56,22 +56,38 @@ Yes. Fields with `'show_in_rest' => true` appear in the Gutenberg document sideb
 == Changelog ==
 
 = 2.1.0 =
-* Added value retrieval API (cmb_get_field, cmb_the_field, etc.)
-* Added new field types: time, range, toggle, message, divider, image, gallery, checkbox_list
-* Added multi-select support to select field
-* Added AJAX search endpoints for relational fields
-* Added location rules for conditional meta box display
-* Added PHP code export from admin UI
-* Added ARIA roles and keyboard navigation for tabs
-* Added asset minification build pipeline with filemtime cache busting
-* Performance: static caching for post/taxonomy/user queries, optimized save pattern, scoped save_post hook
-* Security: wp_unslash on all POST reads, taxonomy-specific nonces, regex validation, FieldInterface enforcement
-* Accessibility: fieldset legends, focus styles, color contrast fixes
-* Various bug fixes and improvements
+* Added FlexibleContentField for layout-based content building
+* Added FrontendForm for frontend rendering via cmb_render_form() / cmb_the_form()
+* Added BlockRegistration API for Gutenberg blocks via cmb_register_block()
+* Added WPGraphQL integration for auto-registering CMB fields in GraphQL schema
+* Added LocalJson sync for saving field configs as JSON files for version control
+* Added expanded Gutenberg sidebar support: radio, color, date, toggle, file/image fields
+* Added hook prefix migration with dual-firing cmbbuilder_ (new) and cmb_ (backward compat)
+* Added PHPDoc annotations on all hook call sites and all PHP files
+* Added improved error messages with actionable guidance in _doing_it_wrong() calls
+* Added type aliases in FieldFactory for flexible_content and checkbox_list types
+* Changed: Standardized all JS files to ES6+ (const/let, arrow functions, destructuring)
 
 = 2.0.0 =
-* Initial release with admin UI builder
-* 15 field types
-* Gutenberg sidebar integration
-* REST API support
-* Import/export functionality
+* Added new field types: time, range, toggle, message, divider, image, gallery, checkbox_list
+* Added multi-select support to select field with placeholder
+* Added ColorField with wp-color-picker and alpha/rgba support
+* Added public API: cmb_get_field(), cmb_the_field(), cmb_get_term_field(), cmb_get_user_field(), cmb_get_option()
+* Added AjaxHandler with nonce-verified search endpoints for posts, users, terms
+* Added LocationMatcher with AND/OR rule matching for conditional meta box display
+* Added AND/OR conditional logic with data-conditional-groups
+* Added PHP code export from Admin UI
+* Added before/after save hooks on user and taxonomy meta managers
+* Added ARIA tab navigation with keyboard support
+* Added client-side validation with blur handler and form submit prevention
+* Added CSS custom properties for theming
+* Added Brain\Monkey test infrastructure with unit tests
+* Added esbuild scripts for JS+CSS minification
+* Added GitHub Actions CI with PHP 8.1/8.2/8.3 matrix
+* AdminUI refactored into Router, ListPage, EditPage, ActionHandler
+* RenderContext pattern for unified field rendering across post/term/user/option contexts
+* StorageInterface with PostMeta/TermMeta/UserMeta/OptionStorage implementations
+* ServiceProvider pattern with conditional loading for modular features
+* Security: wp_unslash on all POST reads, taxonomy-specific nonces, regex validation
+* Performance: static caching, filemtime versioning, debounced conditionals
+* Accessibility: fieldset legends, focus styles, color contrast fixes

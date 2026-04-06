@@ -1,11 +1,16 @@
 <?php
+declare(strict_types=1);
+
 /**
  * Admin CRUD handler — saves, deletes, imports, and exports configurations.
  *
  * @package CustomMetaBoxBuilder
  * @since   2.0
  */
+
 namespace CMB\Core\AdminUI;
+
+defined( 'ABSPATH' ) || exit;
 
 use CMB\Core\MetaBoxManager;
 
@@ -14,14 +19,19 @@ class ActionHandler {
     private static ?array $configCache = null;
 
     public static function getConfigs(): array {
-        if (self::$configCache === null) {
+        if (null === self::$configCache) {
             self::$configCache = get_option(self::OPTION_KEY, []);
         }
         return self::$configCache;
     }
 
     public static function saveConfigs(array $configs): void {
-        update_option(self::OPTION_KEY, $configs, false);
+        // Use add_option on first save to ensure autoload is false.
+        if (false === get_option(self::OPTION_KEY)) {
+            add_option(self::OPTION_KEY, $configs, '', false);
+        } else {
+            update_option(self::OPTION_KEY, $configs, false);
+        }
         self::$configCache = $configs;
     }
 
@@ -132,7 +142,7 @@ class ActionHandler {
                             $sub['options'] = $sOpts;
                         }
                         $sub = array_filter($sub, function($v) {
-                            return $v !== '' && $v !== null && $v !== false;
+                            return '' !== $v && null !== $v && false !== $v;
                         });
                         $sub['id'] = sanitize_text_field($sf['id']);
                         $sub['type'] = sanitize_text_field($sf['type'] ?? 'text');
@@ -145,7 +155,7 @@ class ActionHandler {
 
                 // Clean up empty values
                 $field = array_filter($field, function($v) {
-                    return $v !== '' && $v !== null;
+                    return '' !== $v && null !== $v;
                 });
                 // Always keep id and type
                 $field['id'] = sanitize_text_field($f['id']);
@@ -231,7 +241,8 @@ class ActionHandler {
         }
 
         $configs[$newId] = $configs[$id];
-        $configs[$newId]['title'] .= ' (Copy)';
+        /* translators: suffix appended to duplicated field group title */
+        $configs[$newId]['title'] .= ' ' . __('(Copy)', 'custom-meta-box-builder');
         self::saveConfigs($configs);
 
         wp_safe_redirect(admin_url('admin.php?page=cmb-builder&duplicated=1'));
@@ -291,6 +302,9 @@ class ActionHandler {
             $filename = 'cmb-' . $exportId . '-' . gmdate('Y-m-d') . '.json';
         }
 
+        // SEC-N01: Strip CRLF from filename to prevent header injection.
+        $filename = str_replace(["\r", "\n"], '', $filename);
+
         $export = [
             'version'      => '2.0',
             'plugin'       => 'custom-meta-box-builder',
@@ -342,6 +356,8 @@ class ActionHandler {
         $php .= ");\n";
 
         $filename = 'cmb-' . $exportId . '.php';
+        // SEC-N01: Strip CRLF from filename to prevent header injection.
+        $filename = str_replace(["\r", "\n"], '', $filename);
         header('Content-Type: application/x-php');
         header('Content-Disposition: attachment; filename="' . $filename . '"');
         header('Content-Length: ' . strlen($php));
@@ -389,6 +405,20 @@ class ActionHandler {
             exit;
         }
 
+        // SEC-N04: Validate required keys exist in import schema.
+        if (!isset($data['meta_boxes']) && !isset($data['field_groups'])) {
+            wp_safe_redirect(admin_url('admin.php?page=cmb-builder&error=import_failed'));
+            exit;
+        }
+        if (isset($data['meta_boxes']) && !is_array($data['meta_boxes'])) {
+            wp_safe_redirect(admin_url('admin.php?page=cmb-builder&error=import_failed'));
+            exit;
+        }
+        if (isset($data['field_groups']) && !is_array($data['field_groups'])) {
+            wp_safe_redirect(admin_url('admin.php?page=cmb-builder&error=import_failed'));
+            exit;
+        }
+
         // Support both v1 (meta_boxes) and v2 (field_groups) format
         $groups = $data['field_groups'] ?? $data['meta_boxes'] ?? null;
         if (empty($groups) || !is_array($groups)) {
@@ -421,7 +451,22 @@ class ActionHandler {
         exit;
     }
 
+    /**
+     * SEC-R01: Deep recursive sanitization for arbitrary imported field data.
+     */
+    private static function sanitizeFieldsDeep(array $fields): array {
+        return array_map(function($field) {
+            if (is_array($field)) {
+                return self::sanitizeFieldsDeep($field);
+            }
+            return is_string($field) ? sanitize_text_field($field) : $field;
+        }, $fields);
+    }
+
     private static function sanitizeImportedFields(array $fields): array {
+        // SEC-R01: Apply deep sanitization before structured processing.
+        $fields = self::sanitizeFieldsDeep($fields);
+
         $sanitized = [];
         foreach ($fields as $field) {
             if (!is_array($field) || empty($field['id'])) {
@@ -474,7 +519,7 @@ class ActionHandler {
 
             // Remove empty values to keep storage clean
             $clean = array_filter($clean, function ($v) {
-                return $v !== '' && $v !== null && $v !== 0;
+                return '' !== $v && null !== $v && 0 !== $v;
             });
             // Always keep id and type
             $clean['id']   = sanitize_text_field($field['id']);
@@ -486,6 +531,14 @@ class ActionHandler {
     }
 
     public static function registerSavedBoxes(): void {
+        // Skip loading on non-relevant screens (e.g. front-end when not needed).
+        if (is_admin() && function_exists('get_current_screen')) {
+            $screen = get_current_screen();
+            if ($screen && !in_array($screen->base, ['post', 'edit', 'add'], true) && $screen->base !== 'admin_page_cmb-builder') {
+                return;
+            }
+        }
+
         $configs = self::getConfigs();
         if (empty($configs)) {
             return;

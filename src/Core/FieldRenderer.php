@@ -1,11 +1,16 @@
 <?php
+declare(strict_types=1);
+
 /**
  * Renders individual fields with layout, conditionals, validation, and multilingual support.
  *
  * @package CustomMetaBoxBuilder
  * @since   2.0
  */
+
 namespace CMB\Core;
+
+defined( 'ABSPATH' ) || exit;
 
 use CMB\Core\Contracts\FieldInterface;
 use CMB\Core\RenderContext\RenderContextInterface;
@@ -106,7 +111,7 @@ class FieldRenderer {
 
         /** @var FieldInterface|null $instance */
         $instance = FieldFactory::create($field['type'], $mergedConfig);
-        if ( $instance === null ) {
+        if ( null === $instance ) {
             return '';
         }
 
@@ -180,19 +185,52 @@ class FieldRenderer {
                 // Expand/Collapse all for group fields
                 if ($field['type'] === 'group' && $has_field_repeat && empty($field['repeat_fake'])) {
                     $output .= '<div class="cmb-group-actions">';
-                    $output .= '<button type="button" class="cmb-expand-all">Expand All</button>';
-                    $output .= '<button type="button" class="cmb-collapse-all">Collapse All</button>';
+                    $output .= '<button type="button" class="cmb-expand-all">' . esc_html__('Expand All', 'custom-meta-box-builder') . '</button>';
+                    $output .= '<button type="button" class="cmb-collapse-all">' . esc_html__('Collapse All', 'custom-meta-box-builder') . '</button>';
                     $output .= '</div>';
                 }
                 // Search/filter for large groups (8.4)
                 if ($field['type'] === 'group' && !empty($field['searchable'])) {
                     $searchId = $htmlId . '-search';
                     $output .= '<div class="cmb-group-search">';
-                    $output .= '<label for="' . esc_attr($searchId) . '" class="screen-reader-text">Search items</label>';
-                    $output .= '<input id="' . esc_attr($searchId) . '" type="text" placeholder="Search items..." class="cmb-group-search-input">';
+                    $output .= '<label for="' . esc_attr($searchId) . '" class="screen-reader-text">' . esc_html__('Search items', 'custom-meta-box-builder') . '</label>';
+                    $output .= '<input id="' . esc_attr($searchId) . '" type="text" placeholder="' . esc_attr__('Search items...', 'custom-meta-box-builder') . '" class="cmb-group-search-input">';
                     $output .= '</div>';
                 }
-                $output .= $instance->render();
+                /**
+                 * Fires before a specific field type is rendered.
+                 *
+                 * @since 2.2
+                 *
+                 * @param array          $field      The field configuration.
+                 * @param FieldInterface $instance   The field instance.
+                 * @param mixed          $hookObject The post/object.
+                 */
+                FieldUtils::doAction('render_' . $field['type'], $field, $instance, $hookObject);
+
+                try {
+                    $fieldHtml = $instance->render();
+
+                    /**
+                     * Filters the rendered output of a specific field type.
+                     *
+                     * @since 2.2
+                     *
+                     * @param string         $fieldHtml  The field HTML.
+                     * @param array          $field      The field configuration.
+                     * @param mixed          $hookObject The post/object.
+                     */
+                    $output .= FieldUtils::applyFilters('render_' . $field['type'] . '_html', $fieldHtml, $field, $hookObject);
+                } catch (\Throwable $e) {
+                    if (defined('WP_DEBUG') && WP_DEBUG) {
+                        _doing_it_wrong(
+                            'FieldRenderer::render',
+                            sprintf('Field "%s" threw an error: %s', $field['id'] ?? 'unknown', $e->getMessage()),
+                            '2.1'
+                        );
+                    }
+                    $output .= '<!-- CMB field render error -->';
+                }
                 if ($has_field_repeat && empty($field['repeat_fake'])) {
                     $dataAttrs = '';
                     if (isset($field['min_rows'])) {
@@ -201,7 +239,7 @@ class FieldRenderer {
                     if (isset($field['max_rows'])) {
                         $dataAttrs .= ' data-max-rows="' . (int)$field['max_rows'] . '"';
                     }
-                    $output .= '<button type="button" class="cmb-add-row"' . $dataAttrs . '>Add Row</button>';
+                    $output .= '<button type="button" class="cmb-add-row"' . $dataAttrs . '>' . esc_html__('Add Row', 'custom-meta-box-builder') . '</button>';
                     $output .= ' <span class="cmb-item-count"></span>';
                 }
                 if (!empty($field['description'])) {
@@ -260,11 +298,13 @@ class FieldRenderer {
                 'html_id' => $htmlId . '-' . $locale,
                 'value' => $localizedValue,
             ]));
-            if ( $instance === null ) {
+            if ( null === $instance ) {
                 continue;
             }
 
-            $output .= '<div class="cmb-lang-panel' . $active . '" data-lang="' . esc_attr($locale) . '">';
+            $tabId = 'cmb-lang-tab-' . esc_attr($field['id']) . '-' . esc_attr($locale);
+            $panelId = 'cmb-lang-panel-' . esc_attr($field['id']) . '-' . esc_attr($locale);
+            $output .= '<div class="cmb-lang-panel' . $active . '" id="' . $panelId . '" data-lang="' . esc_attr($locale) . '" role="tabpanel" aria-labelledby="' . $tabId . '">';
             $output .= $instance->render();
             $output .= '</div>';
         }

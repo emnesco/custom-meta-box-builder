@@ -1,11 +1,16 @@
 <?php
+declare(strict_types=1);
+
 /**
  * Local JSON sync — saves field group configs as JSON files for version control.
  *
  * @package CustomMetaBoxBuilder
  * @since   2.1
  */
+
 namespace CMB\Core;
+
+defined( 'ABSPATH' ) || exit;
 
 class LocalJson {
     /**
@@ -47,6 +52,9 @@ class LocalJson {
      * Save a field group config to a JSON file.
      */
     public static function save(string $groupId, array $config): bool {
+        global $wp_filesystem;
+        WP_Filesystem();
+
         $dir = self::getSavePath();
 
         if (!wp_mkdir_p($dir)) {
@@ -54,20 +62,25 @@ class LocalJson {
         }
 
         $config['_modified'] = time();
-        $file = $dir . '/' . sanitize_file_name($groupId) . '.json';
+        $filename = sanitize_file_name($groupId) . '.json';
+        $file = $dir . '/' . $filename;
         $json = wp_json_encode($config, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
 
-        return (bool) file_put_contents($file, $json);
+        return (bool) $wp_filesystem->put_contents($file, $json, FS_CHMOD_FILE);
     }
 
     /**
      * Delete a JSON file for a field group.
      */
     public static function delete(string $groupId): bool {
-        $dir = self::getSavePath();
-        $file = $dir . '/' . sanitize_file_name($groupId) . '.json';
+        global $wp_filesystem;
+        WP_Filesystem();
 
-        if (file_exists($file)) {
+        $dir = self::getSavePath();
+        $filename = sanitize_file_name($groupId) . '.json';
+        $file = $dir . '/' . $filename;
+
+        if ($wp_filesystem->exists($file)) {
             return wp_delete_file($file) !== false;
         }
         return true;
@@ -79,16 +92,26 @@ class LocalJson {
      * @return array<string, array> Keyed by group ID.
      */
     public static function loadAll(): array {
+        global $wp_filesystem;
+        WP_Filesystem();
+
         $configs = [];
         $paths = self::getLoadPaths();
 
         foreach ($paths as $dir) {
-            $files = glob($dir . '/*.json');
-            if (!$files) {
+            $fileList = $wp_filesystem->dirlist($dir);
+            if (!is_array($fileList)) {
                 continue;
             }
-            foreach ($files as $file) {
-                $content = file_get_contents($file);
+            foreach ($fileList as $filename => $info) {
+                if ($info['type'] !== 'f' || pathinfo($filename, PATHINFO_EXTENSION) !== 'json') {
+                    continue;
+                }
+                $file = trailingslashit($dir) . $filename;
+                $content = $wp_filesystem->get_contents($file);
+                if (false === $content) {
+                    continue;
+                }
                 $data = json_decode($content, true);
                 if (!is_array($data) || empty($data['id'])) {
                     continue;
@@ -113,8 +136,14 @@ class LocalJson {
      * - DB configs with no JSON file → leave as-is (user may not have JSON save enabled).
      */
     public static function sync(): void {
+        $cached = get_transient('cmb_localjson_files');
+        if (false !== $cached) {
+            return;
+        }
+
         $jsonConfigs = self::loadAll();
         if (empty($jsonConfigs)) {
+            set_transient('cmb_localjson_files', [], 5 * MINUTE_IN_SECONDS);
             return;
         }
 
@@ -124,7 +153,7 @@ class LocalJson {
         foreach ($jsonConfigs as $groupId => $jsonConfig) {
             $dbConfig = $dbConfigs[$groupId] ?? null;
 
-            if ($dbConfig === null) {
+            if (null === $dbConfig) {
                 // New config from JSON — import it.
                 $dbConfigs[$groupId] = $jsonConfig;
                 $changed = true;
@@ -144,6 +173,8 @@ class LocalJson {
         if ($changed) {
             AdminUI\ActionHandler::saveConfigs($dbConfigs);
         }
+
+        set_transient('cmb_localjson_files', $jsonConfigs, 5 * MINUTE_IN_SECONDS);
     }
 
     /**
@@ -157,11 +188,13 @@ class LocalJson {
         // Auto-save JSON when configs are saved via admin UI.
         add_action('cmbbuilder_config_saved', function (string $groupId, array $config) {
             self::save($groupId, $config);
+            delete_transient('cmb_localjson_files');
         }, 10, 2);
 
         // Auto-delete JSON when a config is deleted.
         add_action('cmbbuilder_config_deleted', function (string $groupId) {
             self::delete($groupId);
+            delete_transient('cmb_localjson_files');
         });
     }
 }

@@ -1,11 +1,16 @@
 <?php
+declare(strict_types=1);
+
 /**
  * Interface for meta/option storage abstraction.
  *
  * @package CustomMetaBoxBuilder
  * @since   2.0
  */
+
 namespace CMB\Core\Storage;
+
+defined( 'ABSPATH' ) || exit;
 
 /**
  * Storage abstraction for meta/option persistence.
