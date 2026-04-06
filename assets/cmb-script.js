@@ -653,14 +653,51 @@
         validateField($(this).closest('.cmb-field'));
       });
 
-      // Prevent form submission with validation errors
+      // Disable native HTML5 validation on inputs inside collapsed/hidden group
+      // bodies to prevent "invalid form control is not focusable" errors.
       $(document).on('submit', 'form#post', function(e) {
+        $(this).find('.cmb-group-item-body').each(function() {
+          if ($(this).css('display') === 'none') {
+            $(this).find(':input[required], :input[pattern]').each(function() {
+              var $input = $(this);
+              if ($input.attr('required')) {
+                $input.data('cmb-was-required', true).removeAttr('required');
+              }
+              if ($input.attr('pattern')) {
+                $input.data('cmb-was-pattern', $input.attr('pattern')).removeAttr('pattern');
+              }
+            });
+          }
+        });
+
+        // Also handle conditional-hidden fields
+        $(this).find('.cmb-field-hidden').find(':input[required], :input[pattern]').each(function() {
+          var $input = $(this);
+          if ($input.attr('required')) {
+            $input.data('cmb-was-required', true).removeAttr('required');
+          }
+          if ($input.attr('pattern')) {
+            $input.data('cmb-was-pattern', $input.attr('pattern')).removeAttr('pattern');
+          }
+        });
+
+        // Run custom validation
         var hasErrors = false;
         $(this).find('.cmb-field[data-validate-required], .cmb-field[data-validate-min], .cmb-field[data-validate-max]').each(function() {
           if (!validateField($(this))) hasErrors = true;
         });
         if (hasErrors) {
           e.preventDefault();
+          // Restore validation attrs
+          $(this).find(':input').each(function() {
+            var $input = $(this);
+            if ($input.data('cmb-was-required')) {
+              $input.attr('required', '').removeData('cmb-was-required');
+            }
+            if ($input.data('cmb-was-pattern')) {
+              $input.attr('pattern', $input.data('cmb-was-pattern')).removeData('cmb-was-pattern');
+            }
+          });
           $('html, body').animate({ scrollTop: $('.cmb-has-error').first().offset().top - 50 }, 300);
         }
       });
