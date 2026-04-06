@@ -615,6 +615,9 @@
           }
         });
       }
+      // Run on page load
+      updateRowCounts();
+
       // === Client-Side Validation ===
       function validateField($field) {
         var $input = $field.find(':input:not([type="hidden"])').first();
