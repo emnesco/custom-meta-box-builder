@@ -232,20 +232,27 @@
 
 /* -- Index / Drag Handle -- */
 .cmb-group-index {
-    width: 40px;
-    min-width: 40px;
-    background: #f6f7f7;
-    color: #a7aaad;
-    font-size: 12px;
-    font-weight: 600;
-    padding: 12px 6px;
+    width: 36px;
+    min-width: 36px;
+    background: #f0f0f1;
+    color: #50575e;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 10px 4px;
     border-right: 1px solid #e2e4e7;
     text-align: center;
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: flex-start;
-    gap: 6px;
+    justify-content: center;
+    gap: 4px;
+    transition: background 0.15s ease, color 0.15s ease;
+    user-select: none;
+}
+
+.cmb-group-index:hover {
+    background: #e0e0e1;
+    color: #1d2327;
 }
 
 .cmb-sortable-handle {
@@ -258,12 +265,13 @@
 
 /* Drag dots indicator */
 .cmb-group-index::before {
-    content: "\2807";
-    font-size: 16px;
-    color: #c3c4c7;
-    letter-spacing: 2px;
+    content: "\2807\2807";
+    font-size: 10px;
+    color: #a7aaad;
+    letter-spacing: 3px;
     line-height: 1;
     display: block;
+    margin-bottom: 2px;
 }
 
 .cmb-group-index:hover::before {
@@ -899,251 +907,6 @@
     background: var(--cmb-primary);
     color: #fff;
     border-color: var(--cmb-primary);
-}
-
-/* === FE-M01 & FE-L01: Dark Mode Support === */
-@media (prefers-color-scheme: dark) {
-    :root {
-        --cmb-primary: #6bb5f5;
-        --cmb-primary-hover: #8fc9f9;
-        --cmb-border: #3e4147;
-        --cmb-bg: #1e1e1e;
-        --cmb-bg-alt: #2a2a2e;
-        --cmb-text: #e0e0e0;
-        --cmb-text-muted: #a0a5ab;
-        --cmb-text-description: #9a9a9a;
-        --cmb-error: #f87171;
-        --cmb-success: #4ade80;
-    }
-
-    [id^="cmb-"] .inside {
-        background: var(--cmb-bg);
-        color: var(--cmb-text);
-    }
-
-    .cmb-field {
-        border-bottom-color: var(--cmb-border);
-    }
-
-    .cmb-field .cmb-label {
-        background: var(--cmb-bg-alt);
-        border-right-color: var(--cmb-border);
-    }
-
-    .cmb-field .cmb-label label {
-        color: var(--cmb-text);
-    }
-
-    .cmb-field p.cmb-description {
-        color: var(--cmb-text-description);
-    }
-
-    .cmb-field input[type="text"],
-    .cmb-field input[type="number"],
-    .cmb-field input[type="email"],
-    .cmb-field input[type="url"],
-    .cmb-field input[type="date"],
-    .cmb-field input[type="datetime-local"],
-    .cmb-field input[type="password"],
-    .cmb-field textarea,
-    .cmb-field select {
-        background: #2c2c30;
-        color: var(--cmb-text);
-        border-color: var(--cmb-border);
-    }
-
-    .cmb-field input:focus,
-    .cmb-field textarea:focus,
-    .cmb-field select:focus {
-        border-color: var(--cmb-primary);
-        box-shadow: 0 0 0 1px var(--cmb-primary);
-    }
-
-    /* Color picker wrapper (FE-M01) */
-    .cmb-color-field,
-    .wp-picker-container {
-        background: var(--cmb-bg-alt);
-        color: var(--cmb-text);
-        border-color: var(--cmb-border);
-    }
-
-    .cmb-group-item-header {
-        background: linear-gradient(to bottom, #2a2a2e, #252528);
-        border-color: var(--cmb-border);
-        color: var(--cmb-text);
-    }
-
-    .cmb-group-item-header:hover {
-        background: linear-gradient(to bottom, #303036, #2c2c30);
-    }
-
-    .cmb-group-item-title {
-        color: var(--cmb-text);
-    }
-
-    .cmb-group-item-body {
-        border-color: var(--cmb-border);
-        background: var(--cmb-bg);
-    }
-
-    .cmb-group-index {
-        background: var(--cmb-bg-alt);
-        color: var(--cmb-text-muted);
-        border-right-color: var(--cmb-border);
-    }
-
-    .cmb-group-index::before {
-        color: var(--cmb-border);
-    }
-
-    .cmb-group-item-actions {
-        border-left-color: var(--cmb-border);
-    }
-
-    .cmb-group-item-actions button {
-        background: var(--cmb-bg-alt);
-        color: var(--cmb-text-muted);
-    }
-
-    .cmb-add-row {
-        background: var(--cmb-bg-alt);
-        color: var(--cmb-primary);
-        border-color: var(--cmb-border);
-    }
-
-    .cmb-add-row:hover {
-        background: #303036;
-        border-color: var(--cmb-primary);
-    }
-
-    .cmb-item-count {
-        background: var(--cmb-bg-alt);
-        color: var(--cmb-text-muted);
-    }
-
-    .cmb-empty-state {
-        background: var(--cmb-bg-alt);
-        border-color: var(--cmb-border);
-        color: var(--cmb-text-muted);
-    }
-
-    .cmb-group-actions button {
-        background: var(--cmb-bg-alt);
-        color: var(--cmb-primary);
-        border-color: var(--cmb-border);
-    }
-
-    .cmb-tab-nav {
-        background: var(--cmb-bg-alt);
-        border-bottom-color: var(--cmb-border);
-    }
-
-    .cmb-tab-nav-item a {
-        color: var(--cmb-text-muted);
-    }
-
-    .cmb-tab-nav-item a:hover {
-        color: var(--cmb-primary);
-        background: #303036;
-    }
-
-    .cmb-tab-nav-item.cmb-tab-active a {
-        color: var(--cmb-primary);
-        border-bottom-color: var(--cmb-primary);
-        background: var(--cmb-bg);
-    }
-
-    .cmb-sortable-placeholder {
-        border-color: var(--cmb-primary);
-        background: rgba(107,181,245,0.1);
-    }
-
-    .cmb-lang-tab-item a {
-        color: var(--cmb-text-muted);
-        border-color: var(--cmb-border);
-        background: var(--cmb-bg-alt);
-    }
-
-    .cmb-lang-tab-item.cmb-lang-tab-active a {
-        background: var(--cmb-bg);
-        color: var(--cmb-primary);
-        border-bottom-color: var(--cmb-bg);
-    }
-
-    .cmb-group-search input {
-        background-color: #2c2c30;
-        color: var(--cmb-text);
-        border-color: var(--cmb-border);
-    }
-
-    .cmb-load-more {
-        background: var(--cmb-bg-alt);
-        color: var(--cmb-primary);
-        border-color: var(--cmb-border);
-    }
-
-    .cmb-load-more:hover {
-        background: rgba(107,181,245,0.1);
-        border-color: var(--cmb-primary);
-    }
-
-    .cmb-file-preview img {
-        border-color: var(--cmb-border);
-    }
-
-    .cmb-radio-group label,
-    .cmb-taxonomy-checklist label {
-        color: var(--cmb-text);
-    }
-
-    .cmb-toggle-slider {
-        background-color: #555;
-    }
-
-    .cmb-field-error {
-        color: var(--cmb-error);
-    }
-
-    .cmb-has-error .cmb-input input,
-    .cmb-has-error .cmb-input select,
-    .cmb-has-error .cmb-input textarea {
-        border-color: var(--cmb-error);
-    }
-
-    .cmb-divider {
-        border-top-color: var(--cmb-border);
-    }
-
-    .cmb-flexible-item {
-        border-color: var(--cmb-border);
-        background: var(--cmb-bg);
-    }
-
-    .cmb-flexible-item .cmb-group-item-header {
-        background: var(--cmb-bg-alt);
-    }
-
-    .cmb-flexible-layout-picker {
-        background: var(--cmb-bg);
-        border-color: var(--cmb-border);
-        box-shadow: 0 2px 8px rgba(0,0,0,0.4);
-    }
-
-    .cmb-flexible-layout-option {
-        border-color: var(--cmb-border);
-        background: var(--cmb-bg);
-        color: var(--cmb-text);
-    }
-
-    .cmb-flexible-layout-option:hover {
-        border-color: var(--cmb-primary);
-        color: var(--cmb-primary);
-    }
-
-    .cmb-button-group-btn.active {
-        background: var(--cmb-primary);
-        border-color: var(--cmb-primary);
-    }
 }
 
 /* === FE-L02: Touch Targets >= 44px on Mobile === */
