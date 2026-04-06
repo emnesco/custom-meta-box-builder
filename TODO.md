@@ -1,525 +1,570 @@
-# Custom Meta Box Builder — Improvement Plan
+# Custom Meta Box Builder — TODO
 
-A comprehensive plan for bug fixes, feature improvements, new features, and UI/UX enhancements.
-Organized into phases with priority and complexity labels.
-
----
-
-## Table of Contents
-
-- [Phase 1: Critical Bug Fixes](#phase-1-critical-bug-fixes)
-- [Phase 2: Security & Data Integrity](#phase-2-security--data-integrity)
-- [Phase 3: Improve Existing Features](#phase-3-improve-existing-features)
-- [Phase 4: UI/UX Improvements](#phase-4-uiux-improvements)
-- [Phase 5: New Field Types](#phase-5-new-field-types)
-- [Phase 6: New Features](#phase-6-new-features)
-- [Phase 7: Developer Experience](#phase-7-developer-experience)
-- [Phase 8: Advanced Features (Future)](#phase-8-advanced-features-future)
+**Based on:** v2.1 Re-Audit (2026-04-06)
+**Sources:** AUDIT_SECURITY.md, AUDIT_ARCHITECTURE.md, AUDIT_PERFORMANCE.md, AUDIT_WP_STANDARDS.md, AUDIT_FRONTEND.md, AUDIT_FEATURE_GAP.md
+**Legend:** `[ ]` = pending, `[x]` = done, `[~]` = partial/in-progress
 
 ---
 
-## Phase 1: Critical Bug Fixes
+## Audit Scorecards (Current → Target)
 
-> These are bugs that cause data loss, broken rendering, or incorrect behavior. Fix first.
-
-### 1.1 ~~CheckboxField & SelectField use `getId()` instead of `getName()`~~ [x]
-- **Files:** `src/Fields/CheckboxField.php:10`, `src/Fields/SelectField.php:10`
-- **Problem:** Both fields use `$this->getId()` for the HTML `name` attribute. In repeatable groups, `getId()` returns the raw field ID (e.g., `"name"`), while `getName()` returns the correctly resolved name with array indices (e.g., `"group[0][name]"`). This causes **data loss** for checkboxes and selects inside groups.
-- **Fix:** Change both to use `$this->getName()`.
-- **Priority:** CRITICAL | **Complexity:** Low
-
-### 1.2 ~~Collapsed groups always render as "open"~~ [x]
-- **File:** `src/Fields/GroupField.php:20`
-- **Problem:** `$collapsed = isset($field['collapsed']) && $field['collapsed'] === true ? 'open' : 'open';` — both branches return `'open'`. The `collapsed` config key has no effect.
-- **Fix:** Change first branch to `'collapsed'` or `''` (closed state), and update CSS/JS to handle the closed state.
-- **Priority:** HIGH | **Complexity:** Low
-
-### 1.3 ~~Malformed HTML — missing opening `<label>` tag~~ [x]
-- **File:** `src/Core/FieldRenderer.php:99`
-- **Problem:** `$output .= esc_html($field['label'] ?? '') . '</label>';` — closing `</label>` with no opening tag.
-- **Fix:** `$output .= '<label>' . esc_html($field['label'] ?? '') . '</label>';`
-- **Priority:** HIGH | **Complexity:** Low
-
-### 1.4 ~~Duplicate `$layout` variable assignment~~ [x]
-- **File:** `src/Core/FieldRenderer.php:72` and `:89`
-- **Problem:** `$layout` is computed identically on two lines. The first is unused.
-- **Fix:** Remove the duplicate at line 72.
-- **Priority:** LOW | **Complexity:** Low
-
-### 1.5 ~~SelectField renders duplicate label~~ [x]
-- **File:** `src/Fields/SelectField.php:9`
-- **Problem:** SelectField renders its own `<label>` inside `render()`, but `FieldRenderer.php:99` also renders a label wrapper. This produces duplicate labels.
-- **Fix:** Remove the label from `SelectField::render()` — let FieldRenderer handle it.
-- **Priority:** HIGH | **Complexity:** Low
-
-### 1.6 ~~Empty repeatable text fields render no input~~ [x]
-- **File:** `src/Fields/TextField.php:11-14`
-- **Problem:** When `repeat === true` and `$value` is an empty array `[]`, the `foreach` never executes and no input is rendered. Users cannot add the first value.
-- **Fix:** Ensure at least one empty input renders when value array is empty.
-- **Priority:** HIGH | **Complexity:** Low
-
-### 1.7 ~~`get_field_value()` returns `array(0)` for empty repeatable fields~~ [x]
-- **File:** `src/Core/FieldRenderer.php:118`
-- **Problem:** Fallback `array(0)` creates a phantom entry (integer `0`) instead of an empty state.
-- **Fix:** Return `[[]]` for groups (one empty group) or `['']` for repeatable scalars.
-- **Priority:** MEDIUM | **Complexity:** Low
-
-### 1.8 ~~`processField()` in JS is a no-op~~ [x]
-- **File:** `assets/cmb-script.js:49-51`
-- **Problem:** Called for non-group repeatable field cloning but does nothing — cloned input names are not updated.
-- **Fix:** Implement name attribute updating (increment index or append `[]`).
-- **Priority:** HIGH | **Complexity:** Medium
-
-### 1.9 ~~Debug `console.log()` statements in production JS~~ [x]
-- **File:** `assets/cmb-script.js:76, 158`
-- **Fix:** Remove all `console.log()` calls.
-- **Priority:** LOW | **Complexity:** Low
-
-### 1.10 ~~Unused/incomplete `replaceSpecificZero()` function in JS~~ [x]
-- **File:** `assets/cmb-script.js:177-188`
-- **Fix:** Delete the function.
-- **Priority:** LOW | **Complexity:** Low
-
-### 1.11 ~~Variable shadowing in JS~~ [x]
-- **File:** `assets/cmb-script.js:21` and `:28`
-- **Problem:** `currentItemCount` is declared twice — once in outer scope (line 21) and again inside the `if` block (line 28). The outer is never used.
-- **Fix:** Remove the inner redeclaration or consolidate.
-- **Priority:** LOW | **Complexity:** Low
-
-**Phase 1 Summary:** All 11 items completed. Fixed CheckboxField/SelectField data loss (getId→getName), collapsed group ternary, malformed label HTML, duplicate layout assignment, SelectField duplicate label, empty repeatable rendering, array(0) fallback, JS processField no-op, console.log removal, dead code removal, variable shadowing.
-
----
-
-## Phase 2: Security & Data Integrity
-
-### 2.1 ~~Add capability check to save handler~~ [x]
-- **File:** `src/Core/MetaBoxManager.php:39-61`
-- **Problem:** No `current_user_can('edit_post', $postId)` check before saving.
-- **Fix:** Add `if (!current_user_can('edit_post', $postId)) return;` after nonce verification.
-- **Priority:** CRITICAL | **Complexity:** Low
-
-### 2.2 ~~Use unique nonce per meta box~~ [x]
-- **File:** `src/Core/MetaBoxManager.php:33, 40`
-- **Problem:** All meta boxes share the hardcoded nonce `'cmb_nonce'`.
-- **Fix:** Use `'cmb_nonce_' . $id` for the nonce action and name.
-- **Priority:** HIGH | **Complexity:** Low
-
-### 2.3 ~~Nested group field sanitization is shallow~~ [x]
-- **File:** `src/Fields/GroupField.php:71-77`
-- **Problem:** `map_deep($value, 'sanitize_text_field')` applies text sanitization to ALL nested values regardless of their field type. Nested select options validation, checkbox sanitization, etc. are all bypassed.
-- **Fix:** Implement recursive sanitization that instantiates the correct field class for each sub-field and calls its own `sanitize()` method.
-- **Priority:** HIGH | **Complexity:** High
-
-### 2.4 ~~CheckboxField/SelectField `sanitize()` don't handle arrays~~ [x]
-- **Files:** `src/Fields/CheckboxField.php:14-16`, `src/Fields/SelectField.php:21-23`
-- **Problem:** If used in a repeatable context, `$value` is an array, but `sanitize()` only handles scalars.
-- **Fix:** Add `if (is_array($value))` branch with `array_map()`.
-- **Priority:** MEDIUM | **Complexity:** Low
-
-### 2.5 ~~Silent failure when field class doesn't exist~~ [x]
-- **File:** `src/Core/MetaBoxManager.php:44-45`
-- **Problem:** If a field type class doesn't exist, the field is silently skipped during save — data is lost without any indication.
-- **Fix:** Log a `_doing_it_wrong()` notice or `error_log()` warning.
-- **Priority:** MEDIUM | **Complexity:** Low
-
-### 2.6 ~~Add meta cleanup on post delete~~ [x]
-- **Problem:** When a post is deleted, orphaned meta data remains in the database.
-- **Fix:** Add `delete_post` hook to `MetaBoxManager::register()` that removes all registered field meta keys.
-- **Priority:** MEDIUM | **Complexity:** Medium
-
-### 2.7 ~~Two separate MetaBoxManager instances~~ [x]
-- **Files:** `src/Core/Plugin.php:8`, `public-api.php:7`
-- **Problem:** `Plugin::boot()` creates one manager, `add_custom_meta_box()` creates another. Both register `add_meta_boxes` and `save_post` hooks independently.
-- **Fix:** Use a singleton or share the instance via the global, created once in `Plugin::boot()`.
-- **Priority:** HIGH | **Complexity:** Medium
-
-### 2.8 ~~Field config mutation via `repeat_fake` flag~~ [x]
-- **File:** `src/Core/MetaBoxManager.php:26-29`
-- **Problem:** The original field config array is mutated in place, adding `repeat` and `repeat_fake` keys.
-- **Fix:** Clone the field array before modifying.
-- **Priority:** LOW | **Complexity:** Low
-
-**Phase 2 Summary:** All 8 items completed. Added current_user_can() check, unique nonce per meta box (cmb_nonce_{id}/cmb_save_{id}), recursive group field sanitization using proper field classes, array handling in Checkbox/Select sanitize(), _doing_it_wrong() logging for missing field classes, delete_post meta cleanup hook, singleton MetaBoxManager shared between Plugin and public API, cloned field config to prevent mutation.
-
----
-
-## Phase 3: Improve Existing Features
-
-### 3.1 ~~Add `default` value support~~ [x]
-- **Problem:** No way to set a default value that shows when post meta is empty.
-- **Fix:** Check for `'default'` key in `AbstractField::getValue()` and `FieldRenderer::get_field_value()`.
-- **Config:** `'default' => 'Draft'`
-- **Priority:** HIGH | **Complexity:** Low
-
-### 3.2 ~~Add meta box `context` and `priority` options~~ [x]
-- **File:** `src/Core/MetaBoxManager.php:20`
-- **Problem:** `add_meta_box()` is called without context/priority, defaulting to `'advanced'`/`'default'`.
-- **Fix:** Accept `'context'` and `'priority'` in the meta box config and pass to `add_meta_box()`.
-- **Config:** `add_custom_meta_box($id, $title, $postTypes, $fields, 'side', 'high')`
-- **Priority:** HIGH | **Complexity:** Low
-
-### 3.3 ~~Add `required` field validation~~ [x]
-- **Problem:** No way to mark fields as required or validate before save.
-- **Fix:** Add `'required' => true` config key. Render `required` HTML attribute. Add server-side validation in `saveMetaBoxData()` with admin notices for errors.
-- **Priority:** HIGH | **Complexity:** Medium
-
-### 3.4 ~~Add proper HTML `id` attributes and label association~~ [x]
-- **File:** `src/Core/FieldRenderer.php:82-84`
-- **Problem:** Both `id` and `name` config are set to the resolved name (with brackets), which is invalid as an HTML `id`. Labels have no `for` attribute.
-- **Fix:** Generate a sanitized HTML `id` (replace brackets with hyphens), add `for` attribute to labels.
-- **Priority:** MEDIUM | **Complexity:** Medium
-
-### 3.5 ~~Add field validation system~~ [x]
-- **Problem:** Only sanitization exists, no validation with user-facing error messages.
-- **Implementation:**
-  - `'validate' => ['required', 'email']` or `'validate' => ['min:3', 'max:100']`
-  - Add `validate()` method to `FieldInterface`
-  - Collect errors in `saveMetaBoxData()` and show via `admin_notices`
-- **Priority:** HIGH | **Complexity:** High
-
-### 3.6 ~~Add `sanitize_callback` override per field~~ [x]
-- **Problem:** Sanitization is hardcoded per field type. No way to customize without extending.
-- **Fix:** If `'sanitize_callback'` is set in field config, use it instead of the default.
-- **Config:** `'sanitize_callback' => 'my_custom_sanitizer'`
-- **Priority:** MEDIUM | **Complexity:** Low
-
-### 3.7 ~~Add `max_rows` / `min_rows` for repeaters~~ [x]
-- **Problem:** No limit on how many rows can be added to repeatable fields.
-- **Fix:** Add config keys, enforce in JS (disable Add button) and PHP (server-side trim).
-- **Config:** `'min_rows' => 1, 'max_rows' => 10`
-- **Priority:** MEDIUM | **Complexity:** Medium
-
-### 3.8 ~~Performance: bulk meta fetch instead of per-field queries~~ [x]
-- **File:** `src/Core/FieldRenderer.php:116-121`
-- **Problem:** Each field triggers a separate `get_post_meta()` call. 20 fields = 20 queries.
-- **Fix:** Fetch all post meta once with `get_post_meta($post_id)` (no key) and look up from that.
-- **Priority:** MEDIUM | **Complexity:** Medium
-
-### 3.9 ~~Add type declarations and null safety~~ [x]
-- **Files:** Multiple across `src/`
-- **Problem:** Missing return types on `FieldInterface::sanitize()` and `getValue()`, missing parameter types, inconsistent null handling.
-- **Fix:** Add PHP 8 type declarations throughout.
-- **Priority:** LOW | **Complexity:** Medium
-
-**Phase 3 Summary:** All 9 items completed. Added default value support in AbstractField::getValue(), context/priority params to add_custom_meta_box() and add_meta_box(), required field validation with HTML required attr + red asterisk + server-side validation, proper HTML id generation (cmb-* prefix, bracket-safe) with label for association, full validation system (required/email/url/min/max/numeric/pattern rules) via validate() method on FieldInterface, sanitize_callback override per field, min_rows/max_rows for repeaters (JS enforcement + PHP array_slice), bulk meta fetch via metaCache in FieldRenderer, PHP 8 type declarations (mixed) on FieldInterface and all field classes.
-
----
-
-## Phase 4: UI/UX Improvements
-
-### 4.1 ~~Fix CSS: toggle indicator icon syntax~~ [x]
-- **File:** `assets/cmb-style.css:91-96`
-- **Problem:** `content: "\f140" / '' !important;` is invalid CSS syntax.
-- **Fix:** `content: "\f140"; font-family: dashicons;`
-- **Priority:** HIGH | **Complexity:** Low
-
-### 4.2 ~~Fix CSS: `min-width: 450px` causes mobile overflow~~ [x]
-- **File:** `assets/cmb-style.css:12`
-- **Problem:** Forces horizontal scroll on screens smaller than 450px.
-- **Fix:** Remove `min-width` or move it inside a min-width media query.
-- **Priority:** HIGH | **Complexity:** Low
-
-### 4.3 ~~Consolidate duplicate `.cmb-remove-row` styles~~ [x]
-- **File:** `assets/cmb-style.css:131-140` and `:156-167`
-- **Problem:** Two declarations for same class with conflicting `width` values.
-- **Fix:** Merge into one rule block.
-- **Priority:** LOW | **Complexity:** Low
-
-### 4.4 ~~Consolidate duplicate `.cmb-add-row` styles~~ [x]
-- **File:** `assets/cmb-style.css:152-153` and `:173-185`
-- **Problem:** Two declarations for same class.
-- **Fix:** Merge into one rule block.
-- **Priority:** LOW | **Complexity:** Low
-
-### 4.5 ~~Add delete confirmation dialog~~ [x]
-- **File:** `assets/cmb-script.js:151-161`
-- **Problem:** Clicking remove instantly deletes a group row with no confirmation.
-- **Fix:** Add `if (!confirm('Remove this item?')) return;` before removal.
-- **Priority:** HIGH | **Complexity:** Low
-
-### 4.6 ~~Add visual feedback on add/remove~~ [x]
-- **Problem:** No animation or feedback when rows are added or removed.
-- **Fix:** Use jQuery `fadeIn()`/`slideDown()` for added rows, `fadeOut()` for removed rows.
-- **Priority:** MEDIUM | **Complexity:** Low
-
-### 4.7 ~~Add `:focus-visible` styles for keyboard accessibility~~ [x]
-- **File:** `assets/cmb-style.css`
-- **Problem:** No focus indicators on buttons (`.cmb-add-row`, `.cmb-remove-row`, group headers).
-- **Fix:** Add `outline: 2px solid #0073aa;` on `:focus-visible`.
-- **Priority:** HIGH | **Complexity:** Low
-
-### 4.8 ~~Make group toggle keyboard-accessible~~ [x]
-- **File:** `assets/cmb-script.js:163-171`
-- **Problem:** Toggle only works on click. No `tabindex`, no `role="button"`, no Enter/Space key handling.
-- **Fix:** Add `tabindex="0"` and `role="button"` to header HTML. Add `keydown` handler for Enter/Space.
-- **Priority:** HIGH | **Complexity:** Low
-
-### 4.9 ~~Add `aria-label` to icon-only buttons~~ [x]
-- **File:** `src/Fields/GroupField.php:49, 63`
-- **Problem:** Remove button (`x`) and toggle indicator have no accessible labels.
-- **Fix:** Add `aria-label="Remove item"` and `aria-label="Toggle group"`.
-- **Priority:** MEDIUM | **Complexity:** Low
-
-### 4.10 ~~Add `aria-expanded` state to toggle~~ [x]
-- **Problem:** Screen readers don't know whether a group is expanded or collapsed.
-- **Fix:** Set `aria-expanded="true"` / `"false"` on the header, toggle in JS.
-- **Priority:** MEDIUM | **Complexity:** Low
-
-### 4.11 ~~Add empty state message for groups~~ [x]
-- **Problem:** When all group items are removed, there's no indication of what to do next.
-- **Fix:** Show "No items yet. Click Add Row to begin." when group container is empty.
-- **Priority:** LOW | **Complexity:** Low
-
-### 4.12 ~~Add Expand All / Collapse All buttons for groups~~ [x]
-- **Problem:** With many group items, toggling each one individually is tedious.
-- **Fix:** Add "Expand All" / "Collapse All" links above the group items container.
-- **Priority:** LOW | **Complexity:** Low
-
-### 4.13 ~~Add item count indicator~~ [x]
-- **Problem:** No way to see how many items exist without expanding/scrolling.
-- **Fix:** Show `"3 items"` next to the Add Row button.
-- **Priority:** LOW | **Complexity:** Low
-
-### 4.14 ~~Fix `cursor: move` on group index without drag support~~ [x]
-- **File:** `assets/cmb-style.css:123`
-- **Problem:** The index column shows a drag cursor but dragging doesn't do anything.
-- **Fix:** Either implement sortable drag (Phase 6) or change to `cursor: default`.
-- **Priority:** LOW | **Complexity:** Low
-
-### 4.15 ~~Add print stylesheet~~ [x]
-- **Problem:** Action buttons (Add Row, Remove) appear when printing.
-- **Fix:** Add `@media print { .cmb-add-row, .cmb-remove-row { display: none; } }`.
-- **Priority:** LOW | **Complexity:** Low
-
-**Phase 4 Summary:** All 15 items completed. Rewrote CSS: fixed toggle icon syntax (dashicons font-family), removed min-width:450px mobile overflow, consolidated duplicate .cmb-remove-row/.cmb-add-row rules, changed cursor:move to cursor:default on group index. Added delete confirmation dialog, slide/fade animations on add/remove, :focus-visible keyboard accessibility styles, keyboard Enter/Space on group toggle headers (role=button, tabindex=0), aria-label on remove button, aria-expanded toggle state, empty state message when all items removed, Expand All/Collapse All links, item count indicator, print stylesheet hiding controls.
-
----
-
-## Phase 5: New Field Types
-
-### 5.1 ~~Number field~~ [x]
-- **HTML:** `<input type="number">` with `min`, `max`, `step` attribute support
-- **Sanitize:** `intval()` or `floatval()` based on step
-- **Priority:** HIGH | **Complexity:** Low
-
-### 5.2 ~~Email field~~ [x]
-- **HTML:** `<input type="email">`
-- **Sanitize:** `sanitize_email()`
-- **Priority:** HIGH | **Complexity:** Low
-
-### 5.3 ~~URL field~~ [x]
-- **HTML:** `<input type="url">`
-- **Sanitize:** `esc_url_raw()`
-- **Priority:** HIGH | **Complexity:** Low
-
-### 5.4 ~~Radio button field~~ [x]
-- **HTML:** `<input type="radio">` set, using same `options` config as SelectField
-- **Sanitize:** Options whitelist (same as SelectField)
-- **Priority:** HIGH | **Complexity:** Low
-
-### 5.5 ~~Hidden field~~ [x]
-- **HTML:** `<input type="hidden">`
-- **Sanitize:** `sanitize_text_field()`
-- **Render:** No label wrapper needed
-- **Priority:** MEDIUM | **Complexity:** Low
-
-### 5.6 ~~Password field~~ [x]
-- **HTML:** `<input type="password">`
-- **Sanitize:** `sanitize_text_field()`
-- **Priority:** LOW | **Complexity:** Low
-
-### 5.7 ~~Date / DateTime picker~~ [x]
-- **HTML:** `<input type="date">` / `<input type="datetime-local">` with optional JS picker
-- **Sanitize:** Date format validation (ISO 8601)
-- **Priority:** HIGH | **Complexity:** Medium
-
-### 5.8 ~~Color picker~~ [x]
-- **HTML:** `<input type="color">` or WordPress Iris color picker integration
-- **Sanitize:** Hex validation regex
-- **JS dependency:** `wp-color-picker` (bundled with WordPress)
-- **Priority:** MEDIUM | **Complexity:** Medium
-
-### 5.9 ~~WYSIWYG / Rich Text editor~~ [x]
-- **HTML:** `wp_editor()` TinyMCE integration
-- **Sanitize:** `wp_kses_post()`
-- **Priority:** MEDIUM | **Complexity:** High
-
-### 5.10 ~~File / Image upload (WP Media Library)~~ [x]
-- **HTML:** Upload button + preview + hidden input for attachment ID
-- **JS dependency:** `wp_enqueue_media()` + media modal
-- **Sanitize:** `absint()` (attachment ID)
-- **Priority:** HIGH | **Complexity:** High
-
-### 5.11 ~~Post Object selector~~ [x]
-- **HTML:** Select2 / AJAX autocomplete for posts
-- **Sanitize:** `absint()` (post ID) + `get_post()` existence check
-- **JS dependency:** Select2 or custom autocomplete
-- **Priority:** MEDIUM | **Complexity:** High
-
-### 5.12 ~~Taxonomy selector~~ [x]
-- **HTML:** Checkbox list or Select2 for taxonomy terms
-- **Sanitize:** `absint()` (term IDs) + `term_exists()` check
-- **Priority:** MEDIUM | **Complexity:** High
-
-### 5.13 ~~User selector~~ [x]
-- **HTML:** Select2 / AJAX autocomplete for users
-- **Sanitize:** `absint()` (user ID)
-- **Priority:** LOW | **Complexity:** High
-
-**Phase 5 Summary:** All 13 field types created. NumberField (int/float, min/max/step), EmailField (sanitize_email), UrlField (esc_url_raw), RadioField (options whitelist, fieldset), HiddenField, PasswordField, DateField (date + datetime-local, ISO 8601 validation), ColorField (hex validation), WysiwygField (wp_editor integration), FileField (WP media library with preview/remove), PostField (select with get_posts query), TaxonomyField (checkbox list or select), UserField (select with role filter). Added file upload JS handlers and wp_enqueue_media() call.
-
----
-
-## Phase 6: New Features
-
-### 6.1 ~~Sortable / draggable repeater rows~~ [x]
-- **Problem:** Users can't reorder group items.
-- **Implementation:** jQuery UI Sortable on `.cmb-group-items`, update name indices after sort.
-- **Priority:** HIGH | **Complexity:** High
-
-### 6.2 ~~Row title from field value~~ [x]
-- **Problem:** Group headers all show the same generic label.
-- **Config:** `'row_title_field' => 'name'` — use the value of a sub-field as the header title.
-- **Implementation:** JS `change` event listener updates header text dynamically.
-- **Priority:** MEDIUM | **Complexity:** Medium
-
-### 6.3 ~~Conditional field display (show/hide logic)~~ [x]
-- **Config:**
-  ```php
-  'conditional' => [
-      'field'    => 'payment_method',
-      'operator' => '==',
-      'value'    => 'card',
-  ]
-  ```
-- **Implementation:** JS event listeners on condition fields, toggle visibility of dependent fields.
-- **Priority:** MEDIUM | **Complexity:** High
-
-### 6.4 ~~Tab support within a meta box~~ [x]
-- **Config:**
-  ```php
-  'tabs' => [
-      'basic'    => ['label' => 'Basic', 'fields' => [...]],
-      'advanced' => ['label' => 'Advanced', 'fields' => [...]],
-  ]
-  ```
-- **Implementation:** New HTML structure with tab headers + tab panels, JS switching.
-- **Priority:** MEDIUM | **Complexity:** High
-
-### 6.5 ~~Taxonomy term meta support~~ [x]
-- **Problem:** Plugin only works on post types — can't add meta boxes to category/tag edit screens.
-- **Implementation:** Hook into `{taxonomy}_edit_form_fields` and `edited_{taxonomy}`.
-- **Priority:** LOW | **Complexity:** High
-
-### 6.6 ~~User profile meta support~~ [x]
-- **Problem:** Can't add meta boxes to the user profile edit screen.
-- **Implementation:** Hook into `edit_user_profile` and `personal_options_update`.
-- **Priority:** LOW | **Complexity:** High
-
-### 6.7 ~~Options page support~~ [x]
-- **Problem:** Can't use this for global site settings (non-post-specific).
-- **Implementation:** Create admin menu pages, use `register_setting()` / `get_option()`.
-- **Priority:** LOW | **Complexity:** High
-
-### 6.8 ~~Revision support for meta values~~ [x]
-- **Problem:** WordPress revisions don't capture meta box changes.
-- **Implementation:** Copy meta on `_wp_put_post_revision`, restore on revision restore.
-- **Priority:** LOW | **Complexity:** High
-
-### 6.9 ~~Duplicate / clone item button~~ [x]
-- **Problem:** Users can only add blank rows or clone the last row.
-- **Fix:** Add a "duplicate" button on each group item that clones that specific item with its values.
-- **Priority:** LOW | **Complexity:** Medium
-
-### 6.10 ~~Unsaved changes warning~~ [x]
-- **Problem:** No warning when navigating away with unsaved changes in meta box fields.
-- **Implementation:** JS `beforeunload` event tracking input changes.
-- **Priority:** LOW | **Complexity:** Low
-
-**Phase 6 Summary:** All 10 items completed. Added jQuery UI Sortable drag-and-drop reordering with index updates (6.1), dynamic row titles from sub-field values via data-row-title-field (6.2), conditional field show/hide with ==, !=, contains, empty, !empty operators (6.3), tab support with nav/panel switching in meta boxes via renderTabs() and flattenFields() (6.4), TaxonomyMetaManager for term meta on edit/add screens (6.5), UserMetaManager for user profile fields (6.6), OptionsManager for admin settings pages with register_setting/get_option (6.7), revision meta support with copy-on-revision and restore-on-restore hooks (6.8), duplicate/clone button per group item (6.9), unsaved changes warning via beforeunload (6.10). Added public API helpers: add_custom_taxonomy_meta(), add_custom_user_meta(), add_custom_options_page(). Added CSS for tabs, sortable placeholder, duplicate button. Updated test mocks.
-
----
-
-## Phase 7: Developer Experience
-
-### 7.1 ~~Add WordPress action/filter hooks~~ [x]
-- **Problem:** No way for developers to customize behavior without modifying core files.
-- **Hooks to add:**
-
-| Hook | Type | Location | Purpose |
-|---|---|---|---|
-| `cmb_before_render_field` | action | FieldRenderer::render() | Before field HTML |
-| `cmb_after_render_field` | action | FieldRenderer::render() | After field HTML |
-| `cmb_before_save_field` | action | MetaBoxManager::saveMetaBoxData() | Before saving |
-| `cmb_after_save_field` | action | MetaBoxManager::saveMetaBoxData() | After saving |
-| `cmb_sanitize_{type}` | filter | MetaBoxManager::saveMetaBoxData() | Custom sanitization |
-| `cmb_field_value` | filter | FieldRenderer::get_field_value() | Modify retrieved value |
-| `cmb_field_html` | filter | FieldRenderer::render() | Modify rendered HTML |
-| `cmb_meta_box_args` | filter | MetaBoxManager::addMetaBoxes() | Modify add_meta_box args |
-
-- **Priority:** HIGH | **Complexity:** Medium
-
-### 7.2 ~~Field type registration API~~ [x]
-- **Problem:** Custom field types work automatically via naming convention, but there's no explicit registration or discovery.
-- **Fix:** Add `CMB::register_field_type('my_type', MyField::class)` for custom namespace/class support.
-- **Priority:** MEDIUM | **Complexity:** Medium
-
-### 7.3 ~~REST API integration~~ [x]
-- **Problem:** Meta box fields are not available via WordPress REST API.
-- **Fix:** Use `register_post_meta()` with `'show_in_rest' => true` for each field. Handle complex types with custom REST schema.
-- **Config:** `'show_in_rest' => true`
-- **Priority:** MEDIUM | **Complexity:** High
-
-### 7.4 ~~Add input validation for field configs at registration time~~ [x]
-- **Files:** `public-api.php`, `src/Core/MetaBoxManager.php`
-- **Problem:** Invalid field configs (missing `id`, missing `type`, unknown type) fail silently.
-- **Fix:** Validate at `add()` time and throw `_doing_it_wrong()` for invalid configs.
-- **Priority:** MEDIUM | **Complexity:** Low
-
-### 7.5 ~~WP-CLI commands~~ [x]
-- **Commands:**
-  - `wp cmb list` — list registered meta boxes
-  - `wp cmb get <post_id> <field_id>` — retrieve a field value
-  - `wp cmb set <post_id> <field_id> <value>` — set a field value
-- **Priority:** LOW | **Complexity:** Medium
-
-### 7.6 ~~Gutenberg sidebar panel support~~ [x]
-- **Problem:** Meta boxes appear below the editor in block editor, not in the sidebar.
-- **Implementation:** React-based `PluginDocumentSettingPanel` components.
-- **Priority:** LOW | **Complexity:** Very High
-
-**Phase 7 Summary:** All 6 items completed. Added 8 WordPress hooks: cmb_before_render_field, cmb_after_render_field, cmb_before_save_field, cmb_after_save_field (actions), cmb_sanitize_{type}, cmb_field_value, cmb_field_html, cmb_meta_box_args (filters) (7.1). Added MetaBoxManager::registerFieldType() for custom field class registration beyond naming convention (7.2). Added REST API integration via register_post_meta() with show_in_rest config and proper type mapping (7.3). Added field config validation at registration with _doing_it_wrong() for missing id/type, recursive for groups (7.4). Added WP-CLI commands: wp cmb list/get/set via WpCliCommands class (7.5). Added Gutenberg sidebar panel via GutenbergPanel class + cmb-gutenberg.js using PluginDocumentSettingPanel with gutenberg_panel config key (7.6).
-
----
-
-## Phase 8: Advanced Features
-
-- [x] Import/Export meta box configurations (JSON)
-- [x] Admin UI for creating meta boxes without code
-- [x] Multi-language field support (per-locale values)
-- [x] Search/filter for large repeater groups (10+ items)
-- [x] Virtual scrolling / lazy loading for very large repeaters
-- [x] Field dependency graph visualization (dev tools)
-- [x] Bulk meta operations for multiple posts
-
-**Phase 8 Summary:** All 7 items completed. Import/Export via ImportExport class with admin page under Tools, JSON export/import with file upload and paste support, plus programmatic API (8.1). Admin UI via AdminUI class with full CRUD for meta box configurations stored in wp_options, dynamic field row builder with JS (8.2). Multi-language support via MultiLanguageTrait with per-locale meta keys, language tab rendering, and FieldRenderer integration for multilingual fields (8.3). Search/filter for repeater groups via searchable config key, search input rendering, and JS text-matching filter (8.4). Lazy loading for large repeaters: auto-hides items beyond 20, "Load more" button loads batches (8.5). Dependency graph visualization via DependencyGraph class with admin page showing conditional logic relationships and full field list (8.6). Bulk operations via BulkOperations class with set/delete/find-replace operations, post type and field selectors, and programmatic API for scripts/WP-CLI (8.7).
-
----
-
-## Quick Reference: Priority Matrix
-
-| Priority | Count | Examples |
+| Area | Current | Target |
 |---|---|---|
-| **CRITICAL** | 3 | CheckboxField/SelectField name bug, capability check, collapsed bug |
-| **HIGH** | 18 | Malformed HTML, nonce per box, hooks system, sortable rows, new field types |
-| **MEDIUM** | 16 | Validation system, REST API, conditional logic, color picker, WYSIWYG |
-| **LOW** | 15 | Print CSS, password field, WP-CLI, Gutenberg, revision support |
+| Security | 0C/1H/10M/9L | 0C/0H/0M |
+| Architecture | 5.9/10 | 8/10 |
+| Performance | 6.4/10 | 8/10 |
+| WP Standards | 6.7/10 | 9/10 |
+| Frontend/A11y | 7.0/10 | 9/10 |
+| Feature Parity (ACF) | 65% | 85% |
+| WCAG 2.1 AA | PARTIAL FAIL | PASS |
+| WP.org Ready | 3 blockers | 0 blockers |
 
 ---
 
-## Implementation Notes
+## Phase 1: WordPress.org Blockers (P0)
 
-- **Non-breaking changes:** All Phase 1-4 items are backward-compatible — existing field configs continue to work.
-- **New field types (Phase 5):** Adding new classes in `src/Fields/` requires no changes to existing code thanks to the dynamic class resolution.
-- **Testing:** Each fix and new feature should include PHPUnit tests. Update `tests/bootstrap.php` with any new WP function mocks needed.
-- **Documentation:** Update `docs/` files after each phase. Add new pages for new field types and features.
+> These 3 items block WordPress.org plugin directory submission.
+
+### 1.1 ABSPATH Guards on All `src/` Files
+- [ ] Add `defined( 'ABSPATH' ) || exit;` to all 66 PHP files in `src/`
+- **Ref:** WPS-C01
+- **Effort:** Trivial (script-able)
+- **Files:** All `src/**/*.php`
+
+### 1.2 i18n: Wrap All Hardcoded Strings
+- [ ] Wrap ~80+ hardcoded strings with `__()` / `esc_html__()` using text domain `custom-meta-box-builder`
+- [ ] `ListPage.php` — "Add New", "Title", "Post Types", "Actions", "Edit", "Delete", "Duplicate"
+- [ ] `EditPage.php` — "Field Type", "Field ID", "Label", "Required", "Add Field", "Save Meta Box"
+- [ ] `FieldRenderer.php` — "Search...", "Select...", "No results found"
+- [ ] `FlexibleContentField.php` — "Add Layout", "Remove", "Collapse"
+- [ ] `FrontendForm.php` — "Submit", "Processing..."
+- [ ] `BlockRegistration.php` — block labels and descriptions
+- [ ] Generate `.pot` file for translators
+- **Ref:** WPS-C03, WPS-H01, WPS-L01
+- **Effort:** Medium (3-4 hours)
+
+### 1.3 WP_Filesystem for All File I/O
+- [ ] Refactor `LocalJson::saveToFile()` to use `$wp_filesystem->put_contents()`
+- [ ] Refactor `LocalJson::syncFromFiles()` to use `$wp_filesystem->get_contents()` and `$wp_filesystem->dirlist()`
+- [ ] Replace all `json_encode()` with `wp_json_encode()`
+- **Ref:** WPS-C02, WPS-C04, WPS-H05
+- **Effort:** Small (2-3 hours)
+
+---
+
+## Phase 2: Security Hardening (P0–P1)
+
+### 2.1 P0 — Must Fix Before Production
+
+- [ ] **SEC-R01:** Deep recursive sanitization on imported field configurations
+  - File: `src/Core/AdminUI/ActionHandler.php`
+  - Recursive `sanitize_text_field()` on all nested string values in imported field arrays
+  - Effort: Medium
+
+- [ ] **SEC-N02:** Add capability checks to AJAX search endpoints
+  - File: `src/Core/AjaxHandler.php`
+  - Add `current_user_can('edit_posts')` to `cmb_search_posts`
+  - Add `current_user_can('list_users')` to `cmb_search_users`
+  - Add `current_user_can('edit_posts')` to `cmb_search_terms`
+  - Effort: Small
+
+- [ ] **SEC-N03:** Set proper REST API `auth_callback`
+  - File: `src/Core/MetaBoxManager.php`
+  - Set `auth_callback` to check `current_user_can('edit_post', $post_id)`
+  - Effort: Small
+
+### 2.2 P1 — Important Security Fixes
+
+- [ ] **SEC-N05:** Validate attachment IDs on frontend form submissions
+  - File: `src/Core/FrontendForm.php`
+  - Verify attachment exists and belongs to current user
+  - Effort: Small
+
+- [ ] **SEC-N06:** Sanitize meta box ID in LocalJson file path construction
+  - File: `src/Core/LocalJson.php`
+  - Apply `sanitize_file_name()` to prevent path traversal
+  - Effort: Trivial
+
+- [ ] **SEC-N07:** Validate `render_template` path in BlockRegistration
+  - File: `src/Core/BlockRegistration.php`
+  - Use `realpath()` + `str_starts_with()` to ensure path is within theme/plugin
+  - Effort: Small
+
+- [ ] **SEC-N09:** Include post ID in frontend form nonce action
+  - File: `src/Core/FrontendForm.php`
+  - Change to `'cmb_frontend_save_' . $metaBoxId . '_' . $postId`
+  - Effort: Trivial
+
+- [ ] **SEC-N10:** Validate FlexibleContent layout type names on save
+  - File: `src/Fields/FlexibleContentField.php`
+  - Validate against `array_keys($this->config['layouts'])`
+  - Effort: Trivial
+
+### 2.3 P2 — Low-Priority Security
+
+- [ ] **SEC-N01:** Guard against CRLF injection in export Content-Disposition header
+  - File: `src/Core/ImportExport.php`
+  - Add `str_replace(["\r", "\n"], '', $filename)`
+  - Effort: Trivial
+
+- [ ] **SEC-N04:** Validate JSON import schema (require `meta_boxes`, `version` keys)
+  - File: `src/Core/AdminUI/ActionHandler.php`
+  - Effort: Small
+
+- [ ] **SEC-N08:** Add `show_in_graphql` config option with permission checks
+  - File: `src/Core/GraphQLIntegration.php`
+  - Respect `post_status` in resolve callbacks
+  - Effort: Medium
+
+- [ ] **SEC-L01:** Remove `@` suppression on `preg_match` — use return value check
+  - File: `src/Core/AbstractField.php`
+
+- [ ] **SEC-L02:** Remove `@` suppression on `filemtime` — use `file_exists()` guard
+  - File: `src/Core/Plugin.php`
+
+- [ ] **SEC-L03:** Add rate limiting on AJAX search endpoints
+  - File: `src/Core/AjaxHandler.php`
+
+- [ ] **SEC-L04:** Add `autocomplete="off"` to password field
+  - File: `src/Fields/PasswordField.php`
+
+- [ ] **SEC-L08:** Replace jQuery `.html()` with safe DOM manipulation
+  - File: `assets/cmb-script.js`
+
+---
+
+## Phase 3: Critical Architecture Fixes
+
+### 3.1 God Class / Method Decomposition
+
+- [ ] **ARCH-C01:** Split ActionHandler (~550 lines) into:
+  - `ImportExportHandler` — import/export logic
+  - `BulkActionHandler` — bulk operations
+  - `MetaBoxRegistrar` — meta box registration
+  - Target: each handler <200 lines
+  - Effort: Medium
+
+- [ ] **ARCH-C02:** Extract from `handleSave()` (~154 lines):
+  - `validateConfig()` — field validation
+  - `assembleConfig()` — config assembly
+  - `persistConfig()` — option update + hooks
+  - Effort: Small
+
+### 3.2 Dependency & Pattern Fixes
+
+- [ ] **ARCH-C03:** Break circular dependency GroupField → FieldRenderer → FieldFactory → GroupField
+  - Introduce `FieldRendererInterface` and inject into GroupField
+  - Effort: Medium
+
+- [ ] **ARCH-C04:** Remove error suppression operators
+  - Replace `@preg_match` in `AbstractField.php` with return value check
+  - Replace `@filemtime` in `Plugin.php` with `file_exists()` guard
+  - Effort: Trivial
+
+- [ ] **ARCH-C05:** Validate `render_template` include path in BlockRegistration
+  - Use `realpath()` + directory check
+  - Effort: Small
+
+- [ ] **ARCH-C06:** Convert static modules to instance classes + ServiceProvider
+  - `LocalJson.php` → instance class + `LocalJsonProvider`
+  - `GraphQLIntegration.php` → instance class + `GraphQLProvider`
+  - `BlockRegistration.php` → instance class + `BlockProvider`
+  - `FrontendForm.php` → instance class + `FrontendProvider`
+  - Effort: Medium
+
+### 3.3 High-Priority Architecture
+
+- [ ] **ARCH-H01:** Fix naming — rename `Checkbox_listField` → `CheckboxListField`
+  - Update `FieldFactory::$typeAliases` accordingly
+  - Effort: Small
+
+- [ ] **ARCH-H02:** Create interfaces for new modules
+  - `FrontendFormInterface`, `BlockRegistrationInterface`, `GraphQLInterface`, `LocalJsonInterface`
+  - Effort: Small
+
+- [ ] **ARCH-H03:** Add `_deprecated_hook()` on legacy `cmb_` prefix
+  - File: `src/Core/FieldUtils.php`
+  - Add `CMBB_LEGACY_HOOKS` constant to disable
+  - Plan removal for v3.0
+  - Effort: Small
+
+- [ ] **ARCH-H04:** Remove `MetaBoxManager::setInstance()` / `::instance()` static accessors
+  - Migrate all callers to use Plugin DI
+  - Effort: Medium
+
+- [ ] **ARCH-H05:** Add try/catch error boundaries in field rendering/saving
+  - Log errors with `_doing_it_wrong()` instead of crashing
+  - Effort: Small
+
+- [ ] **ARCH-H06:** Extract `AbstractMetaManager` from TaxonomyMeta/UserMeta/OptionsManager
+  - Eliminate ~60% duplicated code
+  - Effort: Medium
+
+---
+
+## Phase 4: Performance Optimization
+
+### 4.1 Critical Performance
+
+- [ ] **PERF-C01:** Fix static cache key collisions in relational fields
+  - Files: `PostField.php`, `TaxonomyField.php`, `UserField.php`
+  - Use `md5(serialize($queryArgs))` as cache key
+  - Effort: Small
+
+- [ ] **PERF-C02:** Defer config loading in `registerSavedBoxes()`
+  - File: `src/Core/AdminUI/ActionHandler.php`
+  - Only load config when meta box screen detected
+  - Effort: Small
+
+- [ ] **PERF-C03:** Cache LocalJson file sync with transient (5-min TTL)
+  - File: `src/Core/LocalJson.php`
+  - Only rescan when transient expires or config saved
+  - Effort: Small
+
+- [ ] **PERF-C04:** Add `CMBB_LEGACY_HOOKS` constant to disable dual-prefix overhead
+  - File: `src/Core/FieldUtils.php`
+  - Default: `true` (backward compat), set `false` for performance
+  - Effort: Small
+
+### 4.2 High Performance
+
+- [ ] **PERF-H01:** Fix N+1 in GroupField sub-field rendering
+  - Use `get_post_meta($postId)` (no key) to bulk-fetch all meta
+  - Resolve sub-field values from cached result
+  - Effort: Medium
+
+- [ ] **PERF-H02:** Remove redundant `get_post_meta()` pre-check before `update_post_meta()`
+  - File: `src/Core/MetaBoxManager.php`
+  - WordPress handles "don't update if same" internally
+  - Effort: Trivial
+
+### 4.3 Medium Performance
+
+- [ ] **PERF-M01:** Increase conditional debounce to 250ms for complex chains
+  - File: `assets/cmb-script.js`
+
+- [ ] **PERF-M02:** Cache DOM selectors in conditional evaluation
+  - File: `assets/cmb-script.js`
+
+- [ ] **PERF-M03:** Chunk BulkOperations into batches
+  - File: `src/Core/BulkOperations.php`
+
+- [ ] **PERF-M05:** Batch GraphQL resolve callbacks
+  - File: `src/Core/GraphQLIntegration.php`
+  - Use single `get_post_meta($postId)` call for all fields
+
+- [ ] **PERF-M06:** FrontendForm: only enqueue assets for field types actually used
+  - File: `src/Core/FrontendForm.php`
+
+- [ ] **PERF-M07:** Set `autoload=false` on initial option creation (not just update)
+  - File: `src/Core/AdminUI/ActionHandler.php`
+
+---
+
+## Phase 5: Accessibility / WCAG 2.1 AA (P0)
+
+> 4 criteria currently failing, 2 partial. Target: full WCAG 2.1 AA compliance.
+
+### 5.1 Critical (Currently Failing)
+
+- [ ] **FE-C01:** Add ARIA roles to language tabs (`role="tablist"`, `role="tab"`, `role="tabpanel"`)
+  - File: `src/Core/Traits/MultiLanguageTrait.php`
+  - WCAG 4.1.2
+
+- [ ] **FE-C02:** Remove inline `oninput` from RangeField — move to enqueued JS
+  - File: `src/Fields/RangeField.php`
+  - CSP compliance
+
+- [ ] **FE-C03:** Add `alt` attributes to all image previews
+  - Files: `ImageField.php`, `GalleryField.php`, `FileField.php`
+  - WCAG 1.1.1
+
+- [ ] **FE-C04:** Remove inline `onclick` handlers from admin pages — move to enqueued JS
+  - File: `src/Core/AdminUI/ListPage.php`
+  - Use `data-action="delete"` + JS handler with `wp.i18n.__()`
+  - CSP compliance
+
+### 5.2 High (Partially Failing)
+
+- [ ] **FE-H01:** Fix label associations on FlexibleContent cloned sub-fields
+  - File: `src/Fields/FlexibleContentField.php`
+  - WCAG 3.3.2
+
+- [ ] **FE-H02:** Replace `.innerHTML` cloning with `<template>.content.cloneNode(true)`
+  - File: `assets/cmb-script.js`
+  - XSS prevention + DOM safety
+
+- [ ] **FE-H03:** Add `aria-invalid="true"` and `aria-describedby` to validated fields
+  - Files: all field types + `assets/cmb-script.js`
+  - WCAG 3.3.1
+
+- [ ] **FE-H04:** Add keyboard navigation for group/repeater row controls
+  - Files: `GroupField.php`, `assets/cmb-script.js`
+  - Add up/down arrow buttons as keyboard alternative to drag handle
+  - WCAG 2.1.1
+
+- [ ] **FE-H06:** Add Escape key handler to close modal dialogs
+  - Files: `assets/cmb-admin.js`, `assets/cmb-script.js`
+  - WCAG 2.1.2
+
+- [ ] **FE-H07:** Add ARIA `role="listbox"` / `role="option"` to FlexibleContent layout picker
+  - File: `assets/cmb-script.js`
+  - Add arrow key navigation
+
+### 5.3 Medium Accessibility
+
+- [ ] **FE-M02:** Add `prefers-reduced-motion` media query
+  - File: `assets/cmb-style.css`
+
+- [ ] **FE-M03:** Implement focus trap in modal dialogs
+  - File: `assets/cmb-admin.js`
+
+- [ ] **FE-M04:** Add keyboard alternative for gallery drag-and-drop
+  - File: `assets/cmb-script.js`
+
+- [ ] **FE-M06:** Add `loading="lazy"` on image previews
+  - Files: `ImageField.php`, `GalleryField.php`
+
+---
+
+## Phase 6: WordPress Coding Standards
+
+### 6.1 High Priority
+
+- [ ] **WPS-H02:** Move inline JS confirmation to enqueued JS
+  - File: `src/Core/AdminUI/ListPage.php`
+  - Use `wp.i18n.__()` for translatable confirmation messages
+
+- [ ] **WPS-H03:** Convert ~200+ comparisons to Yoda conditions
+  - Files: throughout codebase
+  - Effort: Medium (bulk find-replace + manual review)
+
+- [ ] **WPS-H04:** Remove `@` error suppression operators
+  - Files: `AbstractField.php`, `Plugin.php`
+
+- [ ] **WPS-H06:** Add type-specific REST sanitize_callback for complex fields
+  - File: `src/Core/MetaBoxManager.php`
+  - Group, FlexibleContent need dedicated sanitizers
+
+### 6.2 Medium Priority
+
+- [ ] **WPS-M01:** Add transient caching for expensive operations
+  - Files: `LocalJson.php`, `ActionHandler.php`
+
+- [ ] **WPS-M04:** Use `object_subtype` parameter in `register_post_meta()`
+  - File: `src/Core/MetaBoxManager.php`
+
+- [ ] **WPS-M05:** Replace `wp_localize_script()` with `wp_add_inline_script()`
+  - File: `src/Core/Plugin.php`
+
+- [ ] **WPS-M07:** Auto-sync `readme.txt` version with plugin header
+  - Files: `readme.txt`, `custom-meta-box-builder.php`
+
+### 6.3 Low Priority
+
+- [ ] **WPS-L02:** Set `"type": "wordpress-plugin"` in `composer.json`
+
+---
+
+## Phase 7: Missing Features — v2.2 Quick Wins
+
+### 7.1 Formatted Value API (GAP-001)
+
+- [ ] Add `format()` method to `FieldInterface`
+- [ ] Implement `format()` in each field type:
+  - ImageField → return `wp_get_attachment_url()` instead of ID
+  - GalleryField → return array of attachment objects
+  - FileField → return attachment array with URL, title, etc.
+  - FlexibleContentField → return formatted nested arrays
+  - GroupField → return formatted sub-field values
+- [ ] Create `cmb_get_field_formatted()` public API function
+- **Ref:** GAP-001
+- **Effort:** Small (4-6 hours)
+
+### 7.2 New Field Types (GAP-002)
+
+- [ ] **LinkField** — URL, title, target picker (like ACF's link field)
+  - Priority: P0, Effort: Small
+
+- [ ] **ButtonGroupField** — radio-like with button UI, `aria-pressed`
+  - Priority: P1, Effort: Small
+
+- [ ] **oEmbedField** — URL input with `wp_oembed_get()` preview
+  - Priority: P1, Effort: Medium
+
+- [ ] **TabField** — group fields under inline tabs within a meta box
+  - Priority: P1, Effort: Medium
+
+- [ ] **AccordionField** — collapsible field groups
+  - Priority: P2, Effort: Medium
+
+- [ ] **GoogleMapField** — Maps API integration with lat/lng/zoom
+  - Priority: P2, Effort: Large
+
+- [ ] **CloneField** — reference existing field groups
+  - Priority: P3, Effort: Large
+
+### 7.3 Developer Hooks (GAP-006)
+
+- [ ] Add per-field-type hooks:
+  - `cmbbuilder_render_{type}` — customize rendering per type
+  - `cmbbuilder_sanitize_{type}` — type-specific sanitization
+  - `cmbbuilder_validate_{type}` — type-specific validation
+  - `cmbbuilder_format_value` — field value formatting
+  - `cmbbuilder_field_choices_{type}` — dynamic choice options
+  - `cmbbuilder_pre_save_all` — before all fields saved
+  - `cmbbuilder_post_save_all` — after all fields saved
+  - `cmbbuilder_enqueue_scripts` — field-specific asset loading
+- **Ref:** GAP-006
+- **Effort:** Small (2-3 hours)
+
+---
+
+## Phase 8: Missing Features — v2.3
+
+### 8.1 REST API Schema (GAP-003)
+
+- [ ] Create JSON Schema definitions for complex types:
+  - Group → Object type with property schema per sub-field
+  - FlexibleContent → Array of Union types per layout
+  - Gallery → Array of attachment objects (not comma-separated IDs)
+- [ ] Expand `getRestType()` for all field types (range→number, toggle→boolean, etc.)
+- [ ] Add `'rest_write' => false` config option for read-only fields
+- **Effort:** Medium (6-8 hours)
+
+### 8.2 GraphQL Types (GAP-004)
+
+- [ ] Create custom GraphQL type definitions:
+  - Groups → `ObjectType` with sub-field properties
+  - FlexibleContent → Union types per layout
+  - Gallery → array of attachment objects with URLs
+  - File → attachment object (not just ID)
+- [ ] Add mutation support for writable fields
+- **Effort:** Medium (8-10 hours)
+
+### 8.3 Gutenberg Sidebar Expansion (GAP-005)
+
+- [ ] Add Gutenberg sidebar support for:
+  - Group/repeater fields
+  - Gallery field
+  - WYSIWYG field
+  - Multi-select field
+  - Conditional logic within sidebar
+- **Effort:** Large (20-30 hours)
+
+### 8.4 WPML/Polylang Integration (GAP-007)
+
+- [ ] Create `wpml-config.xml` for field registration
+- [ ] Add Polylang `pll_register_string()` integration
+- **Effort:** Medium (8-10 hours)
+
+### 8.5 WP-CLI Expansion (GAP-008)
+
+- [ ] Add commands: `export`, `import`, `delete`, `get-term`, `get-user`, `get-option`
+- [ ] Add `--format=json|csv|table` output option
+- [ ] Use WP-CLI's built-in `Formatter` for output
+- **Effort:** Small (3-4 hours)
+
+### 8.6 Frontend Form Improvements (GAP-009)
+
+- [ ] AJAX form submission endpoint
+- [ ] Test all field types in frontend context (groups, flexible content)
+- [ ] Add `capability` parameter for access control
+- [ ] File upload validation with user-facing messages
+- **Effort:** Medium (6-8 hours)
+
+### 8.7 LocalJson Improvements (GAP-010)
+
+- [ ] Add `_modified` timestamp comparison for conflict detection
+- [ ] Add admin notice when DB and JSON configs conflict
+- [ ] Add bi-directional sync with conflict resolution UI
+- **Effort:** Medium (4-6 hours)
+
+---
+
+## Phase 9: Architecture Medium-Priority
+
+### 9.1 Code Quality
+
+- [ ] **ARCH-M01:** Add `declare(strict_types=1)` to all PHP files
+- [ ] **ARCH-M03:** Make `FieldFactory::$typeAliases` extensible via filter
+- [ ] **ARCH-M07:** Split `FrontendForm::processSubmission()` — separate auth, save, redirect
+- [ ] **ARCH-M08:** Fix GraphQL type mapping — complex types shouldn't map to String
+- [ ] **ARCH-M09:** Add caching to `LocalJson::syncFromFiles()`
+- [ ] **ARCH-M11:** Add abstract `format()` method contract on `AbstractField`
+- [ ] **ARCH-M12:** Extract base search method in `AjaxHandler` to reduce 80% duplication
+- [ ] **ARCH-M14:** Create `ImportExportInterface` for format-swappable import/export
+- [ ] **ARCH-M15:** Use WP-CLI's `Formatter` in `WpCliCommands`
+- [ ] **ARCH-M19:** Extract shared rendering logic between FlexibleContentField and GroupField
+
+### 9.2 Build & Dist
+
+- [ ] **ARCH-L04:** Add `AUDIT_*.md` and `TODO*.md` to `.distignore`
+- [ ] **ARCH-L07:** Sync `readme.txt` changelog with `CHANGELOG.md`
+- [ ] **ARCH-L08:** Configure git pre-commit hooks for code style
+
+---
+
+## Phase 10: v3.0 Major Features
+
+- [ ] Full Gutenberg canvas/inline editing (not just sidebar)
+- [ ] Custom database table support for high-performance storage
+- [ ] Advanced conditional logic: nested conditionals, conditional validation
+- [ ] Remove legacy `cmb_` hook prefix (after deprecation period)
+- [ ] Clone/Reference field type
+- [ ] Google Maps field type
+
+---
+
+## Phase 11: Low-Priority Polish
+
+### Performance
+- [ ] **PERF-L01:** Integrate `wp_cache_get/set` for config lookups
+- [ ] **PERF-L02:** Replace `wp_localize_script()` with `wp_add_inline_script()`
+- [ ] **PERF-L04:** Lazy load color picker / date picker assets
+- [ ] **PERF-L05:** Enable tree-shaking in esbuild config
+
+### Frontend
+- [ ] **FE-M01:** Respect `prefers-color-scheme` in color picker
+- [ ] **FE-M05:** Hide interactive controls in print stylesheet
+- [ ] **FE-M07:** Remove `!important` CSS declarations
+- [ ] **FE-L01:** Dark mode support for admin meta boxes
+- [ ] **FE-L02:** Ensure touch targets ≥ 44px on mobile
+- [ ] **FE-L03:** Add CSS transition on conditional field show/hide
+- [ ] **FE-L04:** Remove `console.log()` debug statements from JS
+
+### Architecture
+- [ ] **ARCH-L01:** Fix inconsistent `@since` tags in PHPDoc
+- [ ] **ARCH-L02:** Add `final` keyword on leaf classes
+- [ ] **ARCH-L03:** Add `conflict` section to `composer.json`
+- [ ] **ARCH-L06:** Add PHP 8.4 compatibility notes
+
+### Security
+- [ ] **SEC-L05:** Strip internal `_modified` timestamps from export JSON
+- [ ] **SEC-L06:** Add audit trail logging to WP-CLI commands
+- [ ] **SEC-L09:** Add subresource integrity to enqueued scripts
+
+---
+
+## Summary by Effort
+
+| Effort | Count | Items |
+|---|---|---|
+| Trivial | 12 | ABSPATH guards, path sanitize, nonce fix, layout validation, CRLF guard, error suppression, etc. |
+| Small | 28 | AJAX caps, REST auth, attachment validation, naming fix, hooks, cache keys, etc. |
+| Medium | 22 | i18n strings, WP_Filesystem, ActionHandler split, circular deps, N+1 fix, REST schema, etc. |
+| Large | 6 | Gutenberg expansion, Google Maps, Clone field, static→DI modules, etc. |
+| **Total** | **68** | |
+
+## Priority Matrix
+
+| Priority | Count | Description |
+|---|---|---|
+| **P0 (WP.org Blockers)** | 3 | ABSPATH, i18n, WP_Filesystem |
+| **P0 (Security)** | 3 | Import sanitization, AJAX caps, REST auth |
+| **P1 (Security + A11y)** | 15 | Frontend security, WCAG critical/high failures |
+| **P1 (Architecture)** | 6 | God class, circular deps, error boundaries |
+| **P1 (Performance)** | 6 | Cache keys, config loading, N+1 |
+| **P2 (Features)** | 12 | Field types, hooks, formatted API |
+| **P2 (Standards)** | 10 | Yoda, REST sanitize, transients |
+| **P3 (Polish)** | 13 | Dark mode, touch targets, tree-shaking |
