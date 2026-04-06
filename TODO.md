@@ -11,7 +11,7 @@
 
 | Area | Before | After | Target |
 |---|---|---|---|
-| Security | 0C/1H/10M/9L | 0C/0H/3M/4L | 0C/0H/0M |
+| Security | 0C/1H/10M/9L | 0C/0H/0M/1L | 0C/0H/0M |
 | Architecture | 5.9/10 | 7.5/10 | 8/10 |
 | Performance | 6.4/10 | 7.5/10 | 8/10 |
 | WP Standards | 6.7/10 | 8.5/10 | 9/10 |
@@ -56,10 +56,9 @@
 
 ### 2.1 P0 — Must Fix Before Production
 
-- [ ] **SEC-R01:** Deep recursive sanitization on imported field configurations
+- [x] **SEC-R01:** Deep recursive sanitization on imported field configurations
   - File: `src/Core/AdminUI/ActionHandler.php`
-  - Recursive `sanitize_text_field()` on all nested string values in imported field arrays
-  - **Comment:** NOT YET DONE. Requires careful recursive walker for nested arrays. Deferred to follow-up.
+  - **Comment:** Added `sanitizeFieldsDeep()` recursive method applied in `sanitizeImportedFields()`. All nested string values recursively sanitized.
 
 - [x] **SEC-N02:** Add capability checks to AJAX search endpoints
   - File: `src/Core/AjaxHandler.php`
@@ -71,9 +70,9 @@
 
 ### 2.2 P1 — Important Security Fixes
 
-- [ ] **SEC-N05:** Validate attachment IDs on frontend form submissions
+- [x] **SEC-N05:** Validate attachment IDs on frontend form submissions
   - File: `src/Core/FrontendForm.php`
-  - **Comment:** NOT YET DONE. Needs get_post_type() === 'attachment' check on submitted file/image IDs.
+  - **Comment:** Added attachment ID validation for file, image, gallery field types in processSubmission().
 
 - [x] **SEC-N06:** Sanitize meta box ID in LocalJson file path construction
   - File: `src/Core/LocalJson.php`
@@ -93,17 +92,17 @@
 
 ### 2.3 P2 — Low-Priority Security
 
-- [ ] **SEC-N01:** Guard against CRLF injection in export Content-Disposition header
-  - File: `src/Core/ImportExport.php`
-  - **Comment:** NOT YET DONE. Simple fix: `str_replace(["\r", "\n"], '', $filename)`.
-
-- [ ] **SEC-N04:** Validate JSON import schema (require `meta_boxes`, `version` keys)
+- [x] **SEC-N01:** Guard against CRLF injection in export Content-Disposition header
   - File: `src/Core/AdminUI/ActionHandler.php`
-  - **Comment:** NOT YET DONE. Need to validate import data structure before processing.
+  - **Comment:** Added CRLF stripping from filenames in both handleExport() and handleExportPhp().
 
-- [ ] **SEC-N08:** Add `show_in_graphql` config option with permission checks
+- [x] **SEC-N04:** Validate JSON import schema (require `meta_boxes`, `version` keys)
+  - File: `src/Core/AdminUI/ActionHandler.php`
+  - **Comment:** Added schema validation for required `meta_boxes`/`field_groups` keys before import processing.
+
+- [x] **SEC-N08:** Add `show_in_graphql` config option with permission checks
   - File: `src/Core/GraphQLIntegration.php`
-  - **Comment:** NOT YET DONE. Requires config option + post_status check in resolve callbacks.
+  - **Comment:** Added `show_in_graphql` config checks at meta box and field level. Added `post_status === 'publish'` check in resolve callback.
 
 - [x] **SEC-L01:** Remove `@` suppression on `preg_match` — use return value check
   - File: `src/Core/Contracts/Abstracts/AbstractField.php`
@@ -121,9 +120,9 @@
   - File: `src/Fields/PasswordField.php`
   - **Comment:** Added `autocomplete="off"` attribute to password input.
 
-- [ ] **SEC-L08:** Replace jQuery `.html()` with safe DOM manipulation
+- [x] **SEC-L08:** Replace jQuery `.html()` with safe DOM manipulation
   - File: `assets/cmb-script.js`
-  - **Comment:** NOT YET DONE. Requires significant JS refactoring. Low priority.
+  - **Comment:** Replaced string concatenation `.append('<p>...' + errors[0] + '</p>')` with DOM construction `.append($('<p>').addClass('cmb-field-error').text(errors[0]))`.
 
 ---
 
@@ -484,12 +483,12 @@
 
 ## Summary
 
-### Completed: 38 items
+### Completed: 44 items
 
 | Phase | Done | Total | Key Items Completed |
 |---|---|---|---|
 | Phase 1: WP.org Blockers | 3/3 | 3 | ABSPATH guards, i18n strings, WP_Filesystem |
-| Phase 2: Security | 8/14 | 14 | AJAX caps, REST auth, nonce, path validation, @ removal |
+| Phase 2: Security | 14/14 | 14 | All security items resolved — recursive sanitization, AJAX caps, REST auth, CRLF, GraphQL permissions, jQuery DOM safety |
 | Phase 3: Architecture | 4/12 | 12 | Naming fix, error suppression, template validation, deprecated hooks |
 | Phase 4: Performance | 1/12 | 12 | CMBB_LEGACY_HOOKS constant |
 | Phase 5: Accessibility | 8/14 | 14 | ARIA tabs, alt text, escape key, reduced motion, lazy load |
@@ -498,13 +497,13 @@
 | Phase 8: v2.3 Features | 2/8 | 8 | REST type expansion, WP-CLI commands |
 | Phase 9: Architecture Med | 4/12 | 12 | strict_types, format() contract, Formatter, .distignore |
 | Phase 10-11: Future | 0/17 | 17 | Deferred to v3.0 |
-| **Total** | **38/68** | **68** | |
+| **Total** | **44/68** | **68** | |
 
-### Remaining: 30 items (prioritized)
+### Remaining: 24 items (prioritized)
 
 | Priority | Remaining | Next Steps |
 |---|---|---|
-| P0 | 1 | SEC-R01 recursive import sanitization |
-| P1 | 8 | CRLF guard, JSON schema validation, architecture decomposition |
+| P0 | 0 | All P0 items resolved |
+| P1 | 5 | Architecture decomposition, circular deps, error boundaries |
 | P2 | 10 | Performance optimizations, REST schema, additional hooks |
-| P3 | 11 | Polish, future features, v3.0 planning |
+| P3 | 9 | Polish, future features, v3.0 planning |
