@@ -127,6 +127,7 @@ class ActionHandler {
                     'type'        => sanitize_text_field($f['type'] ?? 'text'),
                     'label'       => sanitize_text_field($f['label'] ?? ''),
                     'description' => sanitize_text_field($f['description'] ?? ''),
+                    'disabled'    => !empty($f['disabled']),
                     'required'    => !empty($f['required']),
                     'placeholder' => sanitize_text_field($f['placeholder'] ?? ''),
                     'default_value' => sanitize_text_field($f['default_value'] ?? ($f['default_value_dc'] ?? '')),
@@ -359,6 +360,7 @@ class ActionHandler {
                 'type' => $field['type'],
             ];
 
+            if (!empty($field['disabled']))    $f['disabled']    = true;
             if (!empty($field['label']))       $f['label']       = $field['label'];
             if (!empty($field['description'])) $f['description'] = $field['description'];
             if (!empty($field['required']))    $f['required']    = true;

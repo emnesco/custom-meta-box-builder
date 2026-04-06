@@ -211,6 +211,7 @@ class EditPage {
         $label       = $field['label'] ?? '';
         $fieldId     = $field['id'] ?? '';
         $description = $field['description'] ?? '';
+        $disabled    = !empty($field['disabled']);
         $required    = !empty($field['required']);
         $placeholder = $field['placeholder'] ?? '';
         $default     = $field['default_value'] ?? ($field['default'] ?? '');
@@ -259,6 +260,9 @@ class EditPage {
         echo '<span class="cmb-field-row-type">' . esc_html($typeLabel) . '</span>';
         if ($fieldId) {
             echo '<code class="cmb-field-row-id">' . esc_html($fieldId) . '</code>';
+        }
+        if ($disabled) {
+            echo '<span class="cmb-disabled-badge">' . esc_html__('Disabled', 'custom-meta-box-builder') . '</span>';
         }
         if ($required) {
             echo '<span class="cmb-required-badge">' . esc_html__('Required', 'custom-meta-box-builder') . '</span>';
@@ -496,6 +500,11 @@ class EditPage {
 
         // Bottom row: required, width, layout, repeatable
         echo '<div class="cmb-field-bottom-row">';
+
+        echo '<label class="cmb-checkbox-label cmb-disabled-toggle">';
+        echo '<input type="checkbox" name="' . $prefix . '[disabled]" value="1"' . ($disabled ? ' checked' : '') . ' class="cmb-field-disabled-input">';
+        echo ' ' . esc_html__('Disabled', 'custom-meta-box-builder');
+        echo '</label>';
 
         echo '<label class="cmb-checkbox-label">';
         echo '<input type="checkbox" name="' . $prefix . '[required]" value="1"' . ($required ? ' checked' : '') . '>';

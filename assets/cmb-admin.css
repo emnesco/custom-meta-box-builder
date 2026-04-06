@@ -424,6 +424,24 @@
     white-space: nowrap;
 }
 
+.cmb-disabled-badge {
+    font-size: 10px;
+    color: #6b7280;
+    background: #f0f0f1;
+    padding: 1px 6px;
+    border-radius: 3px;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.cmb-field-row.cmb-field-is-disabled {
+    opacity: 0.55;
+}
+
+.cmb-field-row.cmb-field-is-disabled > .cmb-field-row-header {
+    background: #f5f5f5;
+}
+
 .cmb-field-row-actions {
     display: flex;
     gap: 4px;

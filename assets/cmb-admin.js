@@ -43,6 +43,10 @@
     function initTypeVisibility() {
         $('.cmb-field-row').each(function () {
             updateTypeOptions($(this));
+            // Apply disabled visual state on load
+            if ($(this).find('.cmb-field-disabled-input').first().is(':checked')) {
+                $(this).addClass('cmb-field-is-disabled');
+            }
         });
         $('.cmb-sub-field-row').each(function () {
             updateSubFieldTypeOptions($(this));
@@ -161,6 +165,21 @@
                     $row.find('.cmb-field-row-meta').append('<span class="cmb-required-badge">Required</span>');
                 }
             } else {
+                $badge.remove();
+            }
+        });
+
+        // Disabled checkbox → update badge and visual state
+        $(document).on('change', '.cmb-field-disabled-input', function () {
+            let $row = $(this).closest('.cmb-field-row');
+            let $badge = $row.find('.cmb-disabled-badge');
+            if ($(this).is(':checked')) {
+                $row.addClass('cmb-field-is-disabled');
+                if (!$badge.length) {
+                    $row.find('.cmb-field-row-meta').prepend('<span class="cmb-disabled-badge">Disabled</span>');
+                }
+            } else {
+                $row.removeClass('cmb-field-is-disabled');
                 $badge.remove();
             }
         });

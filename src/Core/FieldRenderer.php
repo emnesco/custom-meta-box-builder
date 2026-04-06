@@ -89,6 +89,11 @@ class FieldRenderer implements Contracts\FieldRendererInterface {
          */
         $field = FieldUtils::applyFilters('field_config', $field, $this->context->getObjectId());
 
+        // Skip rendering entirely if field is disabled.
+        if (!empty($field['disabled'])) {
+            return '';
+        }
+
         $name = $this->getname($field, $index, $parent);
 
         if (!$parent) {
