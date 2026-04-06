@@ -17,23 +17,14 @@ use CMB\Core\Contracts\Abstracts\AbstractField;
 final class TextField extends AbstractField {
     public function render(): string {
         $value = $this->getValue();
+        if (is_array($value)) {
+            $value = $value[0] ?? '';
+        }
         $attrs = $this->renderAttributes();
         $req = $this->requiredAttr();
         $htmlId = $this->config['html_id'] ?? '';
-        $output = '';
-        if (isset($this->config['repeat']) && $this->config['repeat'] === true) {
-            if (empty($value)) {
-                $value = [''];
-            }
-            foreach ($value as $i => $val) {
-                $id_attr = $htmlId ? ' id="' . esc_attr($htmlId . ($i > 0 ? '-' . $i : '')) . '"' : '';
-                $output .= '<input type="text" name="' . esc_attr($this->getName()) . '"' . $id_attr . ' value="' . esc_attr($val ?? '') . '"' . $attrs . $req . '>';
-            }
-        } else {
-            $id_attr = $htmlId ? ' id="' . esc_attr($htmlId) . '"' : '';
-            $output .= '<input type="text" name="' . esc_attr($this->getName()) . '"' . $id_attr . ' value="' . esc_attr($value ?? '') . '"' . $attrs . $req . '>';
-        }
-        return $output;
+        $id_attr = $htmlId ? ' id="' . esc_attr($htmlId) . '"' : '';
+        return '<input type="text" name="' . esc_attr($this->getName()) . '"' . $id_attr . ' value="' . esc_attr($value ?? '') . '"' . $attrs . $req . '>';
     }
 
     public function sanitize(mixed $value): mixed {

@@ -360,6 +360,114 @@
     opacity: 0.8;
 }
 
+/* === Flat Repeatable Rows === */
+.cmb-repeat-rows {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 4px;
+}
+
+.cmb-repeat-row {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    border: 1.5px solid var(--cmb-border);
+    border-radius: var(--cmb-radius-sm);
+    background: var(--cmb-bg);
+    transition: border-color var(--cmb-transition), box-shadow var(--cmb-transition);
+}
+
+.cmb-repeat-row:hover {
+    border-color: #c1c5cd;
+    box-shadow: var(--cmb-shadow-sm);
+}
+
+.cmb-repeat-row-handle {
+    width: 32px;
+    min-width: 32px;
+    align-self: stretch;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: grab;
+    color: #c0c4cc;
+    background: var(--cmb-bg-alt);
+    border-right: 1px solid var(--cmb-border-light);
+    border-radius: var(--cmb-radius-sm) 0 0 var(--cmb-radius-sm);
+    transition: all var(--cmb-transition);
+}
+
+.cmb-repeat-row-handle:active {
+    cursor: grabbing;
+}
+
+.cmb-repeat-row-handle::before {
+    content: "";
+    display: block;
+    width: 8px;
+    height: 12px;
+    background-image: radial-gradient(circle, currentColor 1px, transparent 1px);
+    background-size: 4px 4px;
+    opacity: 0.5;
+}
+
+.cmb-repeat-row:hover .cmb-repeat-row-handle {
+    color: var(--cmb-primary);
+    background: var(--cmb-primary-light);
+}
+
+.cmb-repeat-row-content {
+    flex: 1;
+    min-width: 0;
+    padding: 6px 10px;
+}
+
+.cmb-repeat-row-content input,
+.cmb-repeat-row-content textarea,
+.cmb-repeat-row-content select {
+    border: none;
+    box-shadow: none;
+    padding: 4px 6px;
+    background: transparent;
+}
+
+.cmb-repeat-row-content input:focus,
+.cmb-repeat-row-content textarea:focus,
+.cmb-repeat-row-content select:focus {
+    border: none;
+    box-shadow: none;
+    outline: none;
+}
+
+.cmb-repeat-row-remove {
+    width: 36px;
+    min-width: 36px;
+    align-self: stretch;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: none;
+    border-left: 1px solid var(--cmb-border-light);
+    color: #c0c4cc;
+    cursor: pointer;
+    padding: 0;
+    border-radius: 0 var(--cmb-radius-sm) var(--cmb-radius-sm) 0;
+    transition: all var(--cmb-transition);
+}
+
+.cmb-repeat-row-remove .dashicons {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+}
+
+.cmb-repeat-row-remove:hover {
+    background: #fef2f2;
+    color: var(--cmb-error);
+}
+
 /* -- Group Fields Container -- */
 .cmb-group-fields {
     display: flex;

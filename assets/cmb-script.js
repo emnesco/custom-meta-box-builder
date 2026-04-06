@@ -8,13 +8,52 @@
         event.preventDefault();
 
         const $addRowButton = $(this);
-
-        // Enforce max_rows
-        const maxRows = $addRowButton.data('max-rows');
         const $repeatedField = $addRowButton.closest('.cmb-input');
+
+        // Check for flat repeatable rows container
+        const $repeatRows = $repeatedField.find('.cmb-repeat-rows').first();
         const $groupItemsContainer = $repeatedField.find('.cmb-group-items').first();
+
+        if ($repeatRows.length) {
+          // Flat repeatable field — clone last .cmb-repeat-row
+          const $rows = $repeatRows.children('.cmb-repeat-row');
+          const maxRows = $addRowButton.data('max-rows');
+          if (maxRows && $rows.length >= maxRows) {
+            return;
+          }
+
+          const $lastRow = $rows.last();
+          const $clone = $lastRow.clone(false, false);
+
+          // Clear values in cloned row
+          $clone.find(':input').each(function() {
+            $(this).val('');
+          });
+          // Update html id to avoid duplicates
+          $clone.find('[id]').each(function() {
+            const oldId = $(this).attr('id');
+            $(this).attr('id', oldId.replace(/-\d+$/, '') + '-' + $rows.length);
+          });
+
+          $clone.hide().appendTo($repeatRows).slideDown(200);
+
+          // Re-initialize color pickers in cloned row
+          if ($.fn.wpColorPicker && $clone.find('.cmb-color-picker').length) {
+            $clone.find('.cmb-color-picker').wpColorPicker();
+          }
+
+          updateRowCounts();
+          return;
+        }
+
+        if ($groupItemsContainer.length === 0) {
+          return;
+        }
+
+        // Group repeatable field
         const $groupItems = $groupItemsContainer.children('.cmb-group-item');
         const currentItemCount = $groupItems.length;
+        const maxRows = $addRowButton.data('max-rows');
 
         if (maxRows && currentItemCount >= maxRows) {
           return;
@@ -23,34 +62,21 @@
         const $parentGroups = $repeatedField.parents('.cmb-group');
         const nestingLevel = $parentGroups.length;
 
-        let $clone;
+        // Remove empty state message if present
+        $groupItemsContainer.find('.cmb-empty-state').remove();
 
-        if ($groupItemsContainer.length === 0) {
-          // Flat repeatable field (no group container)
-          const $inputs = $repeatedField.find(':input');
-          const inputCount = $inputs.length;
-          const $lastInput = $inputs.last();
-          $clone = $lastInput.clone(false, false);
+        const $clone = $groupItems.last().clone(false, false);
+        processNestedGroups($clone, nestingLevel, currentItemCount);
+        $clone.hide().appendTo($groupItemsContainer).slideDown(200);
 
-          $clone = processField($clone, inputCount);
-          $clone.hide().insertAfter($lastInput).fadeIn(200);
-        } else {
-          // Remove empty state message if present
-          $groupItemsContainer.find('.cmb-empty-state').remove();
-
-          $clone = $groupItems.last().clone(false, false);
-          $clone = processNestedGroups($clone, nestingLevel, currentItemCount);
-          $clone.hide().appendTo($groupItemsContainer).slideDown(200);
-
-          // Re-initialize sortable on nested groups within the new row
-          if ($.fn.sortable) {
-            $clone.find('.cmb-group-items').sortable({
-              handle: '.cmb-sortable-handle, .cmb-group-item-header',
-              items: '> .cmb-group-item',
-              placeholder: 'cmb-sortable-placeholder',
-              tolerance: 'pointer'
-            });
-          }
+        // Re-initialize sortable on nested groups within the new row
+        if ($.fn.sortable) {
+          $clone.find('.cmb-group-items').sortable({
+            handle: '.cmb-sortable-handle, .cmb-group-item-header',
+            items: '> .cmb-group-item',
+            placeholder: 'cmb-sortable-placeholder',
+            tolerance: 'pointer'
+          });
         }
 
         // Re-initialize color pickers in cloned row
@@ -61,17 +87,23 @@
         updateRowCounts();
       });
 
-      function processField($clone, currentItemCount) {
-        let name = $clone.attr('name');
-        if (name) {
-          const bracketMatch = name.match(/^(.+)\[(\d+)\]$/);
-          if (bracketMatch) {
-            $clone.attr('name', bracketMatch[1] + '[' + currentItemCount + ']');
-          }
+      // === Remove flat repeat row ===
+      $(document).on('click', '.cmb-repeat-row-remove', function(event) {
+        event.preventDefault();
+        const $row = $(this).closest('.cmb-repeat-row');
+        const $container = $row.parent('.cmb-repeat-rows');
+        const $addRow = $container.closest('.cmb-input').find('.cmb-add-row').first();
+        const minRows = $addRow.data('min-rows') || 1;
+
+        if ($container.children('.cmb-repeat-row').length <= minRows) {
+          return;
         }
-        $clone.val('');
-        return $clone;
-      }
+
+        $row.slideUp(200, function() {
+          $(this).remove();
+          updateRowCounts();
+        });
+      });
 
       function processNestedGroups($clone, nestingLevel, parentItemIndex) {
         $clone.find(':input').each(function() {
@@ -240,6 +272,16 @@
         $wrapper.find('.cmb-file-preview').empty();
         $button.hide();
       });
+
+      // === Sortable flat repeat rows ===
+      if ($.fn.sortable) {
+        $('.cmb-repeat-rows').sortable({
+          handle: '.cmb-repeat-row-handle',
+          items: '> .cmb-repeat-row',
+          placeholder: 'cmb-sortable-placeholder',
+          tolerance: 'pointer'
+        });
+      }
 
       // === Sortable Repeater Rows (6.1) ===
       if ($.fn.sortable) {
@@ -557,9 +599,18 @@
       function updateRowCounts() {
         $('.cmb-item-count').each(function() {
           const $counter = $(this);
-          const $container = $counter.closest('.cmb-input').find('.cmb-group-items').first();
-          if ($container.length) {
-            const count = $container.children('.cmb-group-item').length;
+          const $input = $counter.closest('.cmb-input');
+          const $groupContainer = $input.find('.cmb-group-items').first();
+          const $repeatContainer = $input.find('.cmb-repeat-rows').first();
+          let count = 0;
+
+          if ($groupContainer.length) {
+            count = $groupContainer.children('.cmb-group-item').length;
+          } else if ($repeatContainer.length) {
+            count = $repeatContainer.children('.cmb-repeat-row').length;
+          }
+
+          if (count > 0) {
             $counter.text(count + (count === 1 ? ' item' : ' items'));
           }
         });

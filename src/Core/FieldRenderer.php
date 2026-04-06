@@ -209,18 +209,54 @@ class FieldRenderer implements Contracts\FieldRendererInterface {
                 FieldUtils::doAction('render_' . $field['type'], $field, $instance, $hookObject);
 
                 try {
-                    $fieldHtml = $instance->render();
+                    // Flat repeatable fields (non-group): render each value in its own row
+                    if ($has_field_repeat && $field['type'] !== 'group' && empty($field['repeat_fake'])) {
+                        $values = is_array($value) ? array_values($value) : [$value];
+                        if (empty($values)) {
+                            $values = [''];
+                        }
 
-                    /**
-                     * Filters the rendered output of a specific field type.
-                     *
-                     * @since 2.2
-                     *
-                     * @param string         $fieldHtml  The field HTML.
-                     * @param array          $field      The field configuration.
-                     * @param mixed          $hookObject The post/object.
-                     */
-                    $output .= FieldUtils::applyFilters('render_' . $field['type'] . '_html', $fieldHtml, $field, $hookObject);
+                        $output .= '<div class="cmb-repeat-rows">';
+                        foreach ($values as $i => $singleValue) {
+                            $rowName = $name;
+                            $rowConfig = array_merge($field, [
+                                'id'      => $rowName,
+                                'name'    => $rowName,
+                                'html_id' => $htmlId . ($i > 0 ? '-' . $i : ''),
+                                'value'   => $singleValue,
+                                'repeat'  => false, // prevent field from looping internally
+                            ]);
+                            if ($field['type'] === 'group') {
+                                $rowConfig['_renderer'] = $this;
+                            }
+                            $rowInstance = FieldFactory::create($field['type'], $rowConfig);
+                            if (null === $rowInstance) {
+                                continue;
+                            }
+                            $rowHtml = $rowInstance->render();
+                            $rowHtml = FieldUtils::applyFilters('render_' . $field['type'] . '_html', $rowHtml, $field, $hookObject);
+
+                            $output .= '<div class="cmb-repeat-row">';
+                            $output .= '<div class="cmb-repeat-row-handle cmb-sortable-handle" title="' . esc_attr__('Drag to reorder', 'custom-meta-box-builder') . '"></div>';
+                            $output .= '<div class="cmb-repeat-row-content">' . $rowHtml . '</div>';
+                            $output .= '<button type="button" class="cmb-repeat-row-remove" aria-label="' . esc_attr__('Remove', 'custom-meta-box-builder') . '" title="' . esc_attr__('Remove', 'custom-meta-box-builder') . '"><span class="dashicons dashicons-no-alt"></span></button>';
+                            $output .= '</div>';
+                        }
+                        $output .= '</div>';
+                    } else {
+                        $fieldHtml = $instance->render();
+
+                        /**
+                         * Filters the rendered output of a specific field type.
+                         *
+                         * @since 2.2
+                         *
+                         * @param string         $fieldHtml  The field HTML.
+                         * @param array          $field      The field configuration.
+                         * @param mixed          $hookObject The post/object.
+                         */
+                        $output .= FieldUtils::applyFilters('render_' . $field['type'] . '_html', $fieldHtml, $field, $hookObject);
+                    }
                 } catch (\Throwable $e) {
                     if (defined('WP_DEBUG') && WP_DEBUG) {
                         _doing_it_wrong(
