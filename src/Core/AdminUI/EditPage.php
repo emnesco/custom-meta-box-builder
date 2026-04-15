@@ -134,10 +134,10 @@ class EditPage {
             echo '<input type="text" name="cmb_box_id" id="cmb-box-id" class="widefat" value="' . esc_attr($boxId) . '" readonly>';
         } else {
             echo '<div class="cmb-prefixed-input">';
-            echo '<span class="cmb-input-prefix">cmb_</span>';
+            echo '<span class="cmb-input-prefix">cmb-</span>';
             echo '<input type="text" name="cmb_box_id" id="cmb-box-id" value="" placeholder="e.g. person_details">';
             echo '</div>';
-            echo '<p class="description">' . esc_html__('Auto-generated from title if left empty. The cmb_ prefix is added automatically.', 'custom-meta-box-builder') . '</p>';
+            echo '<p class="description">' . esc_html__('Auto-generated from title if left empty. The cmb- prefix is added automatically.', 'custom-meta-box-builder') . '</p>';
         }
         echo '</div>';
 
