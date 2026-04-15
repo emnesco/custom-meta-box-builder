@@ -191,6 +191,13 @@
 
 /* === Group === */
 
+/* -- Group Item Spacing -- */
+.cmb-group-items {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
 /* -- Group Item Header -- */
 .cmb-group-item-header {
     width: 100%;

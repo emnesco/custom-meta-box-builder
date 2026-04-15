@@ -120,7 +120,7 @@
 
         const $indexElement = $clone.find('.cmb-group-index').first();
         if ($indexElement.length) {
-          $indexElement.text(parentItemIndex);
+          $indexElement.text(parentItemIndex + 1);
         }
 
         $clone.find('.cmb-group').each(function() {
@@ -307,7 +307,7 @@
 
             $container.children('.cmb-group-item').slice(start, end + 1).each(function() {
               var idx = $(this).index();
-              $(this).find('.cmb-group-index').first().text(idx);
+              $(this).find('.cmb-group-index').first().text(idx + 1);
               $(this).find(':input').each(function() {
                 var name = $(this).attr('name');
                 if (!name) return;
@@ -517,7 +517,7 @@
 
         var $indexEl = $clone.find('.cmb-group-index').first();
         if ($indexEl.length) {
-          $indexEl.text(newIndex);
+          $indexEl.text(newIndex + 1);
         }
 
         $clone.hide().insertAfter($groupItem).slideDown(200);
@@ -767,7 +767,7 @@
           update: function() {
             const $container = $(this);
             $container.children('.cmb-flexible-item').each(function(idx) {
-              $(this).find('.cmb-group-index').first().text(idx);
+              $(this).find('.cmb-group-index').first().text(idx + 1);
             });
           }
         });
@@ -808,7 +808,7 @@
 
         // Re-index after move
         $container.children('.cmb-group-item').each(function(idx) {
-          $(this).find('.cmb-group-index').first().text(idx);
+          $(this).find('.cmb-group-index').first().text(idx + 1);
         });
         updateRowCounts();
         $btn.focus();
