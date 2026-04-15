@@ -615,12 +615,7 @@ class MetaBoxManager {
             if ( empty( $fieldId ) ) {
                 continue;
             }
-            $raw   = get_post_meta( $postId, $fieldId );
-            $single = get_post_meta( $postId, $fieldId, true );
-
-            // Use single value for simple fields, array for repeatable/group
-            $isMulti = ( ! empty( $field['repeat'] ) || ! empty( $field['repeatable'] ) || ( $field['type'] ?? '' ) === 'group' );
-            $value   = $isMulti ? $raw : $single;
+            $value = get_post_meta( $postId, $fieldId );
 
             $dump = $this->prettyDump( $value, $fieldId );
 
@@ -638,17 +633,17 @@ class MetaBoxManager {
 
     private function prettyDump( mixed $value, string $key ): string {
         if ( $value === '' || $value === [] || $value === null || $value === false ) {
-            $code = "get_post_meta( \$post_id, '{$key}', true );\n// => (empty)";
+            $code = "get_post_meta( \$post_id, '{$key}' );\n// => (empty)";
             return esc_html( $code );
         }
 
         if ( is_array( $value ) ) {
             $exported = $this->prettyExport( $value, 1 );
-            $code = "get_post_meta( \$post_id, '{$key}', true );\n// =>\n" . $exported;
+            $code = "get_post_meta( \$post_id, '{$key}' );\n// =>\n" . $exported;
             return esc_html( $code );
         }
 
-        $code = "get_post_meta( \$post_id, '{$key}', true );\n// => " . var_export( $value, true );
+        $code = "get_post_meta( \$post_id, '{$key}' );\n// => " . var_export( $value, true );
         return esc_html( $code );
     }
 
