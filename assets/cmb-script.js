@@ -72,7 +72,7 @@
         // Re-initialize sortable on nested groups within the new row
         if ($.fn.sortable) {
           $clone.find('.cmb-group-items').sortable({
-            handle: '.cmb-sortable-handle, .cmb-group-item-header',
+            handle: '.cmb-sortable-handle',
             items: '> .cmb-group-item',
             placeholder: 'cmb-sortable-placeholder',
             tolerance: 'pointer'
@@ -200,6 +200,10 @@
 
       // === Toggle group item (click + keyboard) ===
       $(document).on('click keydown', '.cmb-group-item-header', function(event) {
+        // Don't toggle when clicking the drag handle or reorder buttons
+        if ($(event.target).closest('.cmb-sortable-handle, .cmb-group-reorder-buttons, .cmb-group-move-up, .cmb-group-move-down').length) {
+          return;
+        }
         if (event.type === 'keydown' && event.key !== 'Enter' && event.key !== ' ') {
           return;
         }
@@ -286,7 +290,7 @@
       // === Sortable Repeater Rows (6.1) ===
       if ($.fn.sortable) {
         $('.cmb-group-items').sortable({
-          handle: '.cmb-sortable-handle, .cmb-group-item-header',
+          handle: '.cmb-sortable-handle',
           items: '> .cmb-group-item',
           placeholder: 'cmb-sortable-placeholder',
           tolerance: 'pointer',

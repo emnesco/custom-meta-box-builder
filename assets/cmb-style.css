@@ -227,7 +227,7 @@
     color: var(--cmb-text);
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 12px;
     padding: 12px 16px;
     flex-grow: 1;
     display: flex;
@@ -293,8 +293,8 @@
 .cmb-group-item .toggle-indicator::before {
     content: "\f140";
 }
-.cmb-group-item.open .toggle-indicator::before {
-    content: "\f142";
+.cmb-group-item.open .toggle-indicator {
+    transform: rotate(180deg);
 }
 .cmb-group-item-header:hover .toggle-indicator {
     color: var(--cmb-primary);
