@@ -961,6 +961,41 @@
     margin-top: 4px;
 }
 
+.cmb-prefixed-input {
+    display: flex;
+    align-items: stretch;
+    border: 1px solid #8c8f94;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.cmb-input-prefix {
+    display: flex;
+    align-items: center;
+    padding: 0 8px;
+    background: #f0f0f1;
+    color: #50575e;
+    font-size: 13px;
+    font-family: monospace;
+    border-right: 1px solid #8c8f94;
+    white-space: nowrap;
+    user-select: none;
+}
+
+.cmb-prefixed-input input {
+    border: none;
+    box-shadow: none;
+    flex: 1;
+    padding: 4px 8px;
+    font-family: monospace;
+    min-width: 0;
+}
+
+.cmb-prefixed-input input:focus {
+    outline: none;
+    box-shadow: none;
+}
+
 .cmb-setting-description {
     font-size: 12px;
     color: var(--cmb-text-secondary);

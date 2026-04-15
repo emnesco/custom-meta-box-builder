@@ -130,9 +130,14 @@ class EditPage {
         // Meta Box ID
         echo '<div class="cmb-setting-row">';
         echo '<label for="cmb-box-id">' . esc_html__('Meta Box ID', 'custom-meta-box-builder') . '</label>';
-        echo '<input type="text" name="cmb_box_id" id="cmb-box-id" class="widefat" value="' . esc_attr($boxId) . '" placeholder="e.g. my_custom_fields"' . ($action === 'edit' ? ' readonly' : ' required') . '>';
-        if ($action !== 'edit') {
-            echo '<p class="description">' . esc_html__('Auto-generated from title if left empty.', 'custom-meta-box-builder') . '</p>';
+        if ($action === 'edit') {
+            echo '<input type="text" name="cmb_box_id" id="cmb-box-id" class="widefat" value="' . esc_attr($boxId) . '" readonly>';
+        } else {
+            echo '<div class="cmb-prefixed-input">';
+            echo '<span class="cmb-input-prefix">cmb_</span>';
+            echo '<input type="text" name="cmb_box_id" id="cmb-box-id" value="" placeholder="e.g. person_details">';
+            echo '</div>';
+            echo '<p class="description">' . esc_html__('Auto-generated from title if left empty. The cmb_ prefix is added automatically.', 'custom-meta-box-builder') . '</p>';
         }
         echo '</div>';
 

@@ -93,6 +93,11 @@ class ActionHandler {
             $id = str_replace('-', '_', $id);
         }
 
+        // Ensure cmb_ prefix
+        if (!empty($id) && !str_starts_with($id, 'cmb_')) {
+            $id = 'cmb_' . $id;
+        }
+
         if (empty($id) || empty($title)) {
             return null;
         }
