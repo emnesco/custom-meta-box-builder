@@ -111,6 +111,8 @@ class MetaBoxManager {
 
     public function addMetaBoxes(): void {
         foreach ($this->metaBoxes as $id => $metaBox) {
+            // Ensure all meta box HTML IDs are prefixed with cmb-
+            $htmlId = str_starts_with($id, 'cmb-') ? $id : 'cmb-' . $id;
             /**
              * Filters the meta box arguments before registration.
              *
@@ -123,7 +125,7 @@ class MetaBoxManager {
 
             foreach ($metaBox['postTypes'] as $postType) {
                 add_meta_box(
-                    $id,
+                    $htmlId,
                     $metaBox['title'],
                     function ($post) use ($id, $metaBox) {
                         // Location rules check
