@@ -24,6 +24,7 @@ class Router {
         add_action('admin_init', [ActionHandler::class, 'handleExport']);
         add_action('admin_init', [ActionHandler::class, 'handleExportPhp']);
         add_action('admin_init', [ActionHandler::class, 'handleImport']);
+        add_action('admin_post_cmb_save_settings', [SettingsPage::class, 'handleSave']);
     }
 
     public static function addAdminPage(): void {
@@ -37,8 +38,17 @@ class Router {
             80
         );
 
-        add_action('admin_enqueue_scripts', function ($hookSuffix) use ($hook) {
-            if ($hookSuffix !== $hook) {
+        $settingsHook = add_submenu_page(
+            'cmb-builder',
+            __('Settings', 'custom-meta-box-builder'),
+            __('Settings', 'custom-meta-box-builder'),
+            'manage_options',
+            'cmb-settings',
+            [SettingsPage::class, 'render']
+        );
+
+        add_action('admin_enqueue_scripts', function ($hookSuffix) use ($hook, $settingsHook) {
+            if ($hookSuffix !== $hook && $hookSuffix !== $settingsHook) {
                 return;
             }
             $baseUrl  = plugin_dir_url(dirname(__DIR__, 3) . '/custom-meta-box-builder.php');

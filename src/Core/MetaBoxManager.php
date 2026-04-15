@@ -11,6 +11,7 @@ declare(strict_types=1);
 namespace CMB\Core;
 
 defined( 'ABSPATH' ) || exit;
+use CMB\Core\AdminUI\SettingsPage;
 use CMB\Core\Contracts\FieldInterface;
 use CMB\Core\RenderContext\PostContext;
 use CMB\Core\Storage\PostMetaStorage;
@@ -152,6 +153,11 @@ class MetaBoxManager {
 
                         echo '</div>';
                         wp_nonce_field('cmb_save_' . $id, 'cmb_nonce_' . $id);
+
+                        // Debug output
+                        if ( SettingsPage::isDebugEnabled() ) {
+                            $this->renderDebugOutput( $post->ID, $metaBox['fields'] );
+                        }
                     },
                     $postType,
                     $metaBox['context'],
@@ -588,5 +594,81 @@ class MetaBoxManager {
         }
         echo '</ul></div>';
         $this->validationErrors = [];
+    }
+
+    private function renderDebugOutput( int $postId, array $fields ): void {
+        $allFields = FieldUtils::flattenFields( $fields );
+        if ( empty( $allFields ) ) {
+            return;
+        }
+
+        echo '<div class="cmb-debug-panel">';
+        echo '<div class="cmb-debug-header">';
+        echo '<span class="cmb-debug-badge">DEBUG</span>';
+        echo '<span class="cmb-debug-title">Saved Meta Values</span>';
+        echo '<code class="cmb-debug-post-id">Post ID: ' . esc_html( (string) $postId ) . '</code>';
+        echo '</div>';
+
+        echo '<div class="cmb-debug-fields">';
+        foreach ( $allFields as $field ) {
+            $fieldId = $field['id'] ?? '';
+            if ( empty( $fieldId ) ) {
+                continue;
+            }
+            $raw   = get_post_meta( $postId, $fieldId );
+            $single = get_post_meta( $postId, $fieldId, true );
+
+            // Use single value for simple fields, array for repeatable/group
+            $isMulti = ( ! empty( $field['repeat'] ) || ! empty( $field['repeatable'] ) || ( $field['type'] ?? '' ) === 'group' );
+            $value   = $isMulti ? $raw : $single;
+
+            $dump = $this->prettyDump( $value, $fieldId );
+
+            echo '<div class="cmb-debug-field">';
+            echo '<div class="cmb-debug-field-header">';
+            echo '<code class="cmb-debug-field-key">' . esc_html( $fieldId ) . '</code>';
+            echo '<span class="cmb-debug-field-type">' . esc_html( $field['type'] ?? 'unknown' ) . '</span>';
+            echo '</div>';
+            echo '<pre class="cmb-debug-pre"><code>' . $dump . '</code></pre>';
+            echo '</div>';
+        }
+        echo '</div>';
+        echo '</div>';
+    }
+
+    private function prettyDump( mixed $value, string $key ): string {
+        if ( $value === '' || $value === [] || $value === null || $value === false ) {
+            $code = "get_post_meta( \$post_id, '{$key}', true );\n// => (empty)";
+            return esc_html( $code );
+        }
+
+        if ( is_array( $value ) ) {
+            $exported = $this->prettyExport( $value, 1 );
+            $code = "get_post_meta( \$post_id, '{$key}', true );\n// =>\n" . $exported;
+            return esc_html( $code );
+        }
+
+        $code = "get_post_meta( \$post_id, '{$key}', true );\n// => " . var_export( $value, true );
+        return esc_html( $code );
+    }
+
+    private function prettyExport( mixed $value, int $depth = 0 ): string {
+        if ( ! is_array( $value ) ) {
+            return var_export( $value, true );
+        }
+
+        $indent  = str_repeat( '    ', $depth );
+        $inner   = str_repeat( '    ', $depth + 1 );
+        $isAssoc = array_keys( $value ) !== range( 0, count( $value ) - 1 );
+
+        $lines = [ 'array(' ];
+        foreach ( $value as $k => $v ) {
+            $key    = $isAssoc ? var_export( $k, true ) . ' => ' : '';
+            $val    = is_array( $v ) ? $this->prettyExport( $v, $depth + 1 ) : var_export( $v, true );
+            $lines[] = $inner . $key . $val . ',';
+        }
+        $lines[] = $indent . ')';
+
+        return implode( "\n", $lines );
     }
 }
