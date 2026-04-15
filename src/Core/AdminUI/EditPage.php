@@ -63,6 +63,7 @@ class EditPage {
         echo '<div class="cmb-editor-tabs">';
         echo '<button type="button" class="cmb-editor-tab active" data-tab="fields"><span class="dashicons dashicons-editor-table"></span> ' . esc_html__('Fields', 'custom-meta-box-builder') . '</button>';
         echo '<button type="button" class="cmb-editor-tab" data-tab="code"><span class="dashicons dashicons-editor-code"></span> ' . esc_html__('PHP Code', 'custom-meta-box-builder') . '</button>';
+        echo '<button type="button" class="cmb-editor-tab" data-tab="result"><span class="dashicons dashicons-visibility"></span> ' . esc_html__('Result', 'custom-meta-box-builder') . '</button>';
         echo '</div>';
 
         // Fields panel
@@ -95,6 +96,19 @@ class EditPage {
         echo '</div>';
         echo '<pre class="cmb-code-preview" id="cmb-code-output"><code>// ' . esc_html__('Save the field group first to generate code.', 'custom-meta-box-builder') . '</code></pre>';
         echo '</div>'; // #cmb-panel-code
+
+        // Result panel
+        echo '<div class="cmb-editor-panel" id="cmb-panel-result">';
+        echo '<div class="cmb-result-panel-header">';
+        echo '<p>' . esc_html__('Use these snippets in your theme templates to retrieve and display saved field data. Copy the code for the fields you need.', 'custom-meta-box-builder') . '</p>';
+        echo '<button type="button" class="button" id="cmb-copy-result"><span class="dashicons dashicons-clipboard"></span> ' . esc_html__('Copy All', 'custom-meta-box-builder') . '</button>';
+        echo '</div>';
+        echo '<div class="cmb-result-sections" id="cmb-result-output">';
+        echo '<div class="cmb-result-section">';
+        echo '<div class="cmb-result-section-header"><span class="dashicons dashicons-info-outline"></span> ' . esc_html__('Save the field group and add fields to generate retrieval code.', 'custom-meta-box-builder') . '</div>';
+        echo '</div>';
+        echo '</div>';
+        echo '</div>'; // #cmb-panel-result
 
         echo '</div>'; // #post-body-content
 

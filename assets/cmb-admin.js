@@ -201,6 +201,9 @@
             if (tab === 'code') {
                 updateCodePreview();
             }
+            if (tab === 'result') {
+                updateResultPreview();
+            }
         });
 
         // Add field → open type picker
@@ -282,6 +285,23 @@
                     textarea.select();
                     document.execCommand('copy');
                     document.body.removeChild(textarea);
+                });
+            }
+        });
+
+        // Copy result code
+        $(document).on('click', '#cmb-copy-result', function () {
+            let code = '';
+            $('#cmb-result-output .cmb-code-preview code').each(function () {
+                code += $(this).text() + '\n\n';
+            });
+            if (navigator.clipboard) {
+                navigator.clipboard.writeText(code.trim()).then(function () {
+                    let $btn = $('#cmb-copy-result');
+                    $btn.text('Copied!');
+                    setTimeout(function () {
+                        $btn.html('<span class="dashicons dashicons-clipboard"></span> Copy All');
+                    }, 2000);
                 });
             }
         });
@@ -715,6 +735,259 @@
         code += "});\n";
 
         $('#cmb-code-output code').text(code);
+    }
+
+    /* ─── Result Preview ───────────────────────────────── */
+
+    function updateResultPreview() {
+        let $form = $('#cmb-builder-form');
+        if (!$form.length) return;
+
+        let $output = $('#cmb-result-output');
+        let sections = '';
+        let hasFields = false;
+
+        // Collect all fields
+        $('.cmb-field-row').each(function () {
+            let $r = $(this);
+            let fId = $r.find('.cmb-field-id-input').val();
+            let fType = $r.find('.cmb-field-type-select').val() || 'text';
+            let fLabel = $r.find('.cmb-field-label-input').val() || fId;
+
+            if (!fId) return;
+            hasFields = true;
+
+            let code = '';
+            let hint = '';
+
+            if (fType === 'group') {
+                hint = 'Repeater Group';
+                code = "<?php\n";
+                code += "// Retrieve '" + escPhp(fLabel) + "' group rows\n";
+                code += "$" + fId + " = get_post_meta(get_the_ID(), '" + escPhp(fId) + "', true);\n\n";
+                code += "if (!empty($" + fId + ") && is_array($" + fId + ")) :\n";
+                code += "    foreach ($" + fId + " as $index => $row) :\n";
+                // Show sub-fields
+                let subFields = [];
+                $r.find('.cmb-sub-fields-list').first().children('.cmb-sub-field-row').each(function () {
+                    let sfId = $(this).find('.cmb-sub-field-id-input').first().val();
+                    let sfType = $(this).find('.cmb-sub-field-type-select').first().val() || 'text';
+                    let sfLabel = $(this).find('.cmb-sub-field-label-input').first().val() || sfId;
+                    if (sfId) {
+                        subFields.push({ id: sfId, type: sfType, label: sfLabel });
+                    }
+                });
+                if (subFields.length) {
+                    subFields.forEach(function (sf) {
+                        code += "        $" + sf.id + " = $row['" + escPhp(sf.id) + "'] ?? '';\n";
+                    });
+                    code += "\n        ?>\n";
+                    code += "        <div class=\"group-row\">\n";
+                    subFields.forEach(function (sf) {
+                        if (sf.type === 'image') {
+                            code += "            <?php if ($" + sf.id + ") : ?>\n";
+                            code += "                <img src=\"<?php echo esc_url(wp_get_attachment_url($" + sf.id + ")); ?>\" alt=\"\">\n";
+                            code += "            <?php endif; ?>\n";
+                        } else {
+                            code += "            <p><strong>" + escHtml(sf.label) + ":</strong> <?php echo esc_html($" + sf.id + "); ?></p>\n";
+                        }
+                    });
+                    code += "        </div>\n";
+                    code += "        <?php\n";
+                } else {
+                    code += "        // Access sub-field values: $row['sub_field_id']\n";
+                    code += "        ?>\n";
+                    code += "        <div class=\"group-row\">\n";
+                    code += "            <!-- Output sub-field values here -->\n";
+                    code += "        </div>\n";
+                    code += "        <?php\n";
+                }
+                code += "    endforeach;\n";
+                code += "endif;\n";
+                code += "?>";
+            } else if (fType === 'image') {
+                hint = 'Image';
+                code = "<?php\n";
+                code += "// Retrieve '" + escPhp(fLabel) + "' (attachment ID)\n";
+                code += "$" + fId + " = get_post_meta(get_the_ID(), '" + escPhp(fId) + "', true);\n\n";
+                code += "if ($" + fId + ") :\n";
+                code += "    $image_url = wp_get_attachment_url($" + fId + ");\n";
+                code += "    $image_alt = get_post_meta($" + fId + ", '_wp_attachment_image_alt', true);\n";
+                code += "    ?>\n";
+                code += "    <img src=\"<?php echo esc_url($image_url); ?>\" alt=\"<?php echo esc_attr($image_alt); ?>\">\n";
+                code += "<?php endif; ?>";
+            } else if (fType === 'gallery') {
+                hint = 'Gallery';
+                code = "<?php\n";
+                code += "// Retrieve '" + escPhp(fLabel) + "' (array of attachment IDs)\n";
+                code += "$" + fId + " = get_post_meta(get_the_ID(), '" + escPhp(fId) + "', true);\n\n";
+                code += "if (!empty($" + fId + ") && is_array($" + fId + ")) : ?>\n";
+                code += "    <div class=\"gallery\">\n";
+                code += "        <?php foreach ($" + fId + " as $image_id) : ?>\n";
+                code += "            <img src=\"<?php echo esc_url(wp_get_attachment_url($image_id)); ?>\" alt=\"\">\n";
+                code += "        <?php endforeach; ?>\n";
+                code += "    </div>\n";
+                code += "<?php endif; ?>";
+            } else if (fType === 'file') {
+                hint = 'File';
+                code = "<?php\n";
+                code += "// Retrieve '" + escPhp(fLabel) + "' (attachment ID)\n";
+                code += "$" + fId + " = get_post_meta(get_the_ID(), '" + escPhp(fId) + "', true);\n\n";
+                code += "if ($" + fId + ") :\n";
+                code += "    $file_url = wp_get_attachment_url($" + fId + ");\n";
+                code += "    ?>\n";
+                code += "    <a href=\"<?php echo esc_url($file_url); ?>\" download>Download File</a>\n";
+                code += "<?php endif; ?>";
+            } else if (fType === 'checkbox') {
+                hint = 'Checkbox';
+                code = "<?php\n";
+                code += "// Retrieve '" + escPhp(fLabel) + "' (boolean)\n";
+                code += "$" + fId + " = get_post_meta(get_the_ID(), '" + escPhp(fId) + "', true);\n\n";
+                code += "if ($" + fId + ") :\n";
+                code += "    echo '<span>Yes</span>';\n";
+                code += "else :\n";
+                code += "    echo '<span>No</span>';\n";
+                code += "endif;\n";
+                code += "?>";
+            } else if (fType === 'select' || fType === 'radio') {
+                hint = fType === 'select' ? 'Select' : 'Radio';
+                code = "<?php\n";
+                code += "// Retrieve '" + escPhp(fLabel) + "' (selected value)\n";
+                code += "$" + fId + " = get_post_meta(get_the_ID(), '" + escPhp(fId) + "', true);\n\n";
+                code += "if ($" + fId + ") :\n";
+                code += "    echo '<span>' . esc_html($" + fId + ") . '</span>';\n";
+                code += "endif;\n";
+                code += "?>";
+            } else if (fType === 'wysiwyg') {
+                hint = 'WYSIWYG';
+                code = "<?php\n";
+                code += "// Retrieve '" + escPhp(fLabel) + "' (HTML content)\n";
+                code += "$" + fId + " = get_post_meta(get_the_ID(), '" + escPhp(fId) + "', true);\n\n";
+                code += "if ($" + fId + ") :\n";
+                code += "    echo wp_kses_post($" + fId + ");\n";
+                code += "endif;\n";
+                code += "?>";
+            } else if (fType === 'url' || fType === 'link') {
+                hint = 'URL';
+                code = "<?php\n";
+                code += "// Retrieve '" + escPhp(fLabel) + "' (URL string)\n";
+                code += "$" + fId + " = get_post_meta(get_the_ID(), '" + escPhp(fId) + "', true);\n\n";
+                code += "if ($" + fId + ") : ?>\n";
+                code += "    <a href=\"<?php echo esc_url($" + fId + "); ?>\"><?php echo esc_url($" + fId + "); ?></a>\n";
+                code += "<?php endif; ?>";
+            } else if (fType === 'email') {
+                hint = 'Email';
+                code = "<?php\n";
+                code += "// Retrieve '" + escPhp(fLabel) + "'\n";
+                code += "$" + fId + " = get_post_meta(get_the_ID(), '" + escPhp(fId) + "', true);\n\n";
+                code += "if ($" + fId + ") : ?>\n";
+                code += "    <a href=\"mailto:<?php echo esc_attr($" + fId + "); ?>\"><?php echo esc_html($" + fId + "); ?></a>\n";
+                code += "<?php endif; ?>";
+            } else if (fType === 'date') {
+                hint = 'Date';
+                code = "<?php\n";
+                code += "// Retrieve '" + escPhp(fLabel) + "'\n";
+                code += "$" + fId + " = get_post_meta(get_the_ID(), '" + escPhp(fId) + "', true);\n\n";
+                code += "if ($" + fId + ") :\n";
+                code += "    // Format: adjust date_i18n() format as needed\n";
+                code += "    echo esc_html(date_i18n('F j, Y', strtotime($" + fId + ")));\n";
+                code += "endif;\n";
+                code += "?>";
+            } else if (fType === 'color') {
+                hint = 'Color';
+                code = "<?php\n";
+                code += "// Retrieve '" + escPhp(fLabel) + "' (hex color)\n";
+                code += "$" + fId + " = get_post_meta(get_the_ID(), '" + escPhp(fId) + "', true);\n\n";
+                code += "if ($" + fId + ") : ?>\n";
+                code += "    <div style=\"background-color: <?php echo esc_attr($" + fId + "); ?>;\">\n";
+                code += "        <?php echo esc_html($" + fId + "); ?>\n";
+                code += "    </div>\n";
+                code += "<?php endif; ?>";
+            } else if (fType === 'number' || fType === 'range') {
+                hint = fType === 'number' ? 'Number' : 'Range';
+                code = "<?php\n";
+                code += "// Retrieve '" + escPhp(fLabel) + "'\n";
+                code += "$" + fId + " = get_post_meta(get_the_ID(), '" + escPhp(fId) + "', true);\n\n";
+                code += "if ($" + fId + " !== '') :\n";
+                code += "    echo intval($" + fId + ");\n";
+                code += "endif;\n";
+                code += "?>";
+            } else if (fType === 'post') {
+                hint = 'Post Select';
+                code = "<?php\n";
+                code += "// Retrieve '" + escPhp(fLabel) + "' (post ID)\n";
+                code += "$" + fId + " = get_post_meta(get_the_ID(), '" + escPhp(fId) + "', true);\n\n";
+                code += "if ($" + fId + ") :\n";
+                code += "    $linked_post = get_post($" + fId + ");\n";
+                code += "    if ($linked_post) : ?>\n";
+                code += "        <a href=\"<?php echo esc_url(get_permalink($linked_post)); ?>\">\n";
+                code += "            <?php echo esc_html($linked_post->post_title); ?>\n";
+                code += "        </a>\n";
+                code += "    <?php endif;\n";
+                code += "endif;\n";
+                code += "?>";
+            } else if (fType === 'taxonomy') {
+                hint = 'Taxonomy';
+                code = "<?php\n";
+                code += "// Retrieve '" + escPhp(fLabel) + "' (term ID)\n";
+                code += "$" + fId + " = get_post_meta(get_the_ID(), '" + escPhp(fId) + "', true);\n\n";
+                code += "if ($" + fId + ") :\n";
+                code += "    $term = get_term($" + fId + ");\n";
+                code += "    if ($term && !is_wp_error($term)) :\n";
+                code += "        echo esc_html($term->name);\n";
+                code += "    endif;\n";
+                code += "endif;\n";
+                code += "?>";
+            } else if (fType === 'user') {
+                hint = 'User';
+                code = "<?php\n";
+                code += "// Retrieve '" + escPhp(fLabel) + "' (user ID)\n";
+                code += "$" + fId + " = get_post_meta(get_the_ID(), '" + escPhp(fId) + "', true);\n\n";
+                code += "if ($" + fId + ") :\n";
+                code += "    $user = get_userdata($" + fId + ");\n";
+                code += "    if ($user) :\n";
+                code += "        echo esc_html($user->display_name);\n";
+                code += "    endif;\n";
+                code += "endif;\n";
+                code += "?>";
+            } else if (fType === 'oembed') {
+                hint = 'oEmbed';
+                code = "<?php\n";
+                code += "// Retrieve '" + escPhp(fLabel) + "' (embed URL)\n";
+                code += "$" + fId + " = get_post_meta(get_the_ID(), '" + escPhp(fId) + "', true);\n\n";
+                code += "if ($" + fId + ") :\n";
+                code += "    echo wp_oembed_get($" + fId + ");\n";
+                code += "endif;\n";
+                code += "?>";
+            } else {
+                // Default: text, textarea, password, hidden, etc.
+                hint = escHtml(fType.charAt(0).toUpperCase() + fType.slice(1));
+                code = "<?php\n";
+                code += "// Retrieve '" + escPhp(fLabel) + "'\n";
+                code += "$" + fId + " = get_post_meta(get_the_ID(), '" + escPhp(fId) + "', true);\n\n";
+                code += "if ($" + fId + ") :\n";
+                code += "    echo esc_html($" + fId + ");\n";
+                code += "endif;\n";
+                code += "?>";
+            }
+
+            sections += '<div class="cmb-result-section">';
+            sections += '<div class="cmb-result-section-header">';
+            sections += '<span class="dashicons dashicons-editor-code"></span> ';
+            sections += escHtml(fLabel || fId);
+            sections += ' <small>' + hint + '</small>';
+            sections += '</div>';
+            sections += '<pre class="cmb-code-preview"><code>' + escHtml(code) + '</code></pre>';
+            sections += '</div>';
+        });
+
+        if (!hasFields) {
+            sections = '<div class="cmb-result-section">';
+            sections += '<div class="cmb-result-section-header"><span class="dashicons dashicons-info-outline"></span> Save the field group and add fields to generate retrieval code.</div>';
+            sections += '</div>';
+        }
+
+        $output.html(sections);
     }
 
     /* ─── Helpers ───────────────────────────────────────── */

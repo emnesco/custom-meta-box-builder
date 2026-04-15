@@ -73,7 +73,7 @@
     justify-content: start;
     padding: 14px 18px;
     border-right: 1px solid var(--cmb-border-light);
-    width: 200px;
+    width: 160px;
     flex-shrink: 0;
     background: var(--cmb-bg-alt);
 }
@@ -1084,7 +1084,6 @@
 [data-conditional-field],
 [data-conditional-groups] {
     overflow: hidden;
-    max-height: 1000px;
     opacity: 1;
     transition: max-height 0.3s ease, opacity 0.3s ease;
 }
