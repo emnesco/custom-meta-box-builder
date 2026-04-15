@@ -75,9 +75,11 @@ final class GroupField extends AbstractField {
         $output .= '<div class="cmb-group-item ' . esc_attr($collapsed) . '" data-field-name="' . esc_attr($name) . '">';
         $output .= '<div class="cmb-group-item-header" role="button" tabindex="0" aria-expanded="' . ($collapsed === 'open' ? 'true' : 'false') . '">';
         $output .= '<span class="cmb-group-item-title"><span class="cmb-group-index cmb-sortable-handle" title="Drag to reorder">' . ($index + 1) . '</span>' . esc_html($rowTitle) . '</span>';
-        $output .= '<span class="cmb-group-reorder-buttons">';
+        $output .= '<span class="cmb-group-header-actions">';
         $output .= '<button type="button" class="cmb-group-move-up" tabindex="0" aria-label="' . esc_attr__('Move item up', 'custom-meta-box-builder') . '" title="' . esc_attr__('Move up', 'custom-meta-box-builder') . '"><span class="dashicons dashicons-arrow-up-alt2" aria-hidden="true"></span></button>';
         $output .= '<button type="button" class="cmb-group-move-down" tabindex="0" aria-label="' . esc_attr__('Move item down', 'custom-meta-box-builder') . '" title="' . esc_attr__('Move down', 'custom-meta-box-builder') . '"><span class="dashicons dashicons-arrow-down-alt2" aria-hidden="true"></span></button>';
+        $output .= '<button type="button" class="cmb-duplicate-row" tabindex="0" aria-label="' . esc_attr__('Duplicate item', 'custom-meta-box-builder') . '" title="' . esc_attr__('Duplicate', 'custom-meta-box-builder') . '"><span class="dashicons dashicons-admin-page" aria-hidden="true"></span></button>';
+        $output .= '<button type="button" class="cmb-remove-row" tabindex="0" aria-label="' . esc_attr__('Remove item', 'custom-meta-box-builder') . '" title="' . esc_attr__('Remove', 'custom-meta-box-builder') . '"><span class="dashicons dashicons-trash" aria-hidden="true"></span></button>';
         $output .= '</span>';
         $output .= ' <span class="toggle-indicator" aria-hidden="true"></span>';
         $output .= '</div>';
@@ -100,10 +102,6 @@ final class GroupField extends AbstractField {
             }
         }
 
-        $output .= '</div>';
-        $output .= '<div class="cmb-group-item-actions">';
-        $output .= '<button type="button" class="cmb-duplicate-row" aria-label="Duplicate item" title="Duplicate"><span class="dashicons dashicons-admin-page"></span></button>';
-        $output .= '<button type="button" class="cmb-remove-row" aria-label="Remove item" title="Remove"><span class="dashicons dashicons-trash"></span></button>';
         $output .= '</div>';
         $output .= '</div>';
         $output .= '</div>';

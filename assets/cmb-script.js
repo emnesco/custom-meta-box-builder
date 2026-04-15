@@ -200,8 +200,8 @@
 
       // === Toggle group item (click + keyboard) ===
       $(document).on('click keydown', '.cmb-group-item-header', function(event) {
-        // Don't toggle when clicking the drag handle or reorder buttons
-        if ($(event.target).closest('.cmb-sortable-handle, .cmb-group-reorder-buttons, .cmb-group-move-up, .cmb-group-move-down').length) {
+        // Don't toggle when clicking the drag handle or action buttons
+        if ($(event.target).closest('.cmb-sortable-handle, .cmb-group-header-actions').length) {
           return;
         }
         if (event.type === 'keydown' && event.key !== 'Enter' && event.key !== ' ') {

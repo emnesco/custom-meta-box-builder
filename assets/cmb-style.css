@@ -243,16 +243,15 @@
     letter-spacing: -0.01em;
 }
 
-/* -- Reorder Buttons -- */
-.cmb-group-reorder-buttons {
+/* -- Header Action Buttons (reorder + duplicate + remove) -- */
+.cmb-group-header-actions {
     display: flex;
     align-items: center;
     gap: 2px;
     margin-right: 4px;
 }
 
-.cmb-group-move-up,
-.cmb-group-move-down {
+.cmb-group-header-actions button {
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -267,15 +266,19 @@
     padding: 0;
 }
 
-.cmb-group-move-up:hover,
-.cmb-group-move-down:hover {
+.cmb-group-header-actions button:hover {
     background: var(--cmb-primary-light);
     color: var(--cmb-primary);
     border-color: rgba(56, 88, 233, 0.15);
 }
 
-.cmb-group-move-up .dashicons,
-.cmb-group-move-down .dashicons {
+.cmb-group-header-actions .cmb-remove-row:hover {
+    background: #fef2f2;
+    color: var(--cmb-error);
+    border-color: rgba(239, 68, 68, 0.15);
+}
+
+.cmb-group-header-actions button .dashicons {
     font-size: 16px;
     width: 16px;
     height: 16px;
@@ -485,55 +488,7 @@
     flex-grow: 1;
 }
 
-/* -- Action Buttons Column (duplicate + remove) -- */
-.cmb-group-item-actions {
-    display: flex;
-    flex-direction: column;
-    border-left: 1px solid var(--cmb-border-light);
-    width: 42px;
-    min-width: 42px;
-    flex-shrink: 0;
-}
-
-.cmb-group-item-actions button {
-    width: 100%;
-    height: 50%;
-    min-height: 38px;
-    background: var(--cmb-bg);
-    cursor: pointer;
-    color: #c0c4cc;
-    padding: 0;
-    border: none;
-    text-align: center;
-    box-sizing: border-box;
-    font-size: 16px;
-    line-height: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all var(--cmb-transition);
-}
-
-.cmb-group-item-actions button .dashicons {
-    font-size: 16px;
-    width: 16px;
-    height: 16px;
-}
-
-/* Remove button */
-.cmb-group-item-actions .cmb-remove-row {
-    border-top: 1px solid var(--cmb-border-light);
-}
-.cmb-group-item-actions .cmb-remove-row:hover {
-    background-color: #fef2f2;
-    color: var(--cmb-error);
-}
-
-/* Duplicate button */
-.cmb-group-item-actions .cmb-duplicate-row:hover {
-    background-color: var(--cmb-primary-light);
-    color: var(--cmb-primary);
-}
+/* (Action buttons moved to header — see .cmb-group-header-actions) */
 
 /* -- Nested group indentation -- */
 .cmb-group .cmb-group {
@@ -642,12 +597,10 @@
 
 /* === Focus Styles (Accessibility) === */
 .cmb-add-row:focus-visible,
-.cmb-group-item-actions button:focus-visible,
+.cmb-group-header-actions button:focus-visible,
 .cmb-group-item-header:focus-visible,
 .cmb-group-actions button:focus-visible,
-.cmb-load-more:focus-visible,
-.cmb-group-move-up:focus-visible,
-.cmb-group-move-down:focus-visible {
+.cmb-load-more:focus-visible {
     outline: 2px solid var(--cmb-primary);
     outline-offset: 2px;
     z-index: 1;
@@ -880,7 +833,7 @@
 /* === Print === */
 @media print {
     [id^="cmb-"] .cmb-add-row,
-    [id^="cmb-"] .cmb-group-item-actions,
+    [id^="cmb-"] .cmb-group-header-actions,
     [id^="cmb-"] .cmb-group-index,
     [id^="cmb-"] .toggle-indicator,
     [id^="cmb-"] .cmb-group-actions,
@@ -929,9 +882,9 @@
         font-size: 10px;
     }
 
-    .cmb-group-item-actions {
-        width: 38px;
-        min-width: 38px;
+    .cmb-group-header-actions button {
+        width: 28px;
+        height: 28px;
     }
 
     .cmb-tab-nav {
