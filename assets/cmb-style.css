@@ -26,7 +26,7 @@
 /* === CMB Base Layout === */
 [id^="cmb-"] .inside {
     padding: 0;
-    margin-top: 0;
+    margin-top: 0 !important;
 }
 [id^="cmb-"] .inside * {
     box-sizing: border-box;
@@ -70,7 +70,7 @@
 .cmb-field .cmb-label {
     display: flex;
     flex-direction: column;
-    justify-content: center;
+    justify-content: start;
     padding: 14px 18px;
     border-right: 1px solid var(--cmb-border-light);
     width: 200px;
@@ -324,7 +324,7 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
+    justify-content: start;
     gap: 6px;
     transition: all var(--cmb-transition);
     user-select: none;

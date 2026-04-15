@@ -74,7 +74,7 @@ final class GroupField extends AbstractField {
         $output = '';
         $output .= '<div class="cmb-group-item ' . esc_attr($collapsed) . '" data-field-name="' . esc_attr($name) . '">';
         $output .= '<div class="cmb-group-item-header" role="button" tabindex="0" aria-expanded="' . ($collapsed === 'open' ? 'true' : 'false') . '">';
-        $output .= '<span class="cmb-group-item-title">' . esc_html($rowTitle) . '</span>';
+        $output .= '<span class="cmb-group-item-title"><span class="cmb-group-index cmb-sortable-handle" title="Drag to reorder">' . $index . '</span>' . esc_html($rowTitle) . '</span>';
         $output .= '<span class="cmb-group-reorder-buttons">';
         $output .= '<button type="button" class="cmb-group-move-up" tabindex="0" aria-label="' . esc_attr__('Move item up', 'custom-meta-box-builder') . '" title="' . esc_attr__('Move up', 'custom-meta-box-builder') . '"><span class="dashicons dashicons-arrow-up-alt2" aria-hidden="true"></span></button>';
         $output .= '<button type="button" class="cmb-group-move-down" tabindex="0" aria-label="' . esc_attr__('Move item down', 'custom-meta-box-builder') . '" title="' . esc_attr__('Move down', 'custom-meta-box-builder') . '"><span class="dashicons dashicons-arrow-down-alt2" aria-hidden="true"></span></button>';
@@ -82,7 +82,6 @@ final class GroupField extends AbstractField {
         $output .= ' <span class="toggle-indicator" aria-hidden="true"></span>';
         $output .= '</div>';
         $output .= '<div class="cmb-group-item-body">';
-        $output .= '<div class="cmb-group-index cmb-sortable-handle" title="Drag to reorder">' . $index . '</div>';
         $output .= '<div class="cmb-group-fields">';
 
         if (!empty($field['fields'])) {
