@@ -1,10 +1,35 @@
 {
     "name": "emneslab/custom-meta-box-builder",
-    "description": "Modern WordPress custom meta box plugin with visual builder and PHP API",
+    "description": "A modern WordPress meta box builder with 30+ field types, visual admin UI, nested groups, conditional logic, REST API, Gutenberg sidebar, and WP-CLI support.",
     "type": "wordpress-plugin",
     "license": "GPL-2.0-or-later",
+    "keywords": [
+        "wordpress",
+        "meta-box",
+        "custom-fields",
+        "admin-ui",
+        "field-builder",
+        "post-meta",
+        "taxonomy-meta",
+        "user-meta",
+        "gutenberg",
+        "acf-alternative"
+    ],
+    "homepage": "https://github.com/emnesco/custom-meta-box-builder",
+    "authors": [
+        {
+            "name": "EMNES Lab",
+            "email": "bd.kabiruddin@gmail.com",
+            "homepage": "https://emnes.co"
+        }
+    ],
+    "support": {
+        "issues": "https://github.com/emnesco/custom-meta-box-builder/issues",
+        "source": "https://github.com/emnesco/custom-meta-box-builder"
+    },
     "require": {
-        "php": ">=8.1"
+        "php": ">=8.1",
+        "composer/installers": "^1.0 || ^2.0"
     },
     "conflict": {
         "php": "<8.1"
@@ -12,7 +37,10 @@
     "autoload": {
         "psr-4": {
             "CMB\\": "src/"
-        }
+        },
+        "files": [
+            "public-api.php"
+        ]
     },
     "autoload-dev": {
         "psr-4": {
@@ -30,8 +58,12 @@
         "test:unit": "phpunit tests/Unit/"
     },
     "minimum-stability": "stable",
+    "prefer-stable": true,
     "config": {
         "optimize-autoloader": true,
-        "sort-packages": true
+        "sort-packages": true,
+        "allow-plugins": {
+            "composer/installers": true
+        }
     }
 }

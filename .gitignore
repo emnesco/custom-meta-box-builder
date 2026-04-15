@@ -1,6 +1,10 @@
-vendor
+vendor/
+node_modules/
+composer.lock
+
 .phpunit.result.cache
 .phpunit.cache/
+
 AUDIT_*.md
 TODO*.md
 EXECUTION_PLAN.md
