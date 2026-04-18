@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
-        'name' => 'yourname/custom-meta-box-builder',
+        'name' => 'emneslab/custom-meta-box-builder',
         'pretty_version' => 'dev-main',
         'version' => 'dev-main',
-        'reference' => 'ad84a7962421a719e86f6c91b15a8db4602e41f6',
+        'reference' => '1e8cdbaeeab110599a27267d63005858b376dfe1',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -28,6 +28,15 @@
             'aliases' => array(),
             'dev_requirement' => true,
         ),
+        'composer/installers' => array(
+            'pretty_version' => 'v2.3.0',
+            'version' => '2.3.0.0',
+            'reference' => '12fb2dfe5e16183de69e784a7b84046c43d97e8e',
+            'type' => 'composer-plugin',
+            'install_path' => __DIR__ . '/./installers',
+            'aliases' => array(),
+            'dev_requirement' => false,
+        ),
         'cordoval/hamcrest-php' => array(
             'dev_requirement' => true,
             'replaced' => array(
@@ -39,6 +48,15 @@
             'replaced' => array(
                 0 => '*',
             ),
+        ),
+        'emneslab/custom-meta-box-builder' => array(
+            'pretty_version' => 'dev-main',
+            'version' => 'dev-main',
+            'reference' => '1e8cdbaeeab110599a27267d63005858b376dfe1',
+            'type' => 'wordpress-plugin',
+            'install_path' => __DIR__ . '/../../',
+            'aliases' => array(),
+            'dev_requirement' => false,
         ),
         'hamcrest/hamcrest-php' => array(
             'pretty_version' => 'v2.1.1',
@@ -306,15 +324,6 @@
             'install_path' => __DIR__ . '/../yoast/phpunit-polyfills',
             'aliases' => array(),
             'dev_requirement' => true,
-        ),
-        'yourname/custom-meta-box-builder' => array(
-            'pretty_version' => 'dev-main',
-            'version' => 'dev-main',
-            'reference' => 'ad84a7962421a719e86f6c91b15a8db4602e41f6',
-            'type' => 'wordpress-plugin',
-            'install_path' => __DIR__ . '/../../',
-            'aliases' => array(),
-            'dev_requirement' => false,
         ),
     ),
 );

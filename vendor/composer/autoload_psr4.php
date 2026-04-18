@@ -10,6 +10,7 @@ return array(
     'PhpParser\\' => array($vendorDir . '/nikic/php-parser/lib/PhpParser'),
     'Mockery\\' => array($vendorDir . '/mockery/mockery/library/Mockery'),
     'DeepCopy\\' => array($vendorDir . '/myclabs/deep-copy/src/DeepCopy'),
+    'Composer\\Installers\\' => array($vendorDir . '/composer/installers/src/Composer/Installers'),
     'CMB\\' => array($baseDir . '/src'),
     'Brain\\Monkey\\' => array($vendorDir . '/brain/monkey/src'),
 );
